@@ -131,7 +131,7 @@ const Dashboard = () => {
                 {t("dashboardPage.vitalTrends")}
               </h2>
             </div>
-            <Card className="border-none shadow-sm h-64 flex items-center justify-center bg-white/50 border-dashed border-2 border-gray-100">
+            <Card className="shadow-sm h-64 flex items-center justify-center bg-white/50 border-dashed border-2 border-gray-100">
               <div className="text-center">
                 <p className="text-sm font-bold text-gray-400">
                   {t("dashboardPage.graphPlaceholder")}

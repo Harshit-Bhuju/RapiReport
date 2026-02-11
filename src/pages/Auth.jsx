@@ -1,181 +1,104 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { Mail, Lock, User, Eye, EyeOff, ArrowRight } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import Button from "@/components/ui/Button";
-import Input from "@/components/ui/Input";
 import { Card, CardBody } from "@/components/ui/Card";
-import { cn } from "@/lib/utils";
-
-const schema = z.object({
-  name: z.string().min(2, "Name is too short").optional(),
-  email: z.string().email("Invalid email address"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
-});
+import { Sparkles, ArrowRight } from "lucide-react";
 
 const Auth = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { login: setAuth } = useAuthStore();
-  const [isLogin, setIsLogin] = useState(true);
-  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm({
-    resolver: zodResolver(schema),
-  });
-
-  const onSubmit = async (data) => {
+  const handleGoogleLogin = async () => {
     setIsLoading(true);
-    // Simulate API call
+    // Simulate Google OAuth
     setTimeout(() => {
       setIsLoading(false);
       setAuth(
-        { name: data.name || "Prashant", email: data.email },
+        {
+          name: "Prashant Dahal",
+          email: "prashant.dahal@gmail.com",
+          avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Prashant",
+        },
         "fake-jwt-token",
       );
-      toast.success(
-        isLogin ? "Welcome back!" : "Account created successfully!",
-      );
+      toast.success("Welcome back, Prashant!");
       navigate("/dashboard");
-    }, 1500);
+    }, 1200);
   };
 
   return (
-    <div className="min-h-[calc(100vh-80px)] bg-gray-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Branding/Header */}
-        <div className="text-center mb-8">
-          <div className="w-12 h-12 bg-primary-600 rounded-xl flex items-center justify-center text-white font-bold text-2xl mx-auto mb-4 shadow-lg shadow-primary-200">
-            R
-          </div>
-          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">
-            {isLogin ? t("auth.login") : t("auth.signup")}
-          </h1>
-          <p className="text-gray-500 mt-2 font-medium">
-            {isLogin
-              ? "Access your health intelligence"
-              : "Join RapiReport today"}
-          </p>
-        </div>
+    <div className="min-h-[calc(100vh-80px)] bg-white flex items-center justify-center p-6 sm:p-12 relative overflow-hidden">
+      {/* Subtle Background Elements */}
+      <div className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-20">
+        <div className="absolute top-[10%] left-[5%] w-[40vw] h-[40vw] bg-primary-50 rounded-full blur-[120px] animate-pulse" />
+        <div className="absolute bottom-[10%] right-[5%] w-[35vw] h-[35vw] bg-success-50 rounded-full blur-[100px] animate-pulse delay-700" />
+      </div>
 
-        <Card className="shadow-2xl shadow-gray-200 border-none rounded-[2rem]">
-          <CardBody className="p-8">
-            <div className="flex p-1 bg-gray-100 rounded-2xl mb-8">
-              <button
-                onClick={() => setIsLogin(true)}
-                className={cn(
-                  "flex-1 py-3 text-sm font-bold rounded-xl transition-all",
-                  isLogin
-                    ? "bg-white text-primary-600 shadow-sm"
-                    : "text-gray-500 hover:text-gray-700",
-                )}>
-                Login
-              </button>
-              <button
-                onClick={() => setIsLogin(false)}
-                className={cn(
-                  "flex-1 py-3 text-sm font-bold rounded-xl transition-all",
-                  !isLogin
-                    ? "bg-white text-primary-600 shadow-sm"
-                    : "text-gray-500 hover:text-gray-700",
-                )}>
-                Signup
-              </button>
+      <div className="w-full max-w-sm relative z-10">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center mb-12">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-3xl bg-white shadow-xl shadow-gray-100 mb-8 border border-gray-50 group hover:scale-110 transition-transform">
+            <div className="w-10 h-10 bg-primary-600 rounded-2xl flex items-center justify-center text-white font-black text-xl">
+              R
             </div>
+          </div>
+          <h1 className="text-4xl font-black text-gray-900 tracking-tight leading-tight mb-4">
+            Health intelligence for everyone.
+          </h1>
+          <p className="text-gray-500 font-bold text-lg leading-relaxed">
+            Step into the future of diagnostic reports with AI.
+          </p>
+        </motion.div>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-              <AnimatePresence mode="wait">
-                {!isLogin && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.3 }}>
-                    <Input
-                      label="Full Name"
-                      placeholder="Enter your name"
-                      {...register("name")}
-                      error={errors.name?.message}
-                    />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              <Input
-                label={t("auth.email")}
-                type="email"
-                placeholder="you@email.com"
-                {...register("email")}
-                error={errors.email?.message}
-              />
-
-              <div className="relative">
-                <Input
-                  label={t("auth.password")}
-                  type={showPassword ? "text" : "password"}
-                  placeholder="••••••••"
-                  {...register("password")}
-                  error={errors.password?.message}
-                />
-                <button
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.2 }}>
+          <Card className="border-none shadow-2xl shadow-gray-200/50 rounded-[2.5rem] bg-white/80 backdrop-blur-xl border border-white/50">
+            <CardBody className="p-8 sm:p-10">
+              <div className="space-y-6">
+                <Button
+                  variant="outline"
                   type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-[38px] text-gray-400 hover:text-gray-600 transition-colors">
-                  {showPassword ? (
-                    <EyeOff className="w-5 h-5" />
-                  ) : (
-                    <Eye className="w-5 h-5" />
-                  )}
-                </button>
+                  className="w-full py-5 rounded-2xl border border-gray-200 flex items-center justify-center gap-4 hover:bg-gray-50 bg-white text-gray-800 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-sm font-black text-lg"
+                  onClick={handleGoogleLogin}
+                  loading={isLoading}>
+                  <img
+                    src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+                    alt="Google"
+                    className="w-6 h-6"
+                  />
+                  Continue with Google
+                </Button>
+
+                <p className="text-[10px] text-gray-400 font-black uppercase tracking-[0.2em] text-center pt-2">
+                  Secure OAuth 2.0 via Google
+                </p>
               </div>
+            </CardBody>
+          </Card>
+        </motion.div>
 
-              {isLogin && (
-                <div className="flex items-center justify-between text-sm">
-                  <label className="flex items-center gap-2 text-gray-600 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-100"
-                    />
-                    Remember me
-                  </label>
-                  <a
-                    href="#"
-                    className="font-bold text-primary-600 hover:text-primary-700">
-                    {t("auth.forgotPassword")}
-                  </a>
-                </div>
-              )}
-
-              <Button
-                type="submit"
-                className="w-full py-4 rounded-2xl text-lg"
-                loading={isLoading}>
-                {isLogin ? t("auth.login") : t("auth.signup")}
-                {!isLoading && <ArrowRight className="ml-2 w-5 h-5" />}
-              </Button>
-            </form>
-          </CardBody>
-        </Card>
-
-        <p className="text-center mt-8 text-sm text-gray-500 font-medium">
-          {isLogin ? t("auth.noAccount") : t("auth.hasAccount")}{" "}
-          <button
-            onClick={() => setIsLogin(!isLogin)}
-            className="text-primary-600 font-bold hover:underline">
-            {isLogin ? t("nav.signup") : t("nav.login")}
-          </button>
-        </p>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.4 }}
+          className="mt-12 text-center">
+          <div className="inline-flex items-center gap-2 bg-success-50 px-4 py-2 rounded-full border border-success-100">
+            <div className="w-2 h-2 rounded-full bg-success-500 animate-pulse" />
+            <span className="text-xs font-black text-success-700 uppercase tracking-wider">
+              AI Systems Fully Operational
+            </span>
+          </div>
+        </motion.div>
       </div>
     </div>
   );

@@ -11,6 +11,7 @@ import {
   Filter,
   Search,
   AlertTriangle,
+  ShieldCheck,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/store/authStore";
@@ -20,6 +21,13 @@ import { Card, CardBody } from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
 import PageWrapper from "@/components/layout/PageWrapper";
 import { formatDate, cn } from "@/lib/utils";
+import ChatInterface from "@/components/features/ChatInterface";
+import {
+  HealthInsightCard,
+  DailyRoutineCard,
+  Typewriter,
+} from "@/components/ui/HealthInsightCard";
+import { getDailyActivities } from "@/lib/aiProcessor";
 
 const Dashboard = () => {
   const { t } = useTranslation();
@@ -110,6 +118,80 @@ const Dashboard = () => {
             </CardBody>
           </Card>
         ))}
+      </div>
+
+      {/* AI AI Health Overview */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
+        <div className="lg:col-span-2 space-y-4">
+          <HealthInsightCard
+            type="warning"
+            insights={[
+              {
+                en: "Your last report shows low Hemoglobin. We've updated your daily routine to include more iron-rich activities.",
+                ne: "तपाईंको पछिल्लो रिपोर्टले कम हेमोग्लोबिन देखाउँछ। हामीले तपाईंको दैनिक दिनचर्यामा आइरनयुक्त गतिविधिहरू समावेश गरेका छौं।",
+              },
+            ]}
+          />
+
+          {user?.parentalHistory?.length > 0 && (
+            <Card className="bg-warning-50/50 border-warning-100/50 shadow-none">
+              <CardBody className="p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-2 bg-warning-100 rounded-lg text-warning-700">
+                    <ShieldCheck className="w-5 h-5" />
+                  </div>
+                  <h3 className="font-black text-warning-900">
+                    Parental Risk Analytics
+                  </h3>
+                </div>
+                <div className="space-y-3">
+                  {user.parentalHistory.includes("Diabetes") && (
+                    <div className="p-4 bg-white/50 rounded-xl border border-warning-100">
+                      <p className="text-sm font-bold text-gray-900">
+                        High Predisposition for Type 2 Diabetes
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1 font-medium italic">
+                        Solution:{" "}
+                        <Typewriter text="Focus on a low-glycemic diet and daily cardio to mitigate hereditary risk." />
+                      </p>
+                    </div>
+                  )}
+                  {user.parentalHistory.includes("Heart Disease") && (
+                    <div className="p-4 bg-white/50 rounded-xl border border-warning-100">
+                      <p className="text-sm font-bold text-gray-900">
+                        Cardiovascular Preventive Strategy
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1 font-medium italic">
+                        Solution:{" "}
+                        <Typewriter text="Monitor lipids quarterly. Switch to heart-healthy fats (olive oil, avocados)." />
+                      </p>
+                    </div>
+                  )}
+                  {user.parentalHistory.includes("BP") && (
+                    <div className="p-4 bg-white/50 rounded-xl border border-warning-100">
+                      <p className="text-sm font-bold text-gray-900">
+                        Hereditary Hypertension Alert
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1 font-medium italic">
+                        Solution:{" "}
+                        <Typewriter text="Practice Dash diet (low sodium) and mindfulness/meditation daily." />
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </CardBody>
+            </Card>
+          )}
+        </div>
+        <div className="lg:col-span-1">
+          <Card className="border-none shadow-sm h-full">
+            <CardBody className="p-6">
+              <DailyRoutineCard
+                activities={getDailyActivities(user || { age: 28 })}
+              />
+            </CardBody>
+          </Card>
+        </div>
       </div>
 
       {/* Main Actions */}
@@ -205,6 +287,7 @@ const Dashboard = () => {
           </Button>
         </Card>
       )}
+      <ChatInterface />
     </PageWrapper>
   );
 };

@@ -230,17 +230,28 @@ const Results = () => {
 
               <Button
                 variant="secondary"
-                className="w-full py-6 rounded-2xl text-lg font-black text-primary-700 hover:scale-[1.02]"
+                className="w-full py-6 rounded-2xl text-lg font-black text-primary-700 hover:scale-[1.02] bg-white border-none shadow-xl flex items-center justify-center gap-4"
                 onClick={toggleVoice}>
-                {isPlaying ? (
-                  <Activity className="mr-3 w-6 h-6 animate-pulse" />
-                ) : (
-                  <Play className="mr-3 w-6 h-6 fill-primary-700" />
-                )}
-                {isPlaying ? "Speaking..." : "Listen to Report (बजाउनुहोस्)"}
+                <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center">
+                  {isPlaying ? (
+                    <Activity className="w-6 h-6 text-primary-600 animate-pulse" />
+                  ) : (
+                    <Play className="w-6 h-6 text-primary-600 fill-primary-600" />
+                  )}
+                </div>
+                <div className="text-left">
+                  <p className="text-sm font-black leading-none">
+                    {isPlaying ? "AI is Explaining..." : "Health Brief Audio"}
+                  </p>
+                  <p className="text-[10px] font-bold opacity-60 mt-1 uppercase">
+                    ▶️ {isPlaying ? "Stop" : "Play (बजाउनुहोस्)"}
+                  </p>
+                </div>
               </Button>
             </CardBody>
           </Card>
+
+          <ChatInterface />
 
           <Card className="border-none shadow-sm bg-success-50">
             <CardBody className="p-6">

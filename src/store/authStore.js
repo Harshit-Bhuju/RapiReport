@@ -7,6 +7,7 @@ export const useAuthStore = create(
       user: null,
       token: localStorage.getItem("auth_token"),
       isAuthenticated: !!localStorage.getItem("auth_token"),
+      isProfileComplete: false,
 
       login: (userData, authToken) => {
         localStorage.setItem("auth_token", authToken);
@@ -14,6 +15,7 @@ export const useAuthStore = create(
           user: userData,
           token: authToken,
           isAuthenticated: true,
+          isProfileComplete: !!userData?.profileComplete,
         });
       },
 
@@ -23,10 +25,22 @@ export const useAuthStore = create(
           user: null,
           token: null,
           isAuthenticated: false,
+          isProfileComplete: false,
         });
       },
 
-      updateUser: (userData) => set({ user: userData }),
+      updateProfile: (profileData) => {
+        set((state) => ({
+          user: { ...state.user, ...profileData, profileComplete: true },
+          isProfileComplete: true,
+        }));
+      },
+
+      updateUser: (userData) =>
+        set({
+          user: userData,
+          isProfileComplete: !!userData?.profileComplete,
+        }),
     }),
     {
       name: "auth-storage",

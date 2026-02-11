@@ -19,10 +19,17 @@ import Dashboard from "@/pages/Dashboard";
 import Auth from "@/pages/Auth";
 import Results from "@/pages/Results";
 import NotFound from "@/pages/NotFound";
+import ProfileSetup from "@/components/features/ProfileSetup";
 
-const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated } = useAuthStore();
+const ProtectedRoute = ({ children, requireProfile = true }) => {
+  const { isAuthenticated, isProfileComplete } = useAuthStore();
+
   if (!isAuthenticated) return <Navigate to="/auth" replace />;
+
+  if (requireProfile && !isProfileComplete) {
+    return <Navigate to="/profile-setup" replace />;
+  }
+
   return children;
 };
 
@@ -51,6 +58,14 @@ function App() {
             <Routes>
               <Route path="/" element={<Landing />} />
               <Route path="/auth" element={<Auth />} />
+              <Route
+                path="/profile-setup"
+                element={
+                  <ProtectedRoute requireProfile={false}>
+                    <ProfileSetup />
+                  </ProtectedRoute>
+                }
+              />
               <Route
                 path="/dashboard"
                 element={

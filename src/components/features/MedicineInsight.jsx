@@ -50,6 +50,42 @@ const MedicineInsight = ({ medicines }) => {
                     {i18n.language === "ne" ? med.descNe : med.descEn}
                   </span>
                 </div>
+
+                {/* New Details: Price, Alternatives, Market */}
+                <div className="pt-3 border-t border-gray-100 grid grid-cols-2 gap-3">
+                  <div>
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
+                      {t("features.price") || "Est. Price"}
+                    </p>
+                    <p className="text-sm font-black text-gray-900">
+                      {med.price || "N/A"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
+                      {t("features.market") || "Availability"}
+                    </p>
+                    <Badge
+                      variant={
+                        med.marketAvailability === "High"
+                          ? "success"
+                          : med.marketAvailability === "Low"
+                            ? "error"
+                            : "warning"
+                      }
+                      className="px-2 py-0.5 text-[10px]">
+                      {med.marketAvailability || "Unknown"}
+                    </Badge>
+                  </div>
+                  <div className="col-span-2">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
+                      {t("features.alternatives") || "Alternatives"}
+                    </p>
+                    <p className="text-sm font-medium text-gray-600">
+                      {med.alternatives ? med.alternatives.join(", ") : "None"}
+                    </p>
+                  </div>
+                </div>
               </div>
             </CardBody>
           </Card>

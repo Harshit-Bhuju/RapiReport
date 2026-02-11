@@ -29,6 +29,7 @@ import RiskAnalysis from "@/pages/RiskAnalysis";
 import HealthPlanner from "@/pages/HealthPlanner";
 import NotFound from "@/pages/NotFound";
 import DoctorConsultation from "@/pages/DoctorConsultation";
+import TerritoryGame from "@/pages/TerritoryGame";
 import ProfileSetup from "@/components/features/ProfileSetup";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 
@@ -143,6 +144,16 @@ function App() {
                   <ProtectedRoute>
                     <DashboardLayout>
                       <HealthPlanner />
+                    </DashboardLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/territory-game"
+                element={
+                  <ProtectedRoute>
+                    <DashboardLayout>
+                      <TerritoryGame />
                     </DashboardLayout>
                   </ProtectedRoute>
                 }

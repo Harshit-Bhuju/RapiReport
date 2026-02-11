@@ -65,7 +65,7 @@
     @apply bg-clip-text text-transparent bg-gradient-to-r from-primary-600 to-primary-800;
   }
   
-  . glass-morphism {
+  .glass-morphism {
     @apply bg-white/70 backdrop-blur-md border border-white/20 shadow-xl;
   }
 }

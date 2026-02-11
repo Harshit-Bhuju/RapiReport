@@ -10,6 +10,7 @@ import {
   LogOut,
   X,
   Stethoscope,
+  Map,
 } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { cn } from "@/lib/utils";
@@ -27,6 +28,7 @@ const Sidebar = ({ isOpen, onClose }) => {
       icon: MessageSquare,
     },
     { name: t("sidebar.doctors"), path: "/doctors", icon: Stethoscope },
+    { name: "Territory Game", path: "/territory-game", icon: Map },
     { name: t("sidebar.risk"), path: "/prevention", icon: ShieldAlert },
     { name: t("sidebar.planner"), path: "/planner", icon: CalendarCheck },
   ];

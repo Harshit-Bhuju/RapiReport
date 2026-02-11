@@ -26,6 +26,10 @@ const MedicineInsight = React.lazy(
   () => import("@/components/features/MedicineInsight"),
 );
 
+const ReportUpload = React.lazy(
+  () => import("@/components/features/ReportUpload"),
+);
+
 // Simple Loading component for Suspense fallback
 const Loading = () => {
   const { t } = useTranslation();
@@ -44,7 +48,25 @@ const Results = () => {
   const { t, i18n } = useTranslation();
   const [isPlaying, setIsPlaying] = useState(false);
 
-  // Mock Data
+  // Handle "New Upload" state
+  if (id === "new") {
+    return (
+      <PageWrapper>
+        <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-8">
+          <Button
+            variant="ghost"
+            onClick={() => navigate("/reports")}
+            className="text-gray-600 hover:text-primary-600 -ml-4">
+            <ArrowLeft className="mr-2 w-5 h-5" />
+            {t("common.back")}
+          </Button>
+        </div>
+        <ReportUpload />
+      </PageWrapper>
+    );
+  }
+
+  // Mock Data (Updated with Medicine Details)
   const report = {
     patient: "Prashant Dahal",
     age: 28,
@@ -97,6 +119,9 @@ const Results = () => {
           "Helps increase red blood cell count and improves hemoglobin levels.",
         descNe:
           "यसले रेड ब्लड सेल बढाउन र हेमोग्लोबिनको स्तर सुधार्न मद्दत गर्दछ।",
+        price: "Rs. 185",
+        marketAvailability: "High",
+        alternatives: ["Chemiron", "Ferry-B", "Hemfer"],
       },
       {
         name: "Metformin",
@@ -108,6 +133,9 @@ const Results = () => {
           "Helps control blood sugar levels by improving body response to insulin.",
         descNe:
           "यसले इन्सुलिनको प्रतिक्रिया सुधारेर रगतमा चिनीको मात्रा नियन्त्रण गर्न मद्दत गर्दछ।",
+        price: "Rs. 45 (Strip)",
+        marketAvailability: "High",
+        alternatives: ["Glycomet", "Gluformin", "Riomet"],
       },
     ],
   };

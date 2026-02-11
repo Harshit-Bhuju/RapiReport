@@ -51,24 +51,102 @@ export const useGameStore = create((set, get) => ({
   ],
 
   // Actions
-  updateLocation: (lat, lng) => {
+  fetchLeaderboard: async () => {
+    try {
+      const response = await fetch(
+        "http://localhost/rapireport/backend/api/get_leaderboard.php",
+      );
+      const data = await response.json();
+      if (Array.isArray(data)) {
+        set({ leaderboard: data });
+      }
+    } catch (error) {
+      console.error("Failed to fetch leaderboard:", error);
+    }
+  },
+
+  updateLocation: async (lat, lng, userId = 1, username = "Explorer") => {
+    const { currentLocation, user } = get();
+
+    // Calculate distance if we have a previous location
+    let distanceKm = 0;
+    let areaIncrement = 0;
+    let pointsIncrement = 0;
+
+    if (currentLocation) {
+      const R = 6371; // Radius of the earth in km
+      const dLat = (lat - currentLocation.lat) * (Math.PI / 180);
+      const dLon = (lng - currentLocation.lng) * (Math.PI / 180);
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(currentLocation.lat * (Math.PI / 180)) *
+          Math.cos(lat * (Math.PI / 180)) *
+          Math.sin(dLon / 2) *
+          Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      distanceKm = R * c;
+
+      // "Accurate" Capture Logic:
+      // Assume capturing a path 10 meters (0.01 km) wide.
+      // Area = Distance * Width
+      if (distanceKm > 0.005) {
+        // Only count if moved > 5 meters to reduce GPS jitter
+        areaIncrement = distanceKm * 0.01; // 0.01 km width
+        pointsIncrement = Math.round(distanceKm * 100); // 100 points per km
+      }
+    } else {
+      // First fix, no distance yet
+      pointsIncrement = 1; // Bonus for starting
+    }
+
+    if (areaIncrement === 0 && pointsIncrement === 0 && currentLocation) {
+      return; // No significant movement
+    }
+
+    // 1. Update local state for immediate feedback
     set((state) => {
       const newPath = [...state.pathHistory, [lat, lng]];
-      // Simplified "Area" calculation: +0.001 km2 per movement update for demo
-      const newArea = state.user.areaCapturedKm2 + 0.0001;
-      const points = state.user.pointsToday + 5; // 5 points per update
-
       return {
         currentLocation: { lat, lng },
         pathHistory: newPath,
-        user: {
-          ...state.user,
-          areaCapturedKm2: parseFloat(newArea.toFixed(4)),
-          pointsToday: points,
-          cumulativePoints: state.user.cumulativePoints + 5,
-        },
       };
     });
+
+    // 2. Send to Backend
+    try {
+      const response = await fetch(
+        "http://localhost/rapireport/backend/api/update_location.php",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            user_id: userId,
+            username,
+            lat,
+            lng,
+            area_added: areaIncrement,
+            points_added: pointsIncrement,
+          }),
+        },
+      );
+
+      const result = await response.json();
+
+      if (result.status === "success") {
+        set((state) => ({
+          user: {
+            ...state.user,
+            areaCapturedKm2: parseFloat(result.data.area_captured_km2),
+            pointsToday: parseInt(result.data.points_today),
+            cumulativePoints: parseInt(result.data.cumulative_points),
+          },
+        }));
+      }
+    } catch (error) {
+      console.error("Failed to update location:", error);
+    }
   },
 
   redeemReward: (rewardId) => {

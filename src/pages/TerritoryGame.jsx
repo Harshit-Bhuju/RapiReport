@@ -7,7 +7,13 @@ import { motion } from "framer-motion";
 import { MapPin, Trophy, TrendingUp } from "lucide-react";
 
 const TerritoryGame = () => {
-  const { user } = useGameStore();
+  const { user, fetchLeaderboard } = useGameStore();
+
+  React.useEffect(() => {
+    fetchLeaderboard();
+    const interval = setInterval(fetchLeaderboard, 30000); // Poll every 30s
+    return () => clearInterval(interval);
+  }, [fetchLeaderboard]);
 
   return (
     <div className="space-y-6">

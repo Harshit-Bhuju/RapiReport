@@ -28,7 +28,6 @@ const Navbar = () => {
 
   const navLinks = [
     { name: t("nav.home"), path: "/" },
-    { name: t("nav.features"), path: "/#features" },
     { name: t("nav.dashboard"), path: "/dashboard", auth: true },
   ];
 
@@ -142,7 +141,7 @@ const Navbar = () => {
                 className="flex items-center justify-between w-full p-4 rounded-xl bg-gray-50">
                 <div className="flex items-center gap-3">
                   <Globe className="w-5 h-5 text-primary-600" />
-                  <span className="font-medium">Language / भाषा</span>
+                  <span className="font-medium">{t("nav.language")}</span>
                 </div>
                 <span className="text-sm font-bold text-primary-600">
                   {i18n.language === "ne" ? "English" : "नेपाली"}

@@ -72,31 +72,39 @@ export const analyzeHealthReport = (profile, tests) => {
 export const getDailyActivities = (profile) => {
   const activities = [
     {
+      id: "water_intake",
       en: "Drink at least 3 liters of water",
       ne: "दिनमा कम्तिमा ३ लिटर पानी पिउनुहोस्",
       time: "All Day",
+      verificationType: "image",
     },
   ];
 
   if (profile.age > 50) {
     activities.push({
+      id: "evening_walk",
       en: "15-minute gentle evening walk",
       ne: "बेलुका १५ मिनेट हलुका हिँड्नुहोस्",
       time: "Evening",
+      verificationType: "location",
     });
   } else {
     activities.push({
+      id: "morning_exercise",
       en: "30-minute brisk morning exercise",
       ne: "बिहान ३० मिनेट छिटो हिँड्ने वा व्यायाम गर्नुहोस्",
       time: "Morning",
+      verificationType: "location",
     });
   }
 
   if (profile.conditions?.includes("BP")) {
     activities.push({
+      id: "bp_check",
       en: "Monitor blood pressure and limit salt",
       ne: "रक्तचाप जाँच्नुहोस् र नुन कम खानुहोस्",
       time: "Daily",
+      verificationType: "check",
     });
   }
 

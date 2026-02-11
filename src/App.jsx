@@ -12,26 +12,25 @@ import { useAuthStore } from "./store/authStore";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import Loading from "@/components/ui/Loading";
+import {
+  ProtectedRoute,
+  PublicRoute,
+  FlowRoute,
+} from "@/components/layout/RouteGuards";
 
 // Pages
 import Landing from "@/pages/Landing";
 import Dashboard from "@/pages/Dashboard";
 import Auth from "@/pages/Auth";
 import Results from "@/pages/Results";
+import Reports from "@/pages/Reports";
+import Consultation from "@/pages/Consultation";
+import RiskAnalysis from "@/pages/RiskAnalysis";
+import HealthPlanner from "@/pages/HealthPlanner";
 import NotFound from "@/pages/NotFound";
+import DoctorConsultation from "@/pages/DoctorConsultation";
 import ProfileSetup from "@/components/features/ProfileSetup";
-
-const ProtectedRoute = ({ children, requireProfile = true }) => {
-  const { isAuthenticated, isProfileComplete } = useAuthStore();
-
-  if (!isAuthenticated) return <Navigate to="/auth" replace />;
-
-  if (requireProfile && !isProfileComplete) {
-    return <Navigate to="/profile-setup" replace />;
-  }
-
-  return children;
-};
+import DashboardLayout from "@/components/layout/DashboardLayout";
 
 function App() {
   return (
@@ -51,26 +50,100 @@ function App() {
           }}
         />
 
-        <Navbar />
-
         <Suspense fallback={<Loading fullScreen />}>
           <div className="flex-grow">
             <Routes>
-              <Route path="/" element={<Landing />} />
-              <Route path="/auth" element={<Auth />} />
+              {/* Public Routes with Main Navbar */}
+              <Route
+                path="/"
+                element={
+                  <>
+                    <Navbar />
+                    <Landing />
+                    <Footer />
+                  </>
+                }
+              />
+              <Route
+                path="/auth"
+                element={
+                  <>
+                    <Navbar />
+                    <PublicRoute>
+                      <Auth />
+                    </PublicRoute>
+                  </>
+                }
+              />
+
+              {/* Flow Routes (Setup) */}
               <Route
                 path="/profile-setup"
                 element={
-                  <ProtectedRoute requireProfile={false}>
+                  <FlowRoute>
                     <ProfileSetup />
-                  </ProtectedRoute>
+                  </FlowRoute>
                 }
               />
+
+              {/* Dashboard / Sidebar Routes */}
               <Route
                 path="/dashboard"
                 element={
                   <ProtectedRoute>
-                    <Dashboard />
+                    <DashboardLayout>
+                      <Dashboard />
+                    </DashboardLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/reports"
+                element={
+                  <ProtectedRoute>
+                    <DashboardLayout>
+                      <Reports />
+                    </DashboardLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/consultation"
+                element={
+                  <ProtectedRoute>
+                    <DashboardLayout>
+                      <Consultation />
+                    </DashboardLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/doctors"
+                element={
+                  <ProtectedRoute>
+                    <DashboardLayout>
+                      <DoctorConsultation />
+                    </DashboardLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/prevention"
+                element={
+                  <ProtectedRoute>
+                    <DashboardLayout>
+                      <RiskAnalysis />
+                    </DashboardLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/planner"
+                element={
+                  <ProtectedRoute>
+                    <DashboardLayout>
+                      <HealthPlanner />
+                    </DashboardLayout>
                   </ProtectedRoute>
                 }
               />
@@ -78,17 +151,18 @@ function App() {
                 path="/results/:id"
                 element={
                   <ProtectedRoute>
-                    <Results />
+                    <DashboardLayout>
+                      <Results />
+                    </DashboardLayout>
                   </ProtectedRoute>
                 }
               />
+
               <Route path="/404" element={<NotFound />} />
               <Route path="*" element={<Navigate to="/404" replace />} />
             </Routes>
           </div>
         </Suspense>
-
-        <Footer />
       </div>
     </Router>
   );

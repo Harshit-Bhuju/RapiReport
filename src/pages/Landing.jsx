@@ -34,7 +34,7 @@ const HeroSection = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}>
               <span className="inline-block px-4 py-1.5 rounded-full bg-primary-100 text-primary-700 text-sm font-bold mb-6">
-                🚀 RapiReport v1.0 is Live
+                {t("hero.badge")}
               </span>
               <h1 className="text-4xl md:text-6xl font-extrabold text-gray-900 leading-[1.1] mb-6">
                 {t("hero.title")}
@@ -61,11 +61,11 @@ const HeroSection = () => {
               <div className="mt-10 flex flex-wrap justify-center lg:justify-start gap-6 text-sm text-gray-500 font-medium">
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="w-5 h-5 text-success-500" />
-                  No credit card required
+                  {t("hero.noCard")}
                 </div>
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="w-5 h-5 text-success-500" />
-                  Trusted by 50+ Labs
+                  {t("hero.trustedLabs")}
                 </div>
               </div>
             </motion.div>
@@ -86,14 +86,14 @@ const HeroSection = () => {
                     <div className="w-3 h-3 rounded-full bg-success-400" />
                   </div>
                   <div className="text-xs font-bold text-gray-400">
-                    RapiReport AI | Patient Stats
+                    {t("hero.mockTitle")}
                   </div>
                 </div>
                 <div className="p-8">
                   <div className="grid grid-cols-2 gap-6 mb-8">
                     <div className="p-4 rounded-2xl bg-primary-50 border border-primary-100">
                       <p className="text-xs text-primary-600 font-bold mb-1">
-                        HEMOGLOBIN
+                        {t("hero.hemoglobin")}
                       </p>
                       <p className="text-2xl font-bold text-gray-900">
                         12.5 <span className="text-sm font-medium">g/dL</span>
@@ -104,7 +104,7 @@ const HeroSection = () => {
                     </div>
                     <div className="p-4 rounded-2xl bg-warning-50 border border-warning-100">
                       <p className="text-xs text-warning-600 font-bold mb-1">
-                        BLOOD SUGAR
+                        {t("hero.bloodSugar")}
                       </p>
                       <p className="text-2xl font-bold text-gray-900">
                         110 <span className="text-sm font-medium">mg/dL</span>
@@ -129,9 +129,11 @@ const HeroSection = () => {
                     <Shield className="w-6 h-6" />
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-gray-400">STATUS</p>
+                    <p className="text-xs font-bold text-gray-400">
+                      {t("hero.status")}
+                    </p>
                     <p className="text-sm font-bold text-gray-900">
-                      Health Verified
+                      {t("hero.healthVerified")}
                     </p>
                   </div>
                 </div>
@@ -179,7 +181,7 @@ const Features = () => {
             {t("features.title")}
           </h2>
           <p className="text-lg text-gray-600 uppercase tracking-widest font-bold">
-            Redefining Diagnostic Experience
+            {t("features.subtitle")}
           </p>
         </div>
 
@@ -217,6 +219,7 @@ const Features = () => {
 };
 
 const Landing = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   return (
     <div className="bg-white">
@@ -231,20 +234,24 @@ const Landing = () => {
                 10K+
               </p>
               <p className="text-lg font-medium text-gray-400">
-                Reports Processed
+                {t("stats.reportsProcessed")}
               </p>
             </div>
             <div>
               <p className="text-4xl md:text-6xl font-extrabold text-primary-500 mb-2">
                 50+
               </p>
-              <p className="text-lg font-medium text-gray-400">Partner Labs</p>
+              <p className="text-lg font-medium text-gray-400">
+                {t("stats.partnerLabs")}
+              </p>
             </div>
             <div>
               <p className="text-4xl md:text-6xl font-extrabold text-primary-500 mb-2">
                 4.9/5
               </p>
-              <p className="text-lg font-medium text-gray-400">User Rating</p>
+              <p className="text-lg font-medium text-gray-400">
+                {t("stats.userRating")}
+              </p>
             </div>
           </div>
         </div>
@@ -257,7 +264,7 @@ const Landing = () => {
         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10" />
         <div className="container-custom relative z-10 text-center">
           <h2 className="text-3xl md:text-5xl font-extrabold text-white mb-8 max-w-4xl mx-auto leading-tight">
-            Ready to make diagnostic reports helpful again?
+            {t("cta.title")}
           </h2>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
             <Button
@@ -265,12 +272,12 @@ const Landing = () => {
               variant="secondary"
               className="w-full sm:w-auto px-12 py-5 text-xl font-extrabold rounded-2xl border-none shadow-2xl hover:scale-105"
               onClick={() => navigate("/auth")}>
-              Get Started Now
+              {t("cta.button")}
             </Button>
             <Link
               to="/#features"
               className="text-white font-bold border-b-2 border-white/40 hover:border-white transition-colors">
-              Learn more about our AI
+              {t("cta.link")}
             </Link>
           </div>
         </div>

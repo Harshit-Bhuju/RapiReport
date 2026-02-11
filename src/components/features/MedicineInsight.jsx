@@ -12,9 +12,11 @@ const MedicineInsight = ({ medicines }) => {
       <div className="flex items-center justify-between">
         <h3 className="text-xl font-black text-gray-900 flex items-center gap-2">
           <Pill className="text-primary-600 w-6 h-6" />
-          Medicine Intelligence
+          {t("features.medicineIntelligence") || "Medicine Intelligence"}
         </h3>
-        <Badge variant="info">AI Suggested</Badge>
+        <Badge variant="info">
+          {t("features.aiSuggested") || "AI Suggested"}
+        </Badge>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

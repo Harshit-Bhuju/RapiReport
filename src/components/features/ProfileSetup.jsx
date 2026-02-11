@@ -20,19 +20,20 @@ const ProfileSetup = () => {
   const { updateProfile } = useAuthStore();
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
+    name: "",
     age: "",
     gender: "",
     conditions: [],
+    customConditions: "",
     parentalHistory: [],
-    language: "Both",
+    language: "en",
   });
 
   const conditions = [
-    "Diabetes",
-    "BP",
-    "Heart Disease",
-    "Thyroid",
-    "Cholesterol",
+    { key: "diabetes", label: t("conditions.diabetes") },
+    { key: "bp", label: t("conditions.bp") },
+    { key: "heart", label: t("conditions.heart") },
+    { key: "thyroid", label: t("conditions.thyroid") },
   ];
 
   const handleToggle = (listName, item) => {
@@ -73,26 +74,26 @@ const ProfileSetup = () => {
                     <User className="w-8 h-8" />
                   </div>
                   <h1 className="text-2xl font-black text-gray-900">
-                    Basic Information
+                    {t("profile.setup.step1.title")}
                   </h1>
                   <p className="text-gray-500 font-medium">
-                    Let's start with the basics to personalize your health AI.
+                    {t("profile.setup.step1.subtitle")}
                   </p>
                 </div>
 
                 <div className="grid grid-cols-1 gap-6">
                   <Input
-                    label="What is your full name?"
-                    placeholder="Enter your name"
+                    label={t("profile.setup.step1.nameLabel")}
+                    placeholder={t("profile.setup.step1.namePlaceholder")}
                     value={formData.name || ""}
                     onChange={(e) =>
                       setFormData({ ...formData, name: e.target.value })
                     }
                   />
                   <Input
-                    label="How old are you?"
+                    label={t("profile.setup.step1.ageLabel")}
                     type="number"
-                    placeholder="Enter your age"
+                    placeholder={t("profile.setup.step1.agePlaceholder")}
                     value={formData.age}
                     onChange={(e) =>
                       setFormData({ ...formData, age: e.target.value })
@@ -100,44 +101,60 @@ const ProfileSetup = () => {
                   />
                   <div>
                     <label className="text-sm font-bold text-gray-700 mb-3 block">
-                      Gender
+                      {t("profile.setup.step1.genderLabel")}
                     </label>
                     <div className="grid grid-cols-3 gap-3">
-                      {["Male", "Female", "Other"].map((g) => (
+                      {[
+                        {
+                          key: "Male",
+                          label: t("profile.setup.step1.genderMale"),
+                        },
+                        {
+                          key: "Female",
+                          label: t("profile.setup.step1.genderFemale"),
+                        },
+                        {
+                          key: "Other",
+                          label: t("profile.setup.step1.genderOther"),
+                        },
+                      ].map((g) => (
                         <button
-                          key={g}
+                          key={g.key}
                           onClick={() =>
-                            setFormData({ ...formData, gender: g })
+                            setFormData({ ...formData, gender: g.key })
                           }
                           className={cn(
                             "py-3 rounded-xl border-2 font-bold transition-all",
-                            formData.gender === g
+                            formData.gender === g.key
                               ? "bg-primary-50 border-primary-600 text-primary-700"
                               : "border-gray-100 hover:border-gray-200 text-gray-400",
                           )}>
-                          {g}
+                          {g.label}
                         </button>
                       ))}
                     </div>
                   </div>
                   <div>
                     <label className="text-sm font-bold text-gray-700 mb-3 block">
-                      Preferred Language
+                      {t("profile.setup.step1.languageLabel")}
                     </label>
-                    <div className="grid grid-cols-3 gap-3">
-                      {["Nepali", "English", "Both"].map((l) => (
+                    <div className="grid grid-cols-2 gap-3">
+                      {[
+                        { key: "ne", label: t("profile.setup.step1.langNe") },
+                        { key: "en", label: t("profile.setup.step1.langEn") },
+                      ].map((l) => (
                         <button
-                          key={l}
+                          key={l.key}
                           onClick={() =>
-                            setFormData({ ...formData, language: l })
+                            setFormData({ ...formData, language: l.key })
                           }
                           className={cn(
                             "py-2 rounded-xl border-2 font-bold text-xs transition-all",
-                            formData.language === l
+                            formData.language === l.key
                               ? "bg-primary-50 border-primary-600 text-primary-700"
                               : "border-gray-100 hover:border-gray-200 text-gray-400",
                           )}>
-                          {l}
+                          {l.label}
                         </button>
                       ))}
                     </div>
@@ -153,32 +170,49 @@ const ProfileSetup = () => {
                     <Heart className="w-8 h-8" />
                   </div>
                   <h1 className="text-2xl font-black text-gray-900">
-                    Health Background
+                    {t("profile.setup.step2.title")}
                   </h1>
                   <p className="text-gray-500 font-medium">
-                    This helps us flag critical results specially for you.
+                    {t("profile.setup.step2.subtitle")}
                   </p>
                 </div>
 
                 <div className="space-y-6">
                   <div>
                     <label className="text-sm font-bold text-gray-700 mb-3 block">
-                      Do you have any existing conditions?
+                      {t("profile.setup.step2.conditionsLabel")}
                     </label>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-2 mb-6">
                       {conditions.map((c) => (
                         <button
-                          key={c}
-                          onClick={() => handleToggle("conditions", c)}
+                          key={c.key}
+                          onClick={() => handleToggle("conditions", c.key)}
                           className={cn(
                             "px-4 py-2 rounded-full border-2 text-sm font-bold transition-all",
-                            formData.conditions.includes(c)
+                            formData.conditions.includes(c.key)
                               ? "bg-success-50 border-success-600 text-success-700"
                               : "border-gray-100 text-gray-400",
                           )}>
-                          {c}
+                          {c.label}
                         </button>
                       ))}
+                    </div>
+
+                    <div className="space-y-3">
+                      <label className="text-sm font-bold text-gray-700 block">
+                        {t("profile.setup.step2.customLabel")}
+                      </label>
+                      <textarea
+                        placeholder={t("profile.setup.step2.customPlaceholder")}
+                        className="w-full p-4 rounded-xl border-2 border-gray-100 focus:border-primary-500 focus:ring-0 transition-all min-h-[120px] resize-none text-sm"
+                        value={formData.customConditions}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            customConditions: e.target.value,
+                          })
+                        }
+                      />
                     </div>
                   </div>
                 </div>
@@ -192,29 +226,29 @@ const ProfileSetup = () => {
                     <ShieldCheck className="w-8 h-8" />
                   </div>
                   <h1 className="text-2xl font-black text-gray-900">
-                    Family History
+                    {t("profile.setup.step3.title")}
                   </h1>
                   <p className="text-gray-500 font-medium">
-                    Risk assessment based on parental complications.
+                    {t("profile.setup.step3.subtitle")}
                   </p>
                 </div>
 
                 <div>
                   <label className="text-sm font-bold text-gray-700 mb-3 block">
-                    Parents' medical complications?
+                    {t("profile.setup.step3.parentsLabel")}
                   </label>
                   <div className="flex flex-wrap gap-2">
                     {conditions.map((c) => (
                       <button
-                        key={c}
-                        onClick={() => handleToggle("parentalHistory", c)}
+                        key={c.key}
+                        onClick={() => handleToggle("parentalHistory", c.key)}
                         className={cn(
                           "px-4 py-2 rounded-full border-2 text-sm font-bold transition-all",
-                          formData.parentalHistory.includes(c)
+                          formData.parentalHistory.includes(c.key)
                             ? "bg-warning-50 border-warning-600 text-warning-700"
                             : "border-gray-100 text-gray-400",
                         )}>
-                        {c}
+                        {c.label}
                       </button>
                     ))}
                   </div>
@@ -228,7 +262,7 @@ const ProfileSetup = () => {
                   variant="ghost"
                   onClick={() => setStep((s) => s - 1)}
                   className="flex-1">
-                  <ChevronLeft className="mr-2 w-5 h-5" /> Back
+                  <ChevronLeft className="mr-2 w-5 h-5" /> {t("common.back")}
                 </Button>
               )}
               {step < 3 ? (
@@ -239,11 +273,11 @@ const ProfileSetup = () => {
                     step === 1 &&
                     (!formData.age || !formData.gender || !formData.name)
                   }>
-                  Next <ChevronRight className="ml-2 w-5 h-5" />
+                  {t("common.next")} <ChevronRight className="ml-2 w-5 h-5" />
                 </Button>
               ) : (
                 <Button onClick={handleFinish} className="flex-1">
-                  Complete Setup
+                  {t("profile.setup.finish")}
                 </Button>
               )}
             </div>

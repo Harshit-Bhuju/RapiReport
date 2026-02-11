@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
@@ -20,19 +20,23 @@ import Button from "@/components/ui/Button";
 import { Card, CardBody, CardHeader, CardFooter } from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
 import { formatDate, cn } from "@/lib/utils";
+import ChatInterface from "@/components/features/ChatInterface";
 
 const MedicineInsight = React.lazy(
   () => import("@/components/features/MedicineInsight"),
 );
 
 // Simple Loading component for Suspense fallback
-const Loading = () => (
-  <Card className="border-none shadow-sm">
-    <CardBody className="p-6 text-center text-gray-500">
-      Loading medicine insights...
-    </CardBody>
-  </Card>
-);
+const Loading = () => {
+  const { t } = useTranslation();
+  return (
+    <Card className="border-none shadow-sm">
+      <CardBody className="p-6 text-center text-gray-500">
+        {t("results.loading")}
+      </CardBody>
+    </Card>
+  );
+};
 
 const Results = () => {
   const { id } = useParams();
@@ -127,11 +131,11 @@ const Results = () => {
         <div className="flex gap-4 w-full md:w-auto">
           <Button variant="outline" className="flex-1 md:flex-none">
             <Share2 className="mr-2 w-4 h-4" />
-            Share
+            {t("results.share")}
           </Button>
           <Button variant="secondary" className="flex-1 md:flex-none">
             <Download className="mr-2 w-4 h-4" />
-            Download PDF
+            {t("results.download")}
           </Button>
         </div>
       </div>
@@ -147,7 +151,7 @@ const Results = () => {
               <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                 <div>
                   <Badge variant="primary" className="mb-2">
-                    OFFICIAL REPORT
+                    {t("results.officialReport")}
                   </Badge>
                   <h1 className="text-2xl font-black text-gray-900">
                     {report.type}
@@ -179,7 +183,7 @@ const Results = () => {
                           {test.name}
                         </p>
                         <p className="text-xs font-semibold text-gray-400">
-                          Ref Range: {test.range}
+                          {t("results.refRange")}: {test.range}
                         </p>
                       </div>
                     </div>
@@ -217,7 +221,9 @@ const Results = () => {
                 <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
                   <Stethoscope className="w-6 h-6" />
                 </div>
-                <h3 className="text-xl font-black">AI Health Assistant</h3>
+                <h3 className="text-xl font-black">
+                  {t("results.healthAssistant")}
+                </h3>
               </div>
 
               <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 mb-8 italic text-lg leading-relaxed font-semibold">
@@ -241,10 +247,10 @@ const Results = () => {
                 </div>
                 <div className="text-left">
                   <p className="text-sm font-black leading-none">
-                    {isPlaying ? "AI is Explaining..." : "Health Brief Audio"}
+                    {isPlaying ? t("results.explaining") : t("results.audio")}
                   </p>
                   <p className="text-[10px] font-bold opacity-60 mt-1 uppercase">
-                    ▶️ {isPlaying ? "Stop" : "Play (बजाउनुहोस्)"}
+                    ▶️ {isPlaying ? t("results.stop") : t("results.play")}
                   </p>
                 </div>
               </Button>
@@ -258,13 +264,11 @@ const Results = () => {
               <div className="flex items-center gap-3 mb-4 text-success-700">
                 <Info className="w-5 h-5 shrink-0" />
                 <p className="text-sm font-bold uppercase tracking-wider">
-                  Lifestyle Suggestion
+                  {t("results.lifestyle")}
                 </p>
               </div>
               <p className="text-sm text-success-900 font-medium leading-relaxed">
-                Consume iron-rich foods like spinach, lentils, and pumpkin seeds
-                during dinner. Avoid caffeine with meals as it inhibits iron
-                absorption.
+                {t("results.lifestyleDesc")}
               </p>
             </CardBody>
           </Card>
@@ -272,7 +276,7 @@ const Results = () => {
           {/* Payment Partners */}
           <div className="p-6 rounded-3xl bg-gray-100 flex flex-col items-center gap-4">
             <p className="text-[10px] font-black uppercase text-gray-400 tracking-[0.2em]">
-              Verified Secure Lab Partners
+              {t("results.partners")}
             </p>
             <div className="flex items-center gap-8 opacity-40 grayscale hover:grayscale-0 transition-all cursor-default">
               <img src="/esewa-logo.png" alt="eSewa" className="h-4" />

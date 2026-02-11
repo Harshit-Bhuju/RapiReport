@@ -6,16 +6,35 @@
     "dashboard": "Dashboard",
     "login": "Login",
     "signup": "Sign Up",
-    "logout": "Logout"
+    "logout": "Logout",
+    "language": "Language"
+  },
+  "sidebar": {
+    "dashboard": "Dashboard",
+    "reports": "My Reports",
+    "consultation": "AI Consultation",
+    "doctors": "Consult Doctors",
+    "risk": "Risk Analysis",
+    "planner": "Health Planner",
+    "signout": "Sign Out"
   },
   "hero": {
     "title": "Save 8 Hours Monthly on Health Tracking",
     "subtitle": "Convert messy diagnostic data into professional reports. AI-powered medical insights for Nepal.",
     "cta": "Start Free Version",
-    "demo": "Watch Demo"
+    "demo": "Watch Demo",
+    "badge": "🚀 RapiReport v1.0 is Live",
+    "noCard": "No credit card required",
+    "trustedLabs": "Trusted by 50+ Labs",
+    "mockTitle": "RapiReport AI | Patient Stats",
+    "hemoglobin": "HEMOGLOBIN",
+    "bloodSugar": "BLOOD SUGAR",
+    "status": "STATUS",
+    "healthVerified": "Health Verified"
   },
   "features": {
     "title": "Why RapiReport?",
+    "subtitle": "Redefining Diagnostic Experience",
     "feature1": {
       "title": "Bilingual AI",
       "desc": "Reads Nepali and English medical text automatically"
@@ -27,7 +46,19 @@
     "feature3": {
       "title": "Family Sharing",
       "desc": "Keep your loved ones updated with your health status"
-    }
+    },
+    "medicineIntelligence": "Medicine Intelligence",
+    "aiSuggested": "AI Suggested"
+  },
+  "cta": {
+    "title": "Ready to make diagnostic reports helpful again?",
+    "button": "Get Started Now",
+    "link": "Learn more about our AI"
+  },
+  "stats": {
+    "reportsProcessed": "Reports Processed",
+    "partnerLabs": "Partner Labs",
+    "userRating": "User Rating"
   },
   "auth": {
     "login": "Login to Your Account",
@@ -38,13 +69,154 @@
     "submit": "Continue",
     "forgotPassword": "Forgot Password?",
     "noAccount": "Don't have an account?",
-    "hasAccount": "Already have an account?"
+    "hasAccount": "Already have an account?",
+    "createTitle": "Create your account",
+    "createSubtitle": "Get started with RapiReport today.",
+    "sso": "Single Sign-On",
+    "continueGoogle": "Continue with Google",
+    "secureAccess": "Secure Access",
+    "hipaa": "HIPAA Compliant Security",
+    "badge": "AI Health Intelligence",
+    "heroTitle1": "The Future of",
+    "heroTitle2": "Health Intelligence.",
+    "heroSubtitle": "Turn complex medical reports into clear, actionable insights powered by cutting-edge AI technology.",
+    "feature1Title": "AI-Powered Analysis",
+    "feature1Desc": "Get deep insights from your medical reports instantly.",
+    "feature2Title": "Secure & Private",
+    "feature2Desc": "Your health data is encrypted and remains your own.",
+    "feature3Title": "Clear Summaries",
+    "feature3Desc": "Complex jargon turned into simple, actionable steps.",
+    "termsAgree": "By continuing, you agree to our",
+    "terms": "Terms of Service",
+    "privacy": "Privacy Policy",
+    "and": "and"
+  },
+  "dashboardPage": {
+    "greeting": "Good morning, {{name}}!",
+    "summary": "Here's a summary of your health intelligence today.",
+    "analyzeNew": "Analyze New Report",
+    "bloodTests": "Blood Tests",
+    "healthScore": "Health Score",
+    "aiScore": "AI Score",
+    "latestInsight": "Latest AI Insight",
+    "askAI": "Ask AI Assistant",
+    "vitalTrends": "Latest Vital Trends",
+    "graphPlaceholder": "Activity graph visualization placeholder",
+    "graphComing": "Integrated charting coming soon...",
+    "recent": "Recent",
+    "abnormal": "ABNORMAL",
+    "thyroidPanel": "Thyroid Panel",
+    "viewAnalysis": "View Analysis",
+    "geneticWellness": "Genetic Wellness",
+    "geneticDesc": "Based on your family history, we've identified 3 potential prevention strategies.",
+    "viewRisk": "View Risk Analysis"
   },
   "dashboard": {
     "welcome": "Welcome back",
     "upload": "Upload Report",
     "recent": "Recent Reports",
     "stats": "Health Stats"
+  },
+  "reports": {
+    "title": "My Health Reports",
+    "subtitle": "Manage and analyze your diagnostic history.",
+    "uploadNew": "Upload New Report",
+    "searchPlaceholder": "Search reports by lab or test name...",
+    "sortFilter": "Sort / Filter",
+    "noResults": "No reports found matching your search."
+  },
+  "consultation": {
+    "title": "AI Health Consultation",
+    "subtitle": "Get instant answers about your reports and general health concerns.",
+    "capabilities": "AI Capabilities",
+    "reportAnalysis": "Report Analysis",
+    "medicineGuidance": "Medicine Guidance",
+    "symptomChecking": "Symptom Checking",
+    "bilingualSupport": "Bilingual Support",
+    "safeUsage": "Safe Usage",
+    "safeUsageDesc": "Our AI provides information based on your data but is not a substitute for professional medical advice. Always consult with a doctor for critical decisions."
+  },
+  "risk": {
+    "title": "Hereditary Risk Analysis",
+    "subtitle": "Personalized prevention strategies based on your family medical history.",
+    "predisposition": "Predisposition",
+    "hereditaryHigh": "Hereditary Risk High",
+    "diabetesAdvice": "Your genetic makeup shows a susceptibility to blood sugar fluctuations. Focus on low-glycemic foods.",
+    "heartAdvice": "Preventive cardiovascular measures are recommended. Monitor lipids and focus on healthy omega fats.",
+    "generalAdvice": "Maintaining a healthy lifestyle is key to mitigating this hereditary predisposition.",
+    "dietarySolution": "Dietary Solution",
+    "activityGoal": "Activity Goal",
+    "diabetesDiet": "Reduce refined sugar and process carbohydrates.",
+    "generalDiet": "Increase leafy greens and healthy fats.",
+    "heartActivity": "150 mins of zone 2 cardio per week.",
+    "generalActivity": "Regular resistance training (3x / week).",
+    "noRisksTitle": "No Parental Risks Logged",
+    "noRisksDesc": "Update your health profile to see personalized prevention analysis.",
+    "protectFuture": "Protect Your Future",
+    "protectDesc": "Hereditary risks are not destiny. With early intervention and consistent habits, most can be effectively managed.",
+    "bookCheckup": "Book Preventive Checkup"
+  },
+  "planner": {
+    "title": "Daily Health Planner",
+    "subtitle": "AI-optimized routines tailored to your profile and recent reports.",
+    "today": "Today",
+    "next7": "Next 7 Days",
+    "morning": "Morning",
+    "daytime": "Daytime / All Day",
+    "evening": "Evening",
+    "tasks": "Tasks",
+    "todaysProgress": "Today's Progress",
+    "activitiesCompleted": "2 of 3 activities completed",
+    "healthTip": "Health Tip",
+    "tipText": "Consistency is more important than intensity when starting new routines."
+  },
+  "notFound": {
+    "title": "Page Not Found",
+    "desc": "Sorry, the page you're looking for doesn't exist or has been moved. Check the URL or return home.",
+    "backHome": "Back to Home"
+  },
+  "doctors": {
+    "title": "Doctor Consultation",
+    "subtitle": "Connect with top specialists for instant medical advice.",
+    "credits": "Available Credits",
+    "reviews": "reviews",
+    "exp": "exp",
+    "availableNow": "Available now",
+    "consultFee": "Consultation Fee",
+    "consult": "Consult",
+    "addCredits": "Add Credits",
+    "needMore": "You need",
+    "moreToProceed": "more to proceed with this consultation.",
+    "addContinue": "Add Rs. 1000 & Continue",
+    "cancel": "Cancel"
+  },
+  "results": {
+    "loading": "Loading medicine insights...",
+    "officialReport": "OFFICIAL REPORT",
+    "refRange": "Ref Range",
+    "healthAssistant": "AI Health Assistant",
+    "explaining": "AI is Explaining...",
+    "audio": "Health Brief Audio",
+    "stop": "Stop",
+    "play": "Play (बजाउनुहोस्)",
+    "lifestyle": "Lifestyle Suggestion",
+    "lifestyleDesc": "Consume iron-rich foods like spinach, lentils, and pumpkin seeds during dinner. Avoid caffeine with meals as it inhibits iron absorption.",
+    "partners": "Verified Secure Lab Partners",
+    "share": "Share",
+    "download": "Download PDF"
+  },
+  "chat": {
+    "namaste": "Namaste! I am RapiReport AI. How can I help you with your health today?",
+    "error": "I'm sorry, I'm having trouble connecting right now. Please try again later.",
+    "clearHistory": "Are you sure you want to clear chat history?",
+    "title": "RapiReport AI",
+    "online": "Online Health Support",
+    "thinking": "Thinking...",
+    "placeholder": "Type your health query...",
+    "disclaimer": "AI generated content can be incorrect. Consult a doctor for medical advice."
+  },
+  "insightCard": {
+    "routine": "AI Tailored Routine"
   },
   "form": {
     "upload": "Upload File",
@@ -70,6 +242,45 @@
     "back": "Back",
     "next": "Next",
     "submit": "Submit",
-    "close": "Close"
+    "close": "Close",
+    "quickSearch": "Quick search..."
+  },
+  "profile": {
+    "setup": {
+      "step1": {
+        "title": "Basic Information",
+        "subtitle": "Let's start with the basics to personalize your health AI.",
+        "nameLabel": "What is your full name?",
+        "namePlaceholder": "Enter your name",
+        "ageLabel": "How old are you?",
+        "agePlaceholder": "Enter your age",
+        "genderLabel": "Gender",
+        "genderMale": "Male",
+        "genderFemale": "Female",
+        "genderOther": "Other",
+        "languageLabel": "Preferred Language",
+        "langNe": "Nepali",
+        "langEn": "English"
+      },
+      "step2": {
+        "title": "Health Background",
+        "subtitle": "This helps us flag critical results specially for you.",
+        "conditionsLabel": "Do you have any existing conditions?",
+        "customLabel": "Other Health Background",
+        "customPlaceholder": "Type any other health conditions or details here..."
+      },
+      "step3": {
+        "title": "Family History",
+        "subtitle": "Risk assessment based on parental complications.",
+        "parentsLabel": "Parents' medical complications?"
+      },
+      "finish": "Complete Setup"
+    }
+  },
+  "conditions": {
+    "diabetes": "Diabetes",
+    "bp": "BP",
+    "heart": "Heart Disease",
+    "thyroid": "Thyroid"
   }
 }

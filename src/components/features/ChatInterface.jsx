@@ -1,50 +1,256 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { MessageSquare, Send, X, Bot, User, Sparkles } from "lucide-react";
+import {
+  MessageSquare,
+  Send,
+  X,
+  Bot,
+  User,
+  Sparkles,
+  Trash2,
+  Loader2,
+} from "lucide-react";
 import Button from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import chatService from "@/lib/chatService";
 
-const ChatInterface = () => {
+const ChatInterface = ({ isFullPage = false }) => {
   const { t, i18n } = useTranslation();
-  const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState([
-    {
-      role: "bot",
-      text: {
-        en: "Namaste! I am RapiReport AI. How can I help you with your health today?",
-        ne: "नमस्ते! म रापिरिपोर्ट एआई हुँ। तपाईंको स्वास्थ्यको बारेमा आज म कसरी सहयोग गर्न सक्छु?",
-      },
-    },
-  ]);
+  const [isOpen, setIsOpen] = useState(isFullPage);
+  const [isLoading, setIsLoading] = useState(false);
+  const [messages, setMessages] = useState(() => {
+    const saved = localStorage.getItem("chat_history");
+    return saved
+      ? JSON.parse(saved)
+      : [
+          {
+            role: "bot",
+            text: {
+              en: "Namaste! I am RapiReport AI. How can I help you with your health today?",
+              ne: "नमस्ते! म रापिरिपोर्ट एआई हुँ। तपाईंको स्वास्थ्यको बारेमा आज म कसरी सहयोग गर्न सक्छु?",
+            },
+            timestamp: new Date().toISOString(),
+          },
+        ];
+  });
   const [inputValue, setInputValue] = useState("");
   const scrollRef = useRef(null);
 
   useEffect(() => {
+    localStorage.setItem("chat_history", JSON.stringify(messages));
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages, isOpen]);
 
-  const handleSend = () => {
-    if (!inputValue.trim()) return;
+  const handleSend = async () => {
+    if (!inputValue.trim() || isLoading) return;
 
-    const userMsg = { role: "user", text: { en: inputValue, ne: inputValue } };
+    const userMsg = {
+      role: "user",
+      text: { en: inputValue, ne: inputValue },
+      timestamp: new Date().toISOString(),
+    };
+
     setMessages((prev) => [...prev, userMsg]);
     setInputValue("");
+    setIsLoading(true);
 
-    // Simulate AI response
-    setTimeout(() => {
+    try {
+      const response = await chatService.sendMessage(inputValue, i18n.language);
       const botMsg = {
         role: "bot",
-        text: {
-          en: "I've noted your question. As your AI health assistant, I recommend consulting your reports for specific details or asking me about lifestyle tips!",
-          ne: "मैले तपाईंको प्रश्न नोट गरें। तपाईंको एआई सहयोगीको रूपमा, म विशेष विवरणहरूको लागि आफ्नो रिपोर्टहरू हेर्न वा मलाई जीवनशैलीका सुझावहरूको बारेमा सोध्न सिफारिस गर्दछु।",
-        },
+        text: response.text,
+        timestamp: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, botMsg]);
-    }, 1000);
+    } catch (error) {
+      const errorMsg = {
+        role: "bot",
+        text: {
+          en: "I'm sorry, I'm having trouble connecting right now. Please try again later.",
+          ne: "माफ गर्नुहोस्, म अहिले जडान गर्न असमर्थ छु। कृपया पछि फेरि प्रयास गर्नुहोस्।",
+        },
+        timestamp: new Date().toISOString(),
+      };
+      setMessages((prev) => [...prev, errorMsg]);
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  const clearHistory = () => {
+    if (window.confirm(t("chat.clearHistory"))) {
+      const initialMsg = [
+        {
+          role: "bot",
+          text: {
+            en: "Namaste! I am RapiReport AI. How can I help you with your health today?",
+            ne: "नमस्ते! म रापिरिपोर्ट एआई हुँ। तपाईंको स्वास्थ्यको बारेमा आज म कसरी सहयोग गर्न सक्छु?",
+          },
+          timestamp: new Date().toISOString(),
+        },
+      ];
+      setMessages(initialMsg);
+      localStorage.removeItem("chat_history");
+    }
+  };
+
+  const chatContent = (
+    <div
+      className={cn(
+        "bg-white flex flex-col overflow-hidden transition-all duration-300",
+        isFullPage
+          ? "w-full h-full"
+          : "w-[400px] h-[600px] rounded-3xl shadow-2xl border border-gray-100 mb-4",
+      )}>
+      {/* Header */}
+      <div
+        className={cn(
+          "p-6 flex items-center justify-between shrink-0 border-b border-gray-50",
+          isFullPage ? "bg-white" : "bg-primary-600 text-white",
+        )}>
+        <div className="flex items-center gap-3">
+          <div
+            className={cn(
+              "w-10 h-10 rounded-xl flex items-center justify-center",
+              isFullPage
+                ? "bg-primary-50 text-primary-600"
+                : "bg-white/20 text-white",
+            )}>
+            <Bot className="w-6 h-6" />
+          </div>
+          <div>
+            <h3 className={cn("font-black", !isFullPage && "text-white")}>
+              {t("chat.title")}
+            </h3>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <span className="w-2 h-2 rounded-full bg-success-400 animate-pulse" />
+              <span
+                className={cn(
+                  "text-[10px] font-bold uppercase opacity-80",
+                  !isFullPage && "text-white",
+                )}>
+                {t("chat.online")}
+              </span>
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={clearHistory}
+            className={cn(
+              "p-2 rounded-lg transition-colors",
+              isFullPage
+                ? "text-gray-400 hover:bg-gray-50 hover:text-error-500"
+                : "text-white/60 hover:bg-white/10 hover:text-white",
+            )}
+            title="Clear History">
+            <Trash2 className="w-5 h-5" />
+          </button>
+          {!isFullPage && (
+            <button
+              onClick={() => setIsOpen(false)}
+              className="p-2 hover:bg-white/10 rounded-lg transition-colors">
+              <X className="w-5 h-5" />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Messages */}
+      <div
+        ref={scrollRef}
+        className="flex-grow overflow-y-auto p-6 space-y-6 bg-gray-50/30">
+        {messages.map((msg, idx) => (
+          <motion.div
+            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.2 }}
+            key={idx}
+            className={cn(
+              "flex items-end gap-3",
+              msg.role === "user" ? "flex-row-reverse" : "flex-row",
+            )}>
+            <div
+              className={cn(
+                "w-8 h-8 rounded-lg flex items-center justify-center shrink-0 shadow-sm",
+                msg.role === "user"
+                  ? "bg-primary-100 text-primary-600"
+                  : "bg-white border border-gray-100 text-gray-400",
+              )}>
+              {msg.role === "user" ? (
+                <User className="w-5 h-5" />
+              ) : (
+                <Bot className="w-5 h-5" />
+              )}
+            </div>
+            <div
+              className={cn(
+                "max-w-[85%] p-4 rounded-2xl text-sm font-semibold leading-relaxed shadow-sm",
+                msg.role === "user"
+                  ? "bg-primary-600 text-white rounded-br-none"
+                  : "bg-white text-gray-800 border border-gray-100 rounded-bl-none",
+              )}>
+              {i18n.language === "ne" ? msg.text.ne : msg.text.en}
+            </div>
+          </motion.div>
+        ))}
+        {isLoading && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-white border border-gray-100 flex items-center justify-center shadow-sm">
+              <Bot className="w-5 h-5 text-gray-400" />
+            </div>
+            <div className="bg-white border border-gray-100 p-4 rounded-2xl rounded-bl-none flex items-center gap-2">
+              <Loader2 className="w-4 h-4 animate-spin text-primary-600" />
+              <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+                {t("chat.thinking")}
+              </span>
+            </div>
+          </motion.div>
+        )}
+      </div>
+
+      {/* Input */}
+      <div className="p-6 bg-white border-t border-gray-50">
+        <div className="relative flex gap-3">
+          <input
+            type="text"
+            placeholder={t("chat.placeholder")}
+            className="flex-grow bg-gray-50 border-none rounded-2xl px-6 py-4 text-sm font-bold focus:ring-2 focus:ring-primary-100 transition-all placeholder:text-gray-400"
+            value={inputValue}
+            disabled={isLoading}
+            onChange={(e) => setInputValue(e.target.value)}
+            onKeyPress={(e) => e.key === "Enter" && handleSend()}
+          />
+          <button
+            onClick={handleSend}
+            disabled={!inputValue.trim() || isLoading}
+            className={cn(
+              "w-14 h-14 rounded-2xl flex items-center justify-center transition-all shadow-lg",
+              !inputValue.trim() || isLoading
+                ? "bg-gray-100 text-gray-400 shadow-none cursor-not-allowed"
+                : "bg-primary-600 text-white hover:bg-primary-700 shadow-primary-200",
+            )}>
+            {isLoading ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              <Send className="w-5 h-5" />
+            )}
+          </button>
+        </div>
+        <p className="mt-3 text-[10px] text-center text-gray-400 font-bold uppercase tracking-wider">
+          {t("chat.disclaimer")}
+        </p>
+      </div>
+    </div>
+  );
+
+  if (isFullPage) return chatContent;
 
   return (
     <div className="fixed bottom-6 right-6 z-50">
@@ -53,84 +259,8 @@ const ChatInterface = () => {
           <motion.div
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="mb-4 w-[400px] h-[500px] bg-white rounded-3xl shadow-2xl border border-gray-100 flex flex-col overflow-hidden">
-            {/* Header */}
-            <div className="p-6 bg-primary-600 text-white flex items-center justify-between shrink-0">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
-                  <Bot className="w-6 h-6" />
-                </div>
-                <div>
-                  <h3 className="font-black">RapiReport AI</h3>
-                  <div className="flex items-center gap-1.5 mt-0.5">
-                    <span className="w-2 h-2 rounded-full bg-success-400 animate-pulse" />
-                    <span className="text-[10px] font-bold uppercase opacity-80">
-                      Online Health Support
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <button
-                onClick={() => setIsOpen(false)}
-                className="p-2 hover:bg-white/10 rounded-lg transition-colors">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Messages */}
-            <div
-              ref={scrollRef}
-              className="flex-grow overflow-y-auto p-6 space-y-6 bg-gray-50/50">
-              {messages.map((msg, idx) => (
-                <div
-                  key={idx}
-                  className={cn(
-                    "flex items-end gap-3",
-                    msg.role === "user" ? "flex-row-reverse" : "flex-row",
-                  )}>
-                  <div
-                    className={cn(
-                      "w-8 h-8 rounded-lg flex items-center justify-center shrink-0",
-                      msg.role === "user"
-                        ? "bg-primary-100 text-primary-600"
-                        : "bg-white border border-gray-100 text-gray-400 shadow-sm",
-                    )}>
-                    {msg.role === "user" ? (
-                      <User className="w-5 h-5" />
-                    ) : (
-                      <Bot className="w-5 h-5" />
-                    )}
-                  </div>
-                  <div
-                    className={cn(
-                      "max-w-[75%] p-4 rounded-2xl text-sm font-semibold leading-relaxed shadow-sm",
-                      msg.role === "user"
-                        ? "bg-primary-600 text-white rounded-br-none"
-                        : "bg-white text-gray-800 border border-gray-100 rounded-bl-none",
-                    )}>
-                    {i18n.language === "ne" ? msg.text.ne : msg.text.en}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Input */}
-            <div className="p-4 bg-white border-t border-gray-100 flex gap-2">
-              <input
-                type="text"
-                placeholder="Ask me anything..."
-                className="flex-grow bg-gray-50 border-none rounded-xl px-4 py-3 text-sm font-medium focus:ring-2 focus:ring-primary-100"
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                onKeyPress={(e) => e.key === "Enter" && handleSend()}
-              />
-              <button
-                onClick={handleSend}
-                className="w-12 h-12 bg-primary-600 text-white rounded-xl flex items-center justify-center hover:bg-primary-700 transition-all shadow-lg shadow-primary-200">
-                <Send className="w-5 h-5" />
-              </button>
-            </div>
+            exit={{ opacity: 0, scale: 0.9, y: 20 }}>
+            {chatContent}
           </motion.div>
         )}
       </AnimatePresence>

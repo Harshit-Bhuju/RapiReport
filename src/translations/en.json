@@ -1,0 +1,75 @@
+{
+  "nav": {
+    "home": "Home",
+    "features": "Features",
+    "pricing": "Pricing",
+    "dashboard": "Dashboard",
+    "login": "Login",
+    "signup": "Sign Up",
+    "logout": "Logout"
+  },
+  "hero": {
+    "title": "Save 8 Hours Monthly on Health Tracking",
+    "subtitle": "Convert messy diagnostic data into professional reports. AI-powered medical insights for Nepal.",
+    "cta": "Start Free Version",
+    "demo": "Watch Demo"
+  },
+  "features": {
+    "title": "Why RapiReport?",
+    "feature1": {
+      "title": "Bilingual AI",
+      "desc": "Reads Nepali and English medical text automatically"
+    },
+    "feature2": {
+      "title": "Smart Insights",
+      "desc": "Understand your test results in simple language"
+    },
+    "feature3": {
+      "title": "Family Sharing",
+      "desc": "Keep your loved ones updated with your health status"
+    }
+  },
+  "auth": {
+    "login": "Login to Your Account",
+    "signup": "Create New Account",
+    "email": "Email Address",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "submit": "Continue",
+    "forgotPassword": "Forgot Password?",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?"
+  },
+  "dashboard": {
+    "welcome": "Welcome back",
+    "upload": "Upload Report",
+    "recent": "Recent Reports",
+    "stats": "Health Stats"
+  },
+  "form": {
+    "upload": "Upload File",
+    "processing": "Processing AI Report...",
+    "success": "Report generated successfully!",
+    "error": "Failed to generate report."
+  },
+  "offline": {
+    "message": "No internet connection. Using cached health data."
+  },
+  "footer": {
+    "rights": "All rights reserved",
+    "contact": "Contact Us",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service"
+  },
+  "common": {
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "back": "Back",
+    "next": "Next",
+    "submit": "Submit",
+    "close": "Close"
+  }
+}

@@ -1,8 +1,9 @@
 import React from "react";
 import { User, Activity, Heart, AlertCircle } from "lucide-react";
 import { Card, CardBody } from "@/components/ui/Card";
+import { cn } from "@/lib/utils";
 
-export const FamilyMemberCard = ({ member }) => {
+export const FamilyMemberCard = ({ member, className }) => {
   const getStatusColor = (score) => {
     if (score >= 80) return "text-success-600 bg-success-50";
     if (score >= 60) return "text-warning-600 bg-warning-50";
@@ -10,7 +11,11 @@ export const FamilyMemberCard = ({ member }) => {
   };
 
   return (
-    <Card className="border-none shadow-sm hover:shadow-md transition-all cursor-pointer">
+    <Card
+      className={cn(
+        "border-none shadow-sm hover:shadow-md transition-all cursor-pointer",
+        className,
+      )}>
       <CardBody className="p-5">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">

@@ -30,6 +30,7 @@ import HealthPlanner from "@/pages/HealthPlanner";
 import NotFound from "@/pages/NotFound";
 import DoctorConsultation from "@/pages/DoctorConsultation";
 import TerritoryGame from "@/pages/TerritoryGame";
+import Family from "@/pages/Family";
 import ProfileSetup from "@/components/features/ProfileSetup";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 
@@ -154,6 +155,16 @@ function App() {
                   <ProtectedRoute>
                     <DashboardLayout>
                       <TerritoryGame />
+                    </DashboardLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/family"
+                element={
+                  <ProtectedRoute>
+                    <DashboardLayout>
+                      <Family />
                     </DashboardLayout>
                   </ProtectedRoute>
                 }

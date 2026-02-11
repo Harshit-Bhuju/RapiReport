@@ -11,6 +11,7 @@ import {
   X,
   Stethoscope,
   Map,
+  Users,
 } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { cn } from "@/lib/utils";
@@ -27,6 +28,7 @@ const Sidebar = ({ isOpen, onClose }) => {
       path: "/consultation",
       icon: MessageSquare,
     },
+    { name: "Family Health", path: "/family", icon: Users },
     { name: t("sidebar.doctors"), path: "/doctors", icon: Stethoscope },
     { name: "Territory Game", path: "/territory-game", icon: Map },
     { name: t("sidebar.risk"), path: "/prevention", icon: ShieldAlert },

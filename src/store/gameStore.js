@@ -1,245 +1,211 @@
 import { create } from "zustand";
 
-// ─── Hex Grid Constants ────────────────────────────────────────────────
-const HEX_RADIUS = 0.0018; // ~200m per hex cell
-const COL_SPACING = HEX_RADIUS * 1.5;
-const ROW_SPACING = HEX_RADIUS * Math.sqrt(3);
+// ─── Constants ────────────────────────────────────────────────────────
+const SQUARE_SIZE = 0.0001; // ~10m (0.0001 degrees)
+const RENDER_RADIUS = 0.005; // ~500m radius for generating grid content
 
-const ZONE_COLORS = [
-  "#22d3ee",
-  "#a78bfa",
-  "#34d399",
-  "#fbbf24",
-  "#f472b6",
-  "#60a5fa",
-  "#c084fc",
-  "#2dd4bf",
-];
+// ─── Helpers ──────────────────────────────────────────────────────────
+export const getSquareId = (lat, lng) => {
+  const col = Math.round(lng / SQUARE_SIZE);
+  const row = Math.round(lat / SQUARE_SIZE);
+  return `${col}_${row}`;
+};
 
-// ─── Hex Grid Helpers ──────────────────────────────────────────────────
-export const getHexVertices = (centerLat, centerLng) => {
-  const vertices = [];
-  for (let i = 0; i < 6; i++) {
-    const angle = (Math.PI / 3) * i + Math.PI / 6;
-    vertices.push([
-      centerLat + HEX_RADIUS * Math.sin(angle),
-      centerLng + HEX_RADIUS * Math.cos(angle),
-    ]);
+export const getSquareVertices = (lat, lng) => {
+  const half = SQUARE_SIZE / 2;
+  return [
+    [lat + half, lng - half],
+    [lat + half, lng + half],
+    [lat - half, lng + half],
+    [lat - half, lng - half],
+  ];
+};
+
+// Point-in-polygon check for loop capture
+const isPointInPoly = (point, polygon) => {
+  const [x, y] = point;
+  let inside = false;
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const [xi, yi] = polygon[i];
+    const [xj, yj] = polygon[j];
+    const intersect =
+      yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi;
+    if (intersect) inside = !inside;
   }
-  return vertices;
+  return inside;
 };
 
-export const getHexForPoint = (lat, lng) => {
-  const col = Math.round(lng / COL_SPACING);
-  const rowOffset = Math.abs(col) % 2 === 1 ? ROW_SPACING / 2 : 0;
-  const row = Math.round((lat - rowOffset) / ROW_SPACING);
-  return { col, row, id: `${col}_${row}` };
-};
-
-export const getHexCenter = (col, row) => {
-  const rowOffset = Math.abs(col) % 2 === 1 ? ROW_SPACING / 2 : 0;
-  return {
-    lat: row * ROW_SPACING + rowOffset,
-    lng: col * COL_SPACING,
-  };
-};
-
-export const generateHexesForBounds = (north, south, east, west) => {
-  const hexes = [];
-  const startCol = Math.floor(west / COL_SPACING) - 1;
-  const endCol = Math.ceil(east / COL_SPACING) + 1;
-
-  for (let col = startCol; col <= endCol; col++) {
-    const rowOffset = Math.abs(col) % 2 === 1 ? ROW_SPACING / 2 : 0;
-    const startRow = Math.floor((south - rowOffset) / ROW_SPACING) - 1;
-    const endRow = Math.ceil((north - rowOffset) / ROW_SPACING) + 1;
-
-    for (let row = startRow; row <= endRow; row++) {
-      const centerLat = row * ROW_SPACING + rowOffset;
-      const centerLng = col * COL_SPACING;
-      const id = `${col}_${row}`;
-      const colorIdx = Math.abs((col * 7 + row * 13) % ZONE_COLORS.length);
-
-      hexes.push({
-        id,
-        col,
-        row,
-        centerLat,
-        centerLng,
-        color: ZONE_COLORS[colorIdx],
-      });
-    }
-  }
-  return hexes;
-};
-
-// ─── Zustand Store ─────────────────────────────────────────────────────
+// ─── Store ────────────────────────────────────────────────────────────
 export const useGameStore = create((set, get) => ({
   user: {
     name: "You",
     pointsToday: 0,
     cumulativePoints: 0,
-    hexesCaptured: 0,
+    areasCaptured: 0,
     distanceKm: 0,
-    level: 1,
-    xp: 0,
-    xpToNext: 100,
   },
 
   currentLocation: null,
   pathHistory: [],
-  visitedHexIds: new Set(), // hexes walked through in current session (for loop detection)
+  capturedSquares: {}, // Squares owned by the user
+  enemySquares: {}, // Squares pre-populated with enemies
 
-  // Captured hexes: { "col_row": { owner, color, timestamp } }
-  capturedHexes: {},
-
-  // Leaderboard
   leaderboard: [
-    {
-      rank: 1,
-      name: "Ramesh T.",
-      points: 1480,
-      hexes: 148,
-      avatar: "https://i.pravatar.cc/150?u=ramesh",
-    },
-    {
-      rank: 2,
-      name: "Sita L.",
-      points: 1200,
-      hexes: 120,
-      avatar: "https://i.pravatar.cc/150?u=sita",
-    },
-    {
-      rank: 3,
-      name: "Hari G.",
-      points: 950,
-      hexes: 95,
-      avatar: "https://i.pravatar.cc/150?u=hari",
-    },
-    {
-      rank: 4,
-      name: "Priya S.",
-      points: 800,
-      hexes: 80,
-      avatar: "https://i.pravatar.cc/150?u=priya",
-    },
-    {
-      rank: 5,
-      name: "Deepak K.",
-      points: 650,
-      hexes: 65,
-      avatar: "https://i.pravatar.cc/150?u=deepak",
-    },
+    { rank: 1, name: "Alpha", points: 2500, areas: 50 },
+    { rank: 2, name: "Bravo", points: 1800, areas: 35 },
+    { rank: 3, name: "Charlie", points: 1200, areas: 20 },
   ],
 
   rewards: [
     {
       id: 1,
-      title: "Free Consultation",
+      title: "Free AI Consultation",
       pointsRequired: 500,
       icon: "stethoscope",
     },
-    { id: 2, title: "Health Voucher", pointsRequired: 300, icon: "ticket" },
-    { id: 3, title: "Premium Week", pointsRequired: 200, icon: "activity" },
+    { id: 2, title: "Lab Test Voucher", pointsRequired: 300, icon: "ticket" },
+    {
+      id: 3,
+      title: "Premium Access (1 Week)",
+      pointsRequired: 200,
+      icon: "activity",
+    },
+    { id: 4, title: "Health Kit Bundle", pointsRequired: 1000, icon: "gift" },
   ],
 
-  // ─── Actions ───────────────────────────────────────────────────────
-  fetchLeaderboard: async () => {
-    try {
-      const response = await fetch(
-        "http://localhost/rapireport/backend/api/get_leaderboard.php",
-      );
-      const data = await response.json();
-      if (Array.isArray(data)) set({ leaderboard: data });
-    } catch (e) {
-      // Use mock data on failure
-    }
-  },
+  // ─── Procedural Grid Content ───
+  // We populate a local area with enemies to ensure no gaps.
+  generateTiledWorld: (lat, lng) => {
+    const enemies = {};
+    const colStart = Math.round(lng / SQUARE_SIZE) - 50;
+    const colEnd = colStart + 100;
+    const rowStart = Math.round(lat / SQUARE_SIZE) - 50;
+    const rowEnd = rowStart + 100;
 
-  fetchUserStats: async () => {
-    /* frontend-only for now */
+    for (let c = colStart; c <= colEnd; c++) {
+      for (let r = rowStart; r <= rowEnd; r++) {
+        // Randomly assign ~15% of the world to enemies
+        if (Math.random() > 0.85) {
+          enemies[`${c}_${r}`] = {
+            owner: Math.random() > 0.5 ? "Alpha" : "Bravo",
+            pointsVal: 20,
+          };
+        }
+      }
+    }
+    set({ enemySquares: enemies });
   },
 
   updateLocation: (lat, lng) => {
-    const { currentLocation, capturedHexes, user } = get();
+    const { currentLocation, pathHistory, capturedSquares, enemySquares } =
+      get();
+    const newPoint = [lat, lng];
+    const sqId = getSquareId(lat, lng);
 
-    let pointsIncrement = 0;
-    let distanceIncrement = 0;
-    let xpIncrement = 0;
-    const newCaptures = {};
-
-    // Calculate distance
-    if (currentLocation) {
-      const R = 6371;
-      const dLat = (lat - currentLocation.lat) * (Math.PI / 180);
-      const dLon = (lng - currentLocation.lng) * (Math.PI / 180);
-      const a =
-        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-        Math.cos(currentLocation.lat * (Math.PI / 180)) *
-          Math.cos(lat * (Math.PI / 180)) *
-          Math.sin(dLon / 2) *
-          Math.sin(dLon / 2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-      distanceIncrement = R * c;
-
-      // Jitter filter
-      if (distanceIncrement < 0.005) return;
+    if (!currentLocation) {
+      get().generateTiledWorld(lat, lng);
+      set({ currentLocation: { lat, lng }, pathHistory: [newPoint] });
+      return;
     }
 
-    // Check which hex we're in
-    const currentHex = getHexForPoint(lat, lng);
-
-    if (!capturedHexes[currentHex.id]) {
-      newCaptures[currentHex.id] = { owner: "You", timestamp: Date.now() };
-      pointsIncrement += 10;
-      xpIncrement += 5;
+    // Loop Detection
+    let loopClosed = false;
+    let loopStartIndex = -1;
+    if (pathHistory.length > 10) {
+      for (let i = 0; i < pathHistory.length - 10; i++) {
+        const hPoint = pathHistory[i];
+        const dist = Math.sqrt(
+          Math.pow(lat - hPoint[0], 2) + Math.pow(lng - hPoint[1], 2),
+        );
+        if (dist < 0.00015) {
+          loopClosed = true;
+          loopStartIndex = i;
+          break;
+        }
+      }
     }
 
-    // Track visited hexes for this session
-    set((state) => {
-      const newVisited = new Set(state.visitedHexIds);
-      newVisited.add(currentHex.id);
+    if (loopClosed) {
+      const loopPolygon = pathHistory.slice(loopStartIndex);
+      let minLat = 90,
+        maxLat = -90,
+        minLng = 180,
+        maxLng = -180;
+      loopPolygon.forEach(([la, ln]) => {
+        minLat = Math.min(minLat, la);
+        maxLat = Math.max(maxLat, la);
+        minLng = Math.min(minLng, ln);
+        maxLng = Math.max(maxLng, ln);
+      });
 
-      const totalCaptured = { ...state.capturedHexes, ...newCaptures };
-      const hexCount = Object.keys(totalCaptured).filter(
-        (k) => totalCaptured[k].owner === "You",
-      ).length;
-      const newXp = state.user.xp + xpIncrement;
-      const levelUp = newXp >= state.user.xpToNext;
+      const filledCaptures = {};
+      let loopPoints = 0;
 
-      return {
-        currentLocation: { lat, lng },
-        pathHistory: [...state.pathHistory, [lat, lng]],
-        visitedHexIds: newVisited,
-        capturedHexes: totalCaptured,
+      const colS = Math.floor(minLng / SQUARE_SIZE);
+      const colE = Math.ceil(maxLng / SQUARE_SIZE);
+      const rowS = Math.floor(minLat / SQUARE_SIZE);
+      const rowE = Math.ceil(maxLat / SQUARE_SIZE);
+
+      for (let c = colS; c <= colE; c++) {
+        for (let r = rowS; r <= rowE; r++) {
+          const sLat = r * SQUARE_SIZE;
+          const sLng = c * SQUARE_SIZE;
+          if (isPointInPoly([sLat, sLng], loopPolygon)) {
+            const id = `${c}_${r}`;
+            if (!capturedSquares[id]) {
+              const wasEnemy = enemySquares[id];
+              filledCaptures[id] = { owner: "You", timestamp: Date.now() };
+              loopPoints += wasEnemy ? 25 : 10;
+            }
+          }
+        }
+      }
+
+      set((s) => ({
         user: {
-          ...state.user,
-          pointsToday: state.user.pointsToday + pointsIncrement,
-          cumulativePoints: state.user.cumulativePoints + pointsIncrement,
-          hexesCaptured: hexCount,
-          distanceKm: state.user.distanceKm + distanceIncrement,
-          xp: levelUp ? newXp - state.user.xpToNext : newXp,
-          level: levelUp ? state.user.level + 1 : state.user.level,
-          xpToNext: levelUp ? state.user.xpToNext + 50 : state.user.xpToNext,
+          ...s.user,
+          pointsToday: s.user.pointsToday + loopPoints + 100,
+          areasCaptured: s.user.areasCaptured + 1,
         },
-      };
-    });
+        capturedSquares: { ...s.capturedSquares, ...filledCaptures },
+        pathHistory: [],
+      }));
+    }
+
+    // Walking Capture
+    if (!capturedSquares[sqId]) {
+      const wasEnemy = enemySquares[sqId];
+      set((s) => ({
+        capturedSquares: {
+          ...s.capturedSquares,
+          [sqId]: { owner: "You", timestamp: Date.now() },
+        },
+        user: {
+          ...s.user,
+          pointsToday: s.user.pointsToday + (wasEnemy ? 15 : 5),
+        },
+      }));
+    }
+
+    set((s) => ({
+      currentLocation: { lat, lng },
+      pathHistory: [...s.pathHistory, newPoint],
+    }));
   },
 
   redeemReward: (rewardId) => {
-    const reward = get().rewards.find((r) => r.id === rewardId);
-    if (!reward) return;
-    set((state) => {
-      if (state.user.cumulativePoints >= reward.pointsRequired) {
-        return {
-          user: {
-            ...state.user,
-            cumulativePoints:
-              state.user.cumulativePoints - reward.pointsRequired,
-          },
-        };
-      }
-      return {};
-    });
+    const { rewards, user } = get();
+    const reward = rewards.find((r) => r.id === rewardId);
+    if (reward && user.cumulativePoints >= reward.pointsRequired) {
+      set((s) => ({
+        user: {
+          ...s.user,
+          cumulativePoints: s.user.cumulativePoints - reward.pointsRequired,
+        },
+      }));
+    }
   },
+
+  fetchLeaderboard: async () => {},
+  fetchUserStats: async () => {},
 }));

@@ -158,7 +158,7 @@ const Sidebar = ({ isOpen, onClose }) => {
           <nav className="flex-grow px-3 space-y-4 overflow-y-auto scrollbar-hide py-2">
             {mainGroups.map((group, groupIdx) => (
               <div key={groupIdx} className="space-y-1">
-                <div className="px-3 text-[9px] font-bold text-gray-400 uppercase tracking-widest opacity-70 mb-1">
+                <div className="px-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest opacity-80 mb-1">
                   {group.title}
                 </div>
                 {group.items.map((item) => (
@@ -168,7 +168,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                     onClick={() => window.innerWidth < 1024 && onClose()}
                     className={({ isActive }) =>
                       cn(
-                        "relative flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-semibold transition-all duration-200 group overflow-hidden",
+                        "relative flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-semibold transition-all duration-200 group overflow-hidden",
                         isActive
                           ? "bg-primary-50 text-primary-600"
                           : "text-gray-500 hover:bg-gray-50 hover:text-gray-900",

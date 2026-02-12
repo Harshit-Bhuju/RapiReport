@@ -8,11 +8,10 @@ import {
   ChevronRight,
   CheckCircle2,
   FileText,
-  Activity,
   LineChart,
-  Brain,
-  UploadCloud,
   ArrowRight,
+  Sparkles,
+  Zap,
 } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import Button from "@/components/ui/Button";
@@ -53,7 +52,7 @@ const HeroSection = () => {
                 {t("hero.badge")}
               </motion.div>
 
-              <h1 className="text-5xl sm:text-7xl md:text-8xl font-black text-gray-900 leading-[0.95] mb-10 tracking-[-0.04em] text-glow">
+              <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-gray-900 leading-[1.1] mb-8 tracking-tight text-glow">
                 {t("hero.title")
                   .split(" ")
                   .map((word, i) => (
@@ -538,7 +537,7 @@ const Landing = () => {
                 ISO 27001
               </div>
               <div className="flex items-center gap-2 font-black text-gray-400">
-                <Activity className="w-8 h-8" />
+                <Zap className="w-8 h-8" />
                 HL7
               </div>
             </div>
@@ -569,7 +568,7 @@ const Landing = () => {
               Take Control of Your Health
             </motion.p>
 
-            <h2 className="text-6xl md:text-8xl font-black text-white mb-16 max-w-5xl mx-auto leading-[0.9] tracking-tighter">
+            <h2 className="text-4xl md:text-6xl font-black text-white mb-12 max-w-4xl mx-auto leading-[1.1] tracking-tight">
               Ready to see the{" "}
               <span className="text-primary-500">invisible?</span>
             </h2>

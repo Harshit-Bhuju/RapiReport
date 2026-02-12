@@ -12,11 +12,11 @@ import API from "@/Configs/ApiEndpoints";
 import Button from "@/components/ui/Button";
 import { Card, CardBody } from "@/components/ui/Card";
 import {
-  Activity,
   CheckCircle2,
   Shield,
   ArrowRight,
   Sparkles,
+  Brain,
 } from "lucide-react";
 import logoIcon from "@/assets/logos/rapireport_logo.png";
 
@@ -103,12 +103,12 @@ const Auth = () => {
               </span>
             </div>
 
-            <h1 className="text-6xl font-black text-white leading-[1] mb-8 tracking-tighter">
+            <h1 className="text-4xl md:text-5xl font-black text-white leading-[1.1] mb-8 tracking-tight">
               The future of <br />
               <span className="text-primary-500">personal health.</span>
             </h1>
 
-            <p className="text-primary-100/60 text-xl mb-16 leading-relaxed font-semibold max-w-md">
+            <p className="text-primary-100/60 text-lg mb-16 leading-relaxed font-semibold max-w-md">
               {t("auth.heroSubtitle")}
             </p>
 

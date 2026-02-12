@@ -10,10 +10,14 @@ $allowedOrigins = [
     "https://www.harshitbhuju.com.np",
     "https://harshitbhuju.com.np",
     "https://harmanbhuju.com.np",
+    "https://www.harmanbhuju.com.np",
+    "https://api.harmanbhuju.com.np",
 ];
 
 $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
-if (in_array($origin, $allowedOrigins)) {
+// Allow common dev origins and tunnels
+if (in_array($origin, $allowedOrigins) || 
+    preg_match('/^https?:\/\/(localhost|127\.0\.0\.1|.*\.trycloudflare\.com|.*\.local)(:\d+)?$/', $origin)) {
     header("Access-Control-Allow-Origin: " . $origin);
 }
 header("Access-Control-Allow-Methods: GET, POST, OPTIONS, DELETE");

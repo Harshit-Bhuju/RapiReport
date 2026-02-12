@@ -9,8 +9,8 @@ export const distanceMeters = (lat1, lng1, lat2, lng2) => {
   const a =
     Math.sin(dLat / 2) ** 2 +
     Math.cos((lat1 * Math.PI) / 180) *
-    Math.cos((lat2 * Math.PI) / 180) *
-    Math.sin(dLng / 2) ** 2;
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLng / 2) ** 2;
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c; // Delta in meters
 };
@@ -204,11 +204,15 @@ function questMatchesProfile(q, profile) {
   const hasCondition = (key) =>
     Array.isArray(profile?.conditions) && profile.conditions.includes(key);
   if (!profile || (profile.age == null && !profile.conditions?.length)) {
-    return q.ageGroup === "any" && (q.healthConsideration === "any" || q.healthConsideration === "general");
+    return (
+      q.ageGroup === "any" &&
+      (q.healthConsideration === "any" || q.healthConsideration === "general")
+    );
   }
   const ageGroup = getAgeGroup(profile.age);
   if (q.ageGroup !== "any" && q.ageGroup !== ageGroup) return false;
-  if (q.healthConsideration === "any" || q.healthConsideration === "general") return true;
+  if (q.healthConsideration === "any" || q.healthConsideration === "general")
+    return true;
   return hasCondition(q.healthConsideration);
 }
 
@@ -221,7 +225,7 @@ export const useGameStore = create((set, get) => ({
     dailyEarnings: [], // [{date: '2026-02-12', points: 100}, ...]
     questsCompleted: 0,
     questsToday: 0,
-    lastRefreshDate: new Date().toISOString().split('T')[0],
+    lastRefreshDate: new Date().toISOString().split("T")[0],
   },
   engagedQuest: null,
   setEngagedQuest: (quest) => set({ engagedQuest: quest }),
@@ -247,12 +251,32 @@ export const useGameStore = create((set, get) => ({
   ],
 
   rewards: [
-    { id: 1, title: "Free AI Consultation", pointsRequired: 500, icon: "stethoscope" },
+    {
+      id: 1,
+      title: "Free AI Consultation",
+      pointsRequired: 500,
+      icon: "stethoscope",
+    },
     { id: 2, title: "Lab Test Voucher", pointsRequired: 300, icon: "ticket" },
-    { id: 3, title: "Premium Access (1 Week)", pointsRequired: 200, icon: "activity" },
+    {
+      id: 3,
+      title: "Premium Access (1 Week)",
+      pointsRequired: 200,
+      icon: "activity",
+    },
     { id: 4, title: "Health Kit Bundle", pointsRequired: 1000, icon: "gift" },
-    { id: 5, title: "Fitness Band Discount", pointsRequired: 800, icon: "activity" },
-    { id: 6, title: "Doctor Consult Credit", pointsRequired: 600, icon: "stethoscope" },
+    {
+      id: 5,
+      title: "Fitness Band Discount",
+      pointsRequired: 800,
+      icon: "activity",
+    },
+    {
+      id: 6,
+      title: "Doctor Consult Credit",
+      pointsRequired: 600,
+      icon: "stethoscope",
+    },
   ],
 
   setQuestProfile: (profile) => {
@@ -265,7 +289,9 @@ export const useGameStore = create((set, get) => ({
         const completed = existing?.completed ?? false;
         const progressMeters =
           q.type === "walk"
-            ? (completed ? q.targetMeters : Math.min(Math.round(dist), q.targetMeters))
+            ? completed
+              ? q.targetMeters
+              : Math.min(Math.round(dist), q.targetMeters)
             : undefined;
         return {
           ...q,
@@ -278,19 +304,21 @@ export const useGameStore = create((set, get) => ({
   },
 
   updateLocation: (lat, lng) => {
-    const { currentLocation, pathHistory, quests, distanceWalkedMeters } = get();
+    const { currentLocation, pathHistory, quests, distanceWalkedMeters } =
+      get();
     const newPoint = [lat, lng];
     const newPath = currentLocation
       ? [...pathHistory.slice(-300), newPoint]
       : [newPoint];
-    const addedMeters = pathHistory.length >= 1
-      ? distanceMeters(
-        pathHistory[pathHistory.length - 1][0],
-        pathHistory[pathHistory.length - 1][1],
-        lat,
-        lng,
-      )
-      : 0;
+    const addedMeters =
+      pathHistory.length >= 1
+        ? distanceMeters(
+            pathHistory[pathHistory.length - 1][0],
+            pathHistory[pathHistory.length - 1][1],
+            lat,
+            lng,
+          )
+        : 0;
     const totalWalked = distanceWalkedMeters + addedMeters;
 
     let updatedQuests = quests;
@@ -313,11 +341,15 @@ export const useGameStore = create((set, get) => ({
           pointsEarned += q.points;
           newlyCompleted += 1;
           updatedQuests = updatedQuests.map((x) =>
-            x.id === q.id ? { ...x, completed: true, progressMeters: q.targetMeters } : x,
+            x.id === q.id
+              ? { ...x, completed: true, progressMeters: q.targetMeters }
+              : x,
           );
         } else {
           updatedQuests = updatedQuests.map((x) =>
-            x.id === q.id ? { ...x, progressMeters: Math.round(totalWalked) } : x,
+            x.id === q.id
+              ? { ...x, progressMeters: Math.round(totalWalked) }
+              : x,
           );
         }
       }
@@ -355,7 +387,7 @@ export const useGameStore = create((set, get) => ({
     const { quests, user } = get();
 
     // Check daily limit
-    const today = new Date().toISOString().split('T')[0];
+    const today = new Date().toISOString().split("T")[0];
     let currentQuestsToday = user.questsToday ?? 0;
     if (user.lastRefreshDate !== today) {
       currentQuestsToday = 0;
@@ -369,7 +401,7 @@ export const useGameStore = create((set, get) => ({
     const quest = quests.find((q) => q.id === questId);
     if (quest && !quest.completed) {
       const updatedQuests = quests.map((q) =>
-        q.id === questId ? { ...q, completed: true } : q
+        q.id === questId ? { ...q, completed: true } : q,
       );
 
       // Sync with backend
@@ -380,8 +412,8 @@ export const useGameStore = create((set, get) => ({
           body: JSON.stringify({
             user_id: 1, // In a real app, this comes from authStore
             quest_id: questId,
-            points: quest.points
-          })
+            points: quest.points,
+          }),
         });
       } catch (e) {
         console.error("Failed to sync quest:", e);
@@ -391,11 +423,13 @@ export const useGameStore = create((set, get) => ({
         quests: updatedQuests,
         user: {
           ...user,
-          pointsToday: (user.lastRefreshDate === today ? user.pointsToday : 0) + (quest.points || 0),
+          pointsToday:
+            (user.lastRefreshDate === today ? user.pointsToday : 0) +
+            (quest.points || 0),
           cumulativePoints: user.cumulativePoints + (quest.points || 0),
           questsCompleted: (user.questsCompleted || 0) + 1,
           questsToday: currentQuestsToday + 1,
-          lastRefreshDate: today
+          lastRefreshDate: today,
         },
       });
       return true;
@@ -407,7 +441,7 @@ export const useGameStore = create((set, get) => ({
     const { quests, user } = get();
 
     // Check daily limit
-    const today = new Date().toISOString().split('T')[0];
+    const today = new Date().toISOString().split("T")[0];
     let currentQuestsToday = user.questsToday ?? 0;
     if (user.lastRefreshDate !== today) {
       currentQuestsToday = 0;
@@ -421,7 +455,7 @@ export const useGameStore = create((set, get) => ({
     const quest = quests.find((q) => q.id === questId);
     if (quest && !quest.completed) {
       const updatedQuests = quests.map((q) =>
-        q.id === questId ? { ...q, completed: true, skipped: true } : q
+        q.id === questId ? { ...q, completed: true, skipped: true } : q,
       );
 
       // Sync with backend (0 points for skip)
@@ -433,8 +467,8 @@ export const useGameStore = create((set, get) => ({
             user_id: 1,
             quest_id: questId,
             points: 0,
-            skipped: true
-          })
+            skipped: true,
+          }),
         });
       } catch (e) {
         console.error("Failed to sync skipped quest:", e);
@@ -443,17 +477,20 @@ export const useGameStore = create((set, get) => ({
       set({
         quests: updatedQuests,
         engagedQuest: null, // Close interaction modal
-        anchored: false,    // Force re-anchor for next quest
+        anchored: false, // Force re-anchor for next quest
         user: {
           ...user,
-          questsCompleted: (user.questsCompleted || 0), // Don't count as "completed" for stats if we want strictness, or do if we count "attempts"
+          questsCompleted: user.questsCompleted || 0, // Don't count as "completed" for stats if we want strictness, or do if we count "attempts"
           questsToday: currentQuestsToday + 1,
-          lastRefreshDate: today
+          lastRefreshDate: today,
         },
       });
 
       // Immediately load next quest
-      get().anchorQuestsToLocation(get().currentLocation.lat, get().currentLocation.lng);
+      get().anchorQuestsToLocation(
+        get().currentLocation.lat,
+        get().currentLocation.lng,
+      );
       return true;
     }
     return false;
@@ -476,7 +513,7 @@ export const useGameStore = create((set, get) => ({
             dailyEarnings: json.data.daily_earnings || [],
             cumulativePoints: parseInt(json.data.cumulative_points),
             questsToday: parseInt(json.data.quests_today),
-          }
+          },
         }));
       }
     } catch (e) {
@@ -512,7 +549,10 @@ export const useGameStore = create((set, get) => ({
     const finalLng = lng + (poolItem.offsetLng || 0);
     let finalPath = undefined;
     if (poolItem.targetPath) {
-      finalPath = poolItem.targetPath.map(([oLat, oLng]) => [lat + oLat, lng + oLng]);
+      finalPath = poolItem.targetPath.map(([oLat, oLng]) => [
+        lat + oLat,
+        lng + oLng,
+      ]);
     }
 
     const activeQuest = {
@@ -521,12 +561,12 @@ export const useGameStore = create((set, get) => ({
       lng: finalLng,
       targetPath: finalPath,
       completed: false,
-      progressMeters: poolItem.type === "walk" ? 0 : undefined
+      progressMeters: poolItem.type === "walk" ? 0 : undefined,
     };
 
     set({
       anchored: true,
-      quests: [activeQuest] // Only one active quest at a time
+      quests: [activeQuest], // Only one active quest at a time
     });
   },
 
@@ -539,7 +579,10 @@ export const useGameStore = create((set, get) => ({
         // If we have a location, we can anchor the quest based on how many are completed
         if (currentLocation) {
           set({ anchored: false });
-          get().anchorQuestsToLocation(currentLocation.lat, currentLocation.lng);
+          get().anchorQuestsToLocation(
+            currentLocation.lat,
+            currentLocation.lng,
+          );
         }
       }
     } catch (e) {

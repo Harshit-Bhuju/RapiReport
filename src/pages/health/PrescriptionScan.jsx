@@ -127,11 +127,14 @@ const PrescriptionScan = () => {
         toast.success("Handwriting scanned successfully!");
         fetchOcrHistory(); // Refresh history because gemini_ocr.php saves it
       } else {
+        console.error("Gemini OCR Server Error:", res.data);
         toast.error(res.data?.message || "Scan failed.");
       }
     } catch (err) {
-      console.error("Gemini OCR Error:", err);
-      toast.error("Enhanced scan failed. Try a clearer photo.");
+      console.error("Gemini OCR Request Failure:", err);
+      const errorMsg =
+        err.response?.data?.message || err.message || "Enhanced scan failed.";
+      toast.error(`${errorMsg}. Try a clearer photo.`);
     } finally {
       setIsScanning(false);
     }

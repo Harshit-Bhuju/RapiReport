@@ -2,7 +2,13 @@ import React, { useState } from "react";
 import axios from "axios";
 import { useTranslation } from "react-i18next";
 import ChatInterface from "@/components/features/ChatInterface";
-import { MessageSquare, ShieldCheck, Sparkles, Send, Loader2 } from "lucide-react";
+import {
+  MessageSquare,
+  ShieldCheck,
+  Sparkles,
+  Send,
+  Loader2,
+} from "lucide-react";
 import { Card, CardBody } from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
@@ -24,7 +30,11 @@ const Consultation = () => {
     }
     setSubmitting(true);
     try {
-      const r = await axios.post(API.ASYNC_CONSULT_SUBMIT, { symptoms_text: symptomsText, diet_activity_note: dietActivityNote }, { withCredentials: true });
+      const r = await axios.post(
+        API.ASYNC_CONSULT_SUBMIT,
+        { symptoms_text: symptomsText, diet_activity_note: dietActivityNote },
+        { withCredentials: true },
+      );
       if (r.data?.status === "success") {
         toast.success("Submitted. A doctor will review asynchronously.");
         setAsyncOpen(false);
@@ -99,11 +109,17 @@ const Consultation = () => {
 
           <Card className="border-none shadow-sm bg-success-50/50">
             <CardBody className="p-6">
-              <h3 className="font-black text-gray-900 mb-2 text-sm">Async consult</h3>
+              <h3 className="font-black text-gray-900 mb-2 text-sm">
+                Async consult
+              </h3>
               <p className="text-xs text-gray-600 mb-3">
-                Submit symptoms and notes for a doctor to review. No live visit needed for non-urgent cases.
+                Submit symptoms and notes for a doctor to review. No live visit
+                needed for non-urgent cases.
               </p>
-              <Button size="sm" className="w-full gap-2" onClick={() => setAsyncOpen(true)}>
+              <Button
+                size="sm"
+                className="w-full gap-2"
+                onClick={() => setAsyncOpen(true)}>
                 <Send className="w-4 h-4" />
                 Submit for doctor review
               </Button>
@@ -112,10 +128,15 @@ const Consultation = () => {
         </div>
       </div>
 
-      <Modal open={asyncOpen} onClose={() => setAsyncOpen(false)} title="Submit for doctor review">
+      <Modal
+        isOpen={asyncOpen}
+        onClose={() => setAsyncOpen(false)}
+        title="Submit for doctor review">
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1">Symptoms / reason</label>
+            <label className="block text-sm font-bold text-gray-700 mb-1">
+              Symptoms / reason
+            </label>
             <textarea
               className="w-full p-3 rounded-xl border-2 border-gray-100 focus:border-primary-500 min-h-[100px] resize-none"
               value={symptomsText}
@@ -129,8 +150,16 @@ const Consultation = () => {
             onChange={(e) => setDietActivityNote(e.target.value)}
             placeholder="Recent diet, exercise, or relevant notes"
           />
-          <Button onClick={handleAsyncSubmit} loading={submitting} className="w-full gap-2" disabled={!symptomsText.trim()}>
-            {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+          <Button
+            onClick={handleAsyncSubmit}
+            loading={submitting}
+            className="w-full gap-2"
+            disabled={!symptomsText.trim()}>
+            {submitting ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Send className="w-4 h-4" />
+            )}
             Submit
           </Button>
         </div>

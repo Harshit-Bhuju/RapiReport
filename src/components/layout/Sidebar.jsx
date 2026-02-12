@@ -37,43 +37,82 @@ const Sidebar = ({ isOpen, onClose }) => {
   const { logout, user } = useAuthStore();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
-  const baseNavItems = [
-    { name: t("sidebar.dashboard"), path: "/dashboard", icon: LayoutDashboard },
-    { name: t("sidebar.reports"), path: "/reports", icon: FileText },
-    { name: "Prescriptions", path: "/prescriptions", icon: ScanLine },
-    { name: "Adherence", path: "/adherence", icon: Pill },
-    { name: "Symptoms", path: "/symptoms", icon: Activity },
-    { name: "Activity", path: "/activity", icon: Footprints },
-    { name: "Diet", path: "/diet", icon: Utensils },
+  const mainGroups = [
     {
-      name: t("sidebar.consultation"),
-      path: "/consultation",
-      icon: MessageSquare,
+      title: "Overview",
+      items: [
+        {
+          name: t("sidebar.dashboard"),
+          path: "/dashboard",
+          icon: LayoutDashboard,
+        },
+        { name: t("sidebar.reports"), path: "/reports", icon: FileText },
+        { name: "Medical history", path: "/medical-history", icon: History },
+      ],
     },
-    { name: "Family Health", path: "/family", icon: Users },
-    { name: t("sidebar.doctors"), path: "/doctors", icon: Stethoscope },
-    { name: "Quest Game", path: "/quest-game", icon: Map },
-    { name: "Marketplace", path: "/marketplace", icon: Gift },
-    { name: "Campaigns", path: "/campaigns", icon: Megaphone },
-    { name: "Medical history", path: "/medical-history", icon: History },
-    { name: "Alerts", path: "/alerts", icon: BellRing },
-    { name: "Community", path: "/community", icon: BarChart3 },
-    { name: t("sidebar.risk"), path: "/prevention", icon: ShieldAlert },
-    { name: t("sidebar.planner"), path: "/planner", icon: CalendarCheck },
+    {
+      title: "Health Intelligence",
+      items: [
+        { name: "Symptoms", path: "/symptoms", icon: Activity },
+        { name: "Activity", path: "/activity", icon: Footprints },
+        { name: "Diet", path: "/diet", icon: Utensils },
+        { name: "Adherence", path: "/adherence", icon: Pill },
+        { name: "Prescriptions", path: "/prescriptions", icon: ScanLine },
+      ],
+    },
+    {
+      title: "Connect & Community",
+      items: [
+        {
+          name: t("sidebar.consultation"),
+          path: "/consultation",
+          icon: MessageSquare,
+        },
+        { name: t("sidebar.doctors"), path: "/doctors", icon: Stethoscope },
+        { name: "Family Health", path: "/family", icon: Users },
+        { name: "Community", path: "/community", icon: BarChart3 },
+        { name: "Alerts", path: "/alerts", icon: BellRing },
+      ],
+    },
+    {
+      title: "Optimization",
+      items: [
+        { name: t("sidebar.risk"), path: "/prevention", icon: ShieldAlert },
+        { name: t("sidebar.planner"), path: "/planner", icon: CalendarCheck },
+      ],
+    },
+    {
+      title: "Discover",
+      items: [
+        { name: "Quest Game", path: "/quest-game", icon: Map },
+        { name: "Marketplace", path: "/marketplace", icon: Gift },
+        { name: "Campaigns", path: "/campaigns", icon: Megaphone },
+      ],
+    },
   ];
 
-  const adminNav = { name: "Admin Panel", path: "/admin", icon: Shield };
-  const doctorProfileNav = {
-    name: "Doctor Profile",
-    path: "/doctor-profile",
-    icon: ClipboardList,
-  };
-
-  const navItems = [
-    ...baseNavItems,
-    ...(user?.role === "doctor" ? [doctorProfileNav] : []),
-    ...(user?.role === "admin" ? [adminNav] : []),
+  // System/Admin items
+  const systemItems = [
+    ...(user?.role === "doctor"
+      ? [
+          {
+            name: "Doctor Profile",
+            path: "/doctor-profile",
+            icon: ClipboardList,
+          },
+        ]
+      : []),
+    ...(user?.role === "admin"
+      ? [{ name: "Admin Panel", path: "/admin", icon: Shield }]
+      : []),
   ];
+
+  if (systemItems.length > 0) {
+    mainGroups.push({
+      title: "System",
+      items: systemItems,
+    });
+  }
 
   return (
     <>
@@ -87,93 +126,102 @@ const Sidebar = ({ isOpen, onClose }) => {
 
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 w-72 bg-white border-r border-gray-100 z-50 transition-all duration-300",
+          "fixed inset-y-0 left-0 w-64 bg-white border-r border-gray-100 z-50 transition-all duration-300",
           "lg:translate-x-0",
           isOpen ? "translate-x-0" : "-translate-x-full",
         )}>
         <div className="flex flex-col h-full">
           {/* Logo Section */}
-          <div className="p-6 flex items-center justify-between">
+          <div className="p-5 flex items-center justify-between">
             <Link to="/" className="flex items-center group">
               <div className="relative">
                 <img
                   src={logoIcon}
                   alt="R"
-                  className="h-16 w-16 object-contain transform transition-transform duration-200"
+                  className="h-12 w-12 object-contain transform transition-transform duration-200"
                 />
                 <div className="absolute inset-0 bg-primary-600/10 blur-xl rounded-full -z-10 opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
-              <div className="flex flex-col">
-                <span className="text-xl font-black text-gray-900 tracking-tighter leading-none flex items-center">
+              <div className="flex flex-col ml-1">
+                <span className="text-lg font-black text-gray-900 tracking-tighter leading-none flex items-center">
                   Rapi<span className="text-primary-600">Report</span>
                 </span>
-                <span className="text-[9px] font-bold text-gray-400 uppercase tracking-[0.2em] leading-none mt-1">
-                  Precision Health Insights
+                <span className="text-[8px] font-bold text-gray-400 uppercase tracking-[0.1em] leading-none mt-1">
+                  Precision Health
                 </span>
               </div>
             </Link>
             <button
               onClick={onClose}
               className="lg:hidden p-2 text-gray-400 hover:text-gray-600">
-              <X className="w-6 h-6" />
+              <X className="w-5 h-5" />
             </button>
           </div>
 
           {/* Navigation Links */}
-          <nav className="flex-grow px-4 space-y-1 overflow-y-auto scrollbar-hide">
-            <div className="mb-4 px-4 text-[10px] font-extrabold text-gray-400 uppercase tracking-[0.2em] opacity-80">
-              Menu
-            </div>
-            {navItems.map((item) => (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                onClick={() => window.innerWidth < 1024 && onClose()}
-                className={({ isActive }) =>
-                  cn(
-                    "relative flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 group overflow-hidden mb-0.5",
-                    isActive
-                      ? "bg-primary-50 text-primary-600 shadow-sm"
-                      : "text-gray-500 hover:bg-gray-50 hover:text-gray-900",
-                  )
-                }>
-                {({ isActive }) => (
-                  <>
-                    <div
-                      className={cn(
-                        "absolute left-0 top-0 bottom-0 w-1 bg-primary-600 transition-transform duration-300",
-                        isActive ? "scale-y-100" : "scale-y-0",
-                      )}
-                    />
-
-                    <item.icon
-                      className={cn(
-                        "w-5 h-5 min-w-[20px] transition-all duration-300",
+          <nav className="flex-grow px-3 space-y-4 overflow-y-auto scrollbar-hide py-2">
+            {mainGroups.map((group, groupIdx) => (
+              <div key={groupIdx} className="space-y-1">
+                <div className="px-3 text-[9px] font-bold text-gray-400 uppercase tracking-widest opacity-70 mb-1">
+                  {group.title}
+                </div>
+                {group.items.map((item) => (
+                  <NavLink
+                    key={item.path}
+                    to={item.path}
+                    onClick={() => window.innerWidth < 1024 && onClose()}
+                    className={({ isActive }) =>
+                      cn(
+                        "relative flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-semibold transition-all duration-200 group overflow-hidden",
                         isActive
-                          ? "text-primary-600"
-                          : "group-hover:text-primary-600 group-hover:scale-110",
-                      )}
-                    />
-                    <span className="truncate tracking-tight">{item.name}</span>
-                  </>
+                          ? "bg-primary-50 text-primary-600"
+                          : "text-gray-500 hover:bg-gray-50 hover:text-gray-900",
+                      )
+                    }>
+                    {({ isActive }) => (
+                      <>
+                        <div
+                          className={cn(
+                            "absolute left-0 top-1.5 bottom-1.5 w-1 bg-primary-600 rounded-r-full transition-transform duration-200",
+                            isActive ? "scale-y-100" : "scale-y-0",
+                          )}
+                        />
+
+                        <item.icon
+                          className={cn(
+                            "w-4 h-4 min-w-[16px] transition-all duration-200",
+                            isActive
+                              ? "text-primary-600"
+                              : "group-hover:text-primary-600",
+                          )}
+                        />
+                        <span className="truncate tracking-tight">
+                          {item.name}
+                        </span>
+                      </>
+                    )}
+                  </NavLink>
+                ))}
+                {groupIdx < mainGroups.length - 1 && (
+                  <div className="mt-4 mx-2 h-px bg-gray-50/80" />
                 )}
-              </NavLink>
+              </div>
             ))}
           </nav>
 
           {/* User Profile / Logout */}
-          <div className="p-4 border-t border-gray-100 mt-auto bg-gray-50/30 backdrop-blur-sm">
+          <div className="p-3 border-t border-gray-100 mt-auto bg-gray-50/30">
             <div className="relative">
               <button
                 onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                 className={cn(
-                  "w-full flex items-center gap-3 p-2.5 rounded-xl transition-all duration-300 group",
+                  "w-full flex items-center gap-2.5 p-2 rounded-lg transition-all duration-200 group",
                   isUserMenuOpen
                     ? "bg-white shadow-sm ring-1 ring-gray-100"
-                    : "hover:bg-white hover:shadow-sm",
+                    : "hover:bg-white",
                 )}>
                 <div className="relative shrink-0">
-                  <div className="w-10 h-10 rounded-xl bg-primary-100 flex items-center justify-center text-primary-600 overflow-hidden ring-2 ring-white">
+                  <div className="w-8 h-8 rounded-lg bg-primary-100 flex items-center justify-center text-primary-600 overflow-hidden ring-1 ring-white">
                     {user?.avatar ? (
                       <img
                         src={user.avatar}
@@ -181,32 +229,37 @@ const Sidebar = ({ isOpen, onClose }) => {
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <span className="font-bold text-base">
+                      <span className="font-bold text-xs">
                         {user?.name?.charAt(0)}
                       </span>
                     )}
                   </div>
-                  <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-success-500 border-2 border-white rounded-full" />
+                  <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-success-500 border-2 border-white rounded-full" />
                 </div>
                 <div className="flex-grow min-w-0 text-left">
-                  <p className="text-sm font-bold text-gray-900 truncate">
+                  <p className="text-[13px] font-bold text-gray-900 truncate">
                     {user?.name}
                   </p>
-                  <p className="text-[10px] font-medium text-gray-400 truncate  tracking-tighter">
+                  <p className="text-[9px] font-medium text-gray-400 truncate tracking-tight">
                     {user?.email}
                   </p>
                 </div>
                 <ChevronDown
                   className={cn(
-                    "w-4 h-4 text-gray-400 transition-transform duration-300",
+                    "w-3 h-3 text-gray-400 transition-transform duration-200",
                     isUserMenuOpen && "rotate-180",
                   )}
                 />
               </button>
 
-              {/* Floating Menu on the Right */}
+              {/* Floating Menu */}
               {isUserMenuOpen && (
-                <div className="absolute left-full bottom-0 ml-4 w-52 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-[60] transition-all">
+                <div
+                  className={cn(
+                    "absolute bottom-full mb-2 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-[60] transition-all",
+                    "lg:left-full lg:bottom-0 lg:mb-0 lg:ml-4 lg:w-52",
+                    "left-0 right-0 w-full",
+                  )}>
                   <div className="p-2 space-y-1">
                     <button
                       onClick={() => {

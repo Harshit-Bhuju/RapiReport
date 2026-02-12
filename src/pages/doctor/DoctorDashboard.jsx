@@ -5,6 +5,7 @@ import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import toast from "react-hot-toast";
 import Modal from "@/components/ui/Modal";
+import Badge from "@/components/ui/Badge";
 import chatService from "@/lib/chatService";
 import { useHealthStore } from "@/store/healthStore";
 import API from "@/Configs/ApiEndpoints";
@@ -16,6 +17,11 @@ import {
   ClipboardList,
   AlertTriangle,
   Search,
+  Clock,
+  Heart,
+  Droplets,
+  Thermometer,
+  Zap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -53,16 +59,77 @@ const MOCK_PATIENTS = [
 const MOCK_SYMPTOMS = {
   p1: [
     { at: "2026-02-10", text: "Headache + mild dizziness", severity: "mild" },
-    { at: "2026-02-11", text: "BP reading 150/95 at home", severity: "moderate" },
+    {
+      at: "2026-02-11",
+      text: "BP reading 150/95 at home",
+      severity: "moderate",
+    },
   ],
   p2: [
     { at: "2026-02-09", text: "Fasting sugar 170 mg/dL", severity: "moderate" },
     { at: "2026-02-11", text: "Fatigue after meals", severity: "mild" },
   ],
-  p3: [
-    { at: "2026-02-11", text: "Itchy rash on arms", severity: "moderate" },
-  ],
+  p3: [{ at: "2026-02-11", text: "Itchy rash on arms", severity: "moderate" }],
 };
+
+const MOCK_WAITING_ROOM = [
+  {
+    id: "w1",
+    name: "John Doe",
+    time: "10:30 AM",
+    type: "Follow-up",
+    urgent: false,
+  },
+  {
+    id: "w2",
+    name: "Jane Smith",
+    time: "10:45 AM",
+    type: "Reports Review",
+    urgent: true,
+  },
+  {
+    id: "w3",
+    name: "Mike Ross",
+    time: "11:00 AM",
+    type: "New Patient",
+    urgent: false,
+  },
+];
+
+const MOCK_VITALS = [
+  {
+    title: "Heart Rate",
+    value: "72",
+    unit: "bpm",
+    trend: "stable",
+    color: "text-rose-500",
+    bg: "bg-rose-50",
+  },
+  {
+    title: "Blood Pressure",
+    value: "120/80",
+    unit: "mmHg",
+    trend: "up",
+    color: "text-blue-500",
+    bg: "bg-blue-50",
+  },
+  {
+    title: "SpO2",
+    value: "98",
+    unit: "%",
+    trend: "stable",
+    color: "text-emerald-500",
+    bg: "bg-emerald-50",
+  },
+  {
+    title: "Glucose",
+    value: "95",
+    unit: "mg/dL",
+    trend: "down",
+    color: "text-amber-500",
+    bg: "bg-amber-50",
+  },
+];
 
 function severityBadge(sev) {
   const styles = {
@@ -75,8 +142,7 @@ function severityBadge(sev) {
       className={cn(
         "px-2.5 py-1 rounded-full text-[11px] font-black border capitalize",
         styles[sev] || "bg-gray-50 text-gray-600 border-gray-100",
-      )}
-    >
+      )}>
       {sev}
     </span>
   );
@@ -94,8 +160,11 @@ const DoctorDashboard = () => {
   const [aiLoading, setAiLoading] = useState(false);
   const [chiefComplaint, setChiefComplaint] = useState("");
   const [provisionalDx, setProvisionalDx] = useState("");
-  const [aiDraft, setAiDraft] = useState("");
+  const [prescriptionItems, setPrescriptionItems] = useState([
+    { name: "", dose: "", frequency: "", duration: "" },
+  ]);
 
+  const { prescriptions } = useHealthStore();
   const [asyncRequests, setAsyncRequests] = useState([]);
 
   useEffect(() => {
@@ -111,7 +180,10 @@ const DoctorDashboard = () => {
           setPatients(pList);
           if (pList.length && !selectedId) setSelectedId(pList[0]?.id);
         }
-        if (asyncRes.data?.status === "success" && Array.isArray(asyncRes.data.data)) {
+        if (
+          asyncRes.data?.status === "success" &&
+          Array.isArray(asyncRes.data.data)
+        ) {
           setAsyncRequests(asyncRes.data.data);
         }
         if (statsRes.data?.status === "success") {
@@ -145,6 +217,59 @@ const DoctorDashboard = () => {
     );
   }, [patients, search]);
 
+  const handleAddItem = () => {
+    setPrescriptionItems([
+      ...prescriptionItems,
+      { name: "", dose: "", frequency: "", duration: "" },
+    ]);
+  };
+
+  const handleRemoveItem = (index) => {
+    setPrescriptionItems(prescriptionItems.filter((_, i) => i !== index));
+  };
+
+  const handleUpdateItem = (index, field, value) => {
+    const newItems = [...prescriptionItems];
+    newItems[index][field] = value;
+    setPrescriptionItems(newItems);
+  };
+
+  const handleSavePrescription = async () => {
+    if (!selectedId) {
+      toast.error("Please select a patient first.");
+      return;
+    }
+
+    try {
+      const response = await axios.post(
+        API.SAVE_PRESCRIPTION,
+        {
+          patient_id: selectedId,
+          chief_complaint: chiefComplaint,
+          provisional_dx: provisionalDx,
+          medicines: prescriptionItems.filter((m) => m.name.trim() !== ""),
+        },
+        { withCredentials: true },
+      );
+
+      if (response.data?.status === "success") {
+        toast.success("Prescription saved successfully!");
+        setIsAiOpen(false);
+        // Reset state
+        setPrescriptionItems([
+          { name: "", dose: "", frequency: "", duration: "" },
+        ]);
+        setChiefComplaint("");
+        setProvisionalDx("");
+      } else {
+        toast.error(response.data?.message || "Failed to save prescription.");
+      }
+    } catch (err) {
+      toast.error("Error saving prescription. Check console.");
+      console.error(err);
+    }
+  };
+
   const patient = useMemo(
     () => patients.find((p) => p.id === selectedId) || patients[0],
     [patients, selectedId],
@@ -160,28 +285,22 @@ const DoctorDashboard = () => {
     setAiLoading(true);
     try {
       const prompt = `
-You are assisting a licensed doctor. Generate a SAFE, conservative prescription draft and clinical suggestions.
-
-Return in this format:
-1) Summary
-2) Possible causes (brief)
-3) Safety checks (allergies/interactions/red flags)
-4) Suggested Rx draft (generic names, dose, frequency, duration) - KEEP IT SHORT
-5) Patient instructions
-6) When to refer / urgent warning signs
+You are assisting a licensed doctor. Generate a SAFE, conservative prescription draft.
+Return exactly three sections:
+1) CLINICAL_SUMMARY: Patient status and safety checks.
+2) MEDICINES_JSON: A JSON array of objects with keys: "name", "dose", "frequency", "duration".
+3) PATIENT_INSTRUCTIONS: Advice and when to refer.
 
 Patient:
 - Name: ${patient.name}
 - Age: ${patient.age}
 - Gender: ${patient.gender}
-- Allergies: ${patient.allergies?.length ? patient.allergies.join(", ") : "None known"}
-- Chronic conditions: ${patient.chronic?.length ? patient.chronic.join(", ") : "None"}
-- Recent symptoms: ${timeline.filter((t) => t.type === "symptom").map((s) => `${s.at}: ${s.title}`).join(" | ") || "None"}
+- Chronic: ${patient.chronic?.join(", ") || "None"}
+- Allergies: ${patient.allergies?.join(", ") || "None"}
 
-Chief complaint: ${chiefComplaint}
-Provisional diagnosis: ${provisionalDx}
-
-Important: Always include a disclaimer that AI suggestions must be verified by the doctor.
+Clinical Info:
+- Chief Complaint: ${chiefComplaint}
+- Provisional Dx: ${provisionalDx}
 `;
 
       const res = await chatService.sendMessage(prompt, "en");
@@ -221,8 +340,12 @@ Important: Always include a disclaimer that AI suggestions must be verified by t
                   <FileText className="w-6 h-6" />
                 </div>
                 <div>
-                  <p className="text-2xl font-black text-gray-900">{prescriptionStats.totalPrescriptions || 0}</p>
-                  <p className="text-xs font-bold text-gray-500">Total prescriptions</p>
+                  <p className="text-2xl font-black text-gray-900">
+                    {prescriptionStats.totalPrescriptions || 0}
+                  </p>
+                  <p className="text-xs font-bold text-gray-500">
+                    Total prescriptions
+                  </p>
                 </div>
               </div>
             </CardBody>
@@ -236,8 +359,12 @@ Important: Always include a disclaimer that AI suggestions must be verified by t
                   <Activity className="w-6 h-6" />
                 </div>
                 <div>
-                  <p className="text-2xl font-black text-gray-900">{prescriptionStats.prescriptionsLast30Days || 0}</p>
-                  <p className="text-xs font-bold text-gray-500">Last 30 days</p>
+                  <p className="text-2xl font-black text-gray-900">
+                    {prescriptionStats.prescriptionsLast30Days || 0}
+                  </p>
+                  <p className="text-xs font-bold text-gray-500">
+                    Last 30 days
+                  </p>
                 </div>
               </div>
             </CardBody>
@@ -251,8 +378,12 @@ Important: Always include a disclaimer that AI suggestions must be verified by t
                   <AlertTriangle className="w-6 h-6" />
                 </div>
                 <div>
-                  <p className="text-2xl font-black text-gray-900">{missedDoses}</p>
-                  <p className="text-xs font-bold text-gray-500">Missed doses (7d)</p>
+                  <p className="text-2xl font-black text-gray-900">
+                    {missedDoses}
+                  </p>
+                  <p className="text-xs font-bold text-gray-500">
+                    Missed doses (7d)
+                  </p>
                 </div>
               </div>
             </CardBody>
@@ -260,13 +391,114 @@ Important: Always include a disclaimer that AI suggestions must be verified by t
         )}
       </div>
 
+      {/* Waiting Room & Quick Actions */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <Card className="lg:col-span-2 border-none shadow-xl shadow-gray-100/50">
+          <CardBody className="p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-black text-gray-900 flex items-center gap-2">
+                <Clock className="w-5 h-5 text-primary-600" />
+                Waiting Room
+              </h2>
+              <Badge variant="primary" className="px-3 py-1 text-xs">
+                {MOCK_WAITING_ROOM.length} Pending
+              </Badge>
+            </div>
+            <div className="space-y-3">
+              {MOCK_WAITING_ROOM.map((w) => (
+                <div
+                  key={w.id}
+                  className={cn(
+                    "flex items-center justify-between p-4 rounded-2xl border transition-all",
+                    w.urgent
+                      ? "bg-error-50/50 border-error-100"
+                      : "bg-white border-gray-100",
+                  )}>
+                  <div className="flex items-center gap-4">
+                    <div
+                      className={cn(
+                        "w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg",
+                        w.urgent
+                          ? "bg-error-100 text-error-600"
+                          : "bg-gray-100 text-gray-600",
+                      )}>
+                      {w.name.charAt(0)}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <p className="font-bold text-gray-900">{w.name}</p>
+                        {w.urgent && (
+                          <span className="px-2 py-0.5 rounded-full bg-error-100 text-error-600 text-[10px] font-black uppercase tracking-wider">
+                            Urgent
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-500 font-medium">
+                        {w.type} • Appt: {w.time}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="ghost" size="sm" className="text-xs h-9">
+                      Review File
+                    </Button>
+                    <Button size="sm" className="text-xs h-9">
+                      Start Call
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardBody>
+        </Card>
+
+        <Card className="border-none shadow-xl shadow-gray-100/50 bg-gray-900 text-white">
+          <CardBody className="p-6">
+            <h2 className="text-xl font-black mb-6 flex items-center gap-2">
+              <Zap className="w-5 h-5 text-warning-400" />
+              Quick Templates
+            </h2>
+            <div className="space-y-4">
+              <button className="w-full p-4 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/10 text-left transition-all group">
+                <p className="font-bold text-sm mb-1 group-hover:text-warning-400">
+                  Common Cold/URTI
+                </p>
+                <p className="text-[10px] text-gray-400">
+                  Saline drops, Antipyretic, Rest...
+                </p>
+              </button>
+              <button className="w-full p-4 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/10 text-left transition-all group">
+                <p className="font-bold text-sm mb-1 group-hover:text-warning-400">
+                  Hypertension Follow-up
+                </p>
+                <p className="text-[10px] text-gray-400">
+                  Amlodipine 5mg, Low salt diet...
+                </p>
+              </button>
+              <button className="w-full p-4 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/10 text-left transition-all group">
+                <p className="font-bold text-sm mb-1 group-hover:text-warning-400">
+                  Diabetes Check
+                </p>
+                <p className="text-[10px] text-gray-400">
+                  Metformin 500mg, HbA1c test...
+                </p>
+              </button>
+            </div>
+          </CardBody>
+        </Card>
+      </div>
+
       {prescriptionStats?.commonMedicines?.length > 0 && (
         <Card className="border-none shadow-xl shadow-gray-100/50">
           <CardBody className="p-6">
-            <h2 className="text-lg font-black text-gray-900 mb-3">Most prescribed medicines</h2>
+            <h2 className="text-lg font-black text-gray-900 mb-3">
+              Most prescribed medicines
+            </h2>
             <div className="space-y-2">
               {prescriptionStats.commonMedicines.map((m, i) => (
-                <div key={i} className="flex items-center justify-between p-3 rounded-xl border border-gray-100 bg-white">
+                <div
+                  key={i}
+                  className="flex items-center justify-between p-3 rounded-xl border border-gray-100 bg-white">
                   <span className="font-bold text-gray-900">{m.name}</span>
                   <span className="text-sm text-gray-500">{m.count}x</span>
                 </div>
@@ -279,15 +511,31 @@ Important: Always include a disclaimer that AI suggestions must be verified by t
       {asyncRequests.length > 0 && (
         <Card className="border-none shadow-xl shadow-gray-100/50 border-l-4 border-primary-500">
           <CardBody className="p-6">
-            <h2 className="text-lg font-black text-gray-900 mb-3">Async consultation requests (telemedicine)</h2>
-            <p className="text-sm text-gray-600 mb-4">Patients submitted symptoms/vitals for your review.</p>
+            <h2 className="text-lg font-black text-gray-900 mb-3">
+              Async consultation requests (telemedicine)
+            </h2>
+            <p className="text-sm text-gray-600 mb-4">
+              Patients submitted symptoms/vitals for your review.
+            </p>
             <div className="space-y-3">
               {asyncRequests.slice(0, 5).map((req) => (
-                <div key={req.id} className="p-4 rounded-xl border border-gray-100 bg-white">
-                  <p className="font-bold text-gray-900">{req.patientName || "Patient"} • {req.patientEmail}</p>
-                  <p className="text-sm text-gray-600 mt-1">{req.symptomsText || "—"}</p>
-                  {req.dietActivityNote && <p className="text-xs text-gray-500 mt-1">Diet/activity: {req.dietActivityNote}</p>}
-                  <p className="text-xs text-gray-400 mt-2">{new Date(req.createdAt).toLocaleString()}</p>
+                <div
+                  key={req.id}
+                  className="p-4 rounded-xl border border-gray-100 bg-white">
+                  <p className="font-bold text-gray-900">
+                    {req.patientName || "Patient"} • {req.patientEmail}
+                  </p>
+                  <p className="text-sm text-gray-600 mt-1">
+                    {req.symptomsText || "—"}
+                  </p>
+                  {req.dietActivityNote && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      Diet/activity: {req.dietActivityNote}
+                    </p>
+                  )}
+                  <p className="text-xs text-gray-400 mt-2">
+                    {new Date(req.createdAt).toLocaleString()}
+                  </p>
                 </div>
               ))}
             </div>
@@ -332,8 +580,7 @@ Important: Always include a disclaimer that AI suggestions must be verified by t
                       p.id === patient?.id
                         ? "bg-primary-50 border-primary-200"
                         : "bg-white border-gray-100 hover:bg-gray-50",
-                    )}
-                  >
+                    )}>
                     <p className="font-black text-gray-900 truncate">
                       {p.name}
                     </p>
@@ -371,13 +618,53 @@ Important: Always include a disclaimer that AI suggestions must be verified by t
                 )}
               </div>
 
-              <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {/* Health Snapshot Vitals */}
+              <div className="mt-8">
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">
+                  Patient Health Snapshot (Real-time)
+                </p>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {MOCK_VITALS.map((v, i) => (
+                    <div
+                      key={i}
+                      className={cn(
+                        "p-4 rounded-2xl border border-gray-100 transition-all hover:shadow-md",
+                        v.bg,
+                      )}>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-[10px] font-bold text-gray-500 uppercase">
+                          {v.title}
+                        </span>
+                        {v.trend === "up" ? (
+                          <Activity className="w-3 h-3 text-error-500" />
+                        ) : v.trend === "down" ? (
+                          <Activity className="w-3 h-3 text-primary-500 rotate-180" />
+                        ) : (
+                          <Activity className="w-3 h-3 text-gray-400" />
+                        )}
+                      </div>
+                      <div className="flex items-baseline gap-1">
+                        <span className={cn("text-xl font-black", v.color)}>
+                          {v.value}
+                        </span>
+                        <span className="text-[10px] font-bold text-gray-400 uppercase">
+                          {v.unit}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mt-6 grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 gap-3">
                 <div className="p-4 rounded-2xl border border-gray-100 bg-white">
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">
                     Chronic
                   </p>
                   <p className="text-sm font-black text-gray-900 mt-1">
-                    {patient?.chronic?.length ? patient.chronic.join(", ") : "—"}
+                    {patient?.chronic?.length
+                      ? patient.chronic.join(", ")
+                      : "—"}
                   </p>
                 </div>
                 <div className="p-4 rounded-2xl border border-gray-100 bg-white">
@@ -388,7 +675,7 @@ Important: Always include a disclaimer that AI suggestions must be verified by t
                     {timeline.filter((t) => t.type === "symptom").length}
                   </p>
                 </div>
-                <div className="p-4 rounded-2xl border border-gray-100 bg-white">
+                <div className="p-4 rounded-2xl border border-gray-100 bg-white xs:col-span-2 sm:col-span-1">
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">
                     Rx (local)
                   </p>
@@ -431,8 +718,7 @@ Important: Always include a disclaimer that AI suggestions must be verified by t
                   {timeline.map((item, idx) => (
                     <div
                       key={idx}
-                      className="p-4 rounded-2xl border border-gray-100 bg-white flex items-start justify-between gap-4"
-                    >
+                      className="p-4 rounded-2xl border border-gray-100 bg-white flex items-start justify-between gap-4">
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
                           <div
@@ -441,8 +727,7 @@ Important: Always include a disclaimer that AI suggestions must be verified by t
                               item.type === "rx"
                                 ? "bg-primary-50 text-primary-600"
                                 : "bg-gray-100 text-gray-700",
-                            )}
-                          >
+                            )}>
                             {item.type === "rx" ? (
                               <ClipboardList className="w-4 h-4" />
                             ) : (
@@ -480,10 +765,9 @@ Important: Always include a disclaimer that AI suggestions must be verified by t
       <Modal
         isOpen={isAiOpen}
         onClose={() => setIsAiOpen(false)}
-        title="AI-assisted prescription draft (MVP)"
-        size="xl"
-      >
-        <div className="space-y-4">
+        title="Advanced Prescription TUI"
+        size="xl">
+        <div className="space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
               label="Chief complaint"
@@ -499,30 +783,94 @@ Important: Always include a disclaimer that AI suggestions must be verified by t
             />
           </div>
 
-          <div className="flex gap-3 justify-end">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-black text-gray-900 uppercase tracking-wider">
+                Prescribed Medicines
+              </h3>
+              <Button
+                size="sm"
+                onClick={handleAddItem}
+                variant="outline"
+                className="h-8">
+                <Activity className="w-3.5 h-3.5 mr-1" />
+                Add medicine
+              </Button>
+            </div>
+
+            <div className="space-y-3">
+              {prescriptionItems.map((item, idx) => (
+                <div
+                  key={idx}
+                  className="p-4 rounded-2xl border border-gray-100 bg-gray-50/50 space-y-3">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex-1">
+                      <Input
+                        placeholder="Medicine name (e.g. Paracetamol)"
+                        value={item.name}
+                        onChange={(e) =>
+                          handleUpdateItem(idx, "name", e.target.value)
+                        }
+                        className="bg-white border-none shadow-sm h-10"
+                      />
+                    </div>
+                    {prescriptionItems.length > 1 && (
+                      <button
+                        onClick={() => handleRemoveItem(idx)}
+                        className="p-2 text-error-500 hover:bg-error-50 rounded-lg transition-colors">
+                        <AlertTriangle className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-3 gap-3">
+                    <Input
+                      placeholder="Dose (e.g. 500mg)"
+                      value={item.dose}
+                      onChange={(e) =>
+                        handleUpdateItem(idx, "dose", e.target.value)
+                      }
+                      className="bg-white border-none shadow-sm h-10 text-xs"
+                    />
+                    <Input
+                      placeholder="Freq (e.g. 1-0-1)"
+                      value={item.frequency}
+                      onChange={(e) =>
+                        handleUpdateItem(idx, "frequency", e.target.value)
+                      }
+                      className="bg-white border-none shadow-sm h-10 text-xs"
+                    />
+                    <Input
+                      placeholder="Dur (e.g. 5 days)"
+                      value={item.duration}
+                      onChange={(e) =>
+                        handleUpdateItem(idx, "duration", e.target.value)
+                      }
+                      className="bg-white border-none shadow-sm h-10 text-xs"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex gap-3 justify-end pt-4 border-t border-gray-100">
             <Button
               onClick={handleGenerateDraft}
               loading={aiLoading}
-              className="gap-2"
-            >
+              variant="outline"
+              className="gap-2">
               <Wand2 className="w-4 h-4" />
-              Generate draft
+              Fill with AI
             </Button>
-            <Button variant="secondary" onClick={() => setIsAiOpen(false)}>
-              Close
+            <Button onClick={handleSavePrescription}>Save Prescription</Button>
+            <Button variant="ghost" onClick={() => setIsAiOpen(false)}>
+              Cancel
             </Button>
           </div>
 
-          <textarea
-            className="w-full p-4 rounded-2xl border-2 border-gray-100 focus:border-primary-500 focus:ring-0 transition-all min-h-[260px] resize-none text-sm"
-            placeholder="AI draft will appear here…"
-            value={aiDraft}
-            onChange={(e) => setAiDraft(e.target.value)}
-          />
-
-          <p className="text-xs text-gray-400">
-            Always verify before prescribing. This draft is AI-generated and may
-            be incorrect.
+          <p className="text-[10px] text-gray-400 text-center italic">
+            This TUI allows structured drafting. AI assists in filling fields
+            based on complaints. Always verify before finalizing.
           </p>
         </div>
       </Modal>
@@ -531,4 +879,3 @@ Important: Always include a disclaimer that AI suggestions must be verified by t
 };
 
 export default DoctorDashboard;
-

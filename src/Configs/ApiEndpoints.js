@@ -20,6 +20,24 @@ const getBaseUrl = () => {
 
 export const BASE_URL = getBaseUrl();
 
+const getOcrServiceBaseUrl = () => {
+  const hostname = window.location.hostname;
+  const isLocal =
+    hostname === "localhost" ||
+    hostname === "127.0.0.1" ||
+    hostname.startsWith("192.168.") ||
+    hostname.startsWith("10.") ||
+    hostname.endsWith(".local");
+
+  // Local dev uses Vite proxy to FastAPI at http://localhost:8000
+  if (isLocal) return "/ocr-api";
+
+  // Production can be configured via env (otherwise OCR service is disabled)
+  return import.meta?.env?.VITE_OCR_SERVICE_URL || "";
+};
+
+export const OCR_SERVICE_BASE_URL = getOcrServiceBaseUrl();
+
 const API = {
   // Authentication
   GOOGLE_LOGIN: `${BASE_URL}/auth/google_login.php`,
@@ -53,6 +71,11 @@ const API = {
   DOCTOR_PATIENT_TIMELINE: `${BASE_URL}/health/doctor_patient_timeline.php`,
   PRESCRIPTION_STATS: `${BASE_URL}/health/prescription_stats.php`,
   AI_DIET_SUGGESTION: `${BASE_URL}/api/ai_diet_suggestion.php`,
+  OCR_HISTORY_LIST: `${BASE_URL}/health/ocr_history_list.php`,
+  OCR_HISTORY_DELETE: `${BASE_URL}/health/ocr_history_delete.php`,
+
+  // Optional Python OCR microservice (FastAPI/EasyOCR)
+  OCR_UPLOAD: OCR_SERVICE_BASE_URL ? `${OCR_SERVICE_BASE_URL}/upload` : null,
 };
 
 export default API;

@@ -19,6 +19,12 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ""),
       },
+      // Optional Python OCR microservice (FastAPI) used by PrescriptionScan "Advanced OCR"
+      "/ocr-api": {
+        target: "http://localhost:8000",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/ocr-api/, ""),
+      },
     },
   },
 });

@@ -8,6 +8,15 @@ import {
   Mail,
   BadgeCheck,
   Filter,
+  Activity,
+  Server,
+  Terminal,
+  Cpu,
+  Globe,
+  Send,
+  Bell,
+  ListRestart,
+  Settings,
 } from "lucide-react";
 import { Card, CardBody } from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
@@ -23,6 +32,44 @@ const MOCK_USERS = [
   { id: 5, name: "Dr. James Lee", email: "james@example.com", role: "doctor" },
   { id: 6, name: "Emma Brown", email: "emma@example.com", role: "user" },
   { id: 7, name: "Admin User", email: "admin@example.com", role: "admin" },
+];
+
+const MOCK_HEALTH = [
+  { label: "API Server", status: "online", latency: "45ms", load: "12%" },
+  { label: "Database", status: "online", latency: "12ms", load: "8%" },
+  { label: "AI Service", status: "online", latency: "850ms", load: "22%" },
+  { label: "Auth Provider", status: "online", latency: "120ms", load: "5%" },
+];
+
+const MOCK_ACTIVITY = [
+  {
+    id: 1,
+    action: "User Registered",
+    user: "Emma Brown",
+    time: "2 mins ago",
+    type: "user",
+  },
+  {
+    id: 2,
+    action: "Role Changed",
+    user: "Dr. James Lee",
+    time: "15 mins ago",
+    type: "system",
+  },
+  {
+    id: 3,
+    action: "Backup Created",
+    user: "System",
+    time: "1 hour ago",
+    type: "system",
+  },
+  {
+    id: 4,
+    action: "Security Alert",
+    user: "Unknown IP",
+    time: "3 hours ago",
+    type: "alert",
+  },
 ];
 
 const AdminPanel = () => {
@@ -59,7 +106,9 @@ const AdminPanel = () => {
     setAssigningId(targetUser.id);
     setTimeout(() => {
       setUsers((prev) =>
-        prev.map((u) => (u.id === targetUser.id ? { ...u, role: "doctor" } : u)),
+        prev.map((u) =>
+          u.id === targetUser.id ? { ...u, role: "doctor" } : u,
+        ),
       );
       setAssigningId(null);
       toast.success(`Assigned doctor role to ${targetUser.name}`);
@@ -108,7 +157,7 @@ const AdminPanel = () => {
             Admin Panel
           </h1>
           <p className="text-gray-500 font-medium mt-1">
-            Manage users and assign doctor roles
+            Manage users and monitor system health
           </p>
         </div>
       </div>
@@ -118,8 +167,12 @@ const AdminPanel = () => {
           <CardBody className="p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Users</p>
-                <p className="text-2xl font-black text-gray-900 mt-1">{stats.total}</p>
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                  Total Users
+                </p>
+                <p className="text-2xl font-black text-gray-900 mt-1">
+                  {stats.total}
+                </p>
               </div>
               <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center">
                 <Users className="w-6 h-6 text-gray-500" />
@@ -131,8 +184,12 @@ const AdminPanel = () => {
           <CardBody className="p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Doctors</p>
-                <p className="text-2xl font-black text-primary-600 mt-1">{stats.doctors}</p>
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                  Doctors
+                </p>
+                <p className="text-2xl font-black text-primary-600 mt-1">
+                  {stats.doctors}
+                </p>
               </div>
               <div className="w-12 h-12 rounded-xl bg-primary-50 flex items-center justify-center">
                 <Stethoscope className="w-6 h-6 text-primary-600" />
@@ -144,8 +201,12 @@ const AdminPanel = () => {
           <CardBody className="p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Regular Users</p>
-                <p className="text-2xl font-black text-gray-900 mt-1">{stats.users}</p>
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                  Regular Users
+                </p>
+                <p className="text-2xl font-black text-gray-900 mt-1">
+                  {stats.users}
+                </p>
               </div>
               <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center">
                 <UserCheck className="w-6 h-6 text-gray-500" />
@@ -157,8 +218,12 @@ const AdminPanel = () => {
           <CardBody className="p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Admins</p>
-                <p className="text-2xl font-black text-gray-900 mt-1">{stats.admins}</p>
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                  Admins
+                </p>
+                <p className="text-2xl font-black text-gray-900 mt-1">
+                  {stats.admins}
+                </p>
               </div>
               <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center">
                 <Shield className="w-6 h-6 text-gray-500" />
@@ -168,6 +233,131 @@ const AdminPanel = () => {
         </Card>
       </div>
 
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2 space-y-6">
+          <Card className="border-none shadow-xl shadow-gray-100/50">
+            <CardBody className="p-6">
+              <div className="flex items-center justify-between mb-8">
+                <h2 className="text-xl font-black text-gray-900 flex items-center gap-2">
+                  <Server className="w-5 h-5 text-primary-600" />
+                  System Monitoring
+                </h2>
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-success-50 text-success-700 text-[10px] font-black uppercase">
+                  <div className="w-2 h-2 rounded-full bg-success-500 animate-pulse" />
+                  Normal
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {MOCK_HEALTH.map((h, i) => (
+                  <div
+                    key={i}
+                    className="p-4 rounded-2xl border border-gray-100 bg-gray-50/50 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-white border border-gray-100 flex items-center justify-center shadow-sm">
+                        {h.label.includes("AI") ? (
+                          <Cpu className="w-5 h-5 text-indigo-500" />
+                        ) : (
+                          <Settings className="w-5 h-5 text-gray-500" />
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-gray-900">
+                          {h.label}
+                        </p>
+                        <p className="text-xs text-gray-500">{h.latency}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs font-black text-primary-600 uppercase tracking-wider">
+                        {h.load} Load
+                      </p>
+                      <p className="text-[10px] text-success-600 font-bold mt-0.5">
+                        {h.status}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-8 p-4 rounded-2xl bg-gray-900 text-white font-mono text-xs overflow-hidden">
+                <div className="flex items-center gap-2 mb-2 text-gray-500">
+                  <Terminal className="w-3 h-3" />
+                  <span>logs.stdout</span>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-success-400">[info] DB cluster-01 ok</p>
+                  <p className="text-indigo-400">[ai] prompt:842ms</p>
+                  <p className="text-gray-400">[net] GET /api/v1/users 200</p>
+                </div>
+              </div>
+            </CardBody>
+          </Card>
+
+          <Card className="border-none shadow-xl shadow-gray-100/50 bg-gradient-to-br from-primary-600 to-indigo-700 text-white">
+            <CardBody className="p-6">
+              <div className="flex items-center gap-2 mb-6">
+                <Globe className="w-5 h-5 text-primary-200" />
+                <h2 className="text-xl font-black">Broadcast</h2>
+              </div>
+              <div className="space-y-4">
+                <textarea
+                  placeholder="Broadcast message..."
+                  className="w-full p-4 rounded-2xl bg-white/10 border border-white/20 text-white placeholder:text-primary-200 focus:outline-none focus:ring-2 focus:ring-white/30 resize-none h-24"
+                />
+                <Button className="w-full bg-white text-primary-600 hover:bg-primary-50 border-none shadow-lg gap-2">
+                  <Send className="w-4 h-4" />
+                  Broadcast
+                </Button>
+              </div>
+            </CardBody>
+          </Card>
+        </div>
+
+        <div>
+          <Card className="border-none shadow-xl shadow-gray-100/50 h-full">
+            <CardBody className="p-6">
+              <h2 className="text-lg font-black text-gray-900 flex items-center gap-2 mb-6">
+                <ListRestart className="w-5 h-5 text-primary-600" />
+                Activity
+              </h2>
+              <div className="space-y-6 relative before:absolute before:left-[19px] before:top-2 before:bottom-2 before:w-px before:bg-gray-100">
+                {MOCK_ACTIVITY.map((act) => (
+                  <div key={act.id} className="relative pl-10">
+                    <div
+                      className={cn(
+                        "absolute left-0 top-1 w-10 h-10 rounded-xl flex items-center justify-center border-4 border-white z-10",
+                        act.type === "alert"
+                          ? "bg-error-50 text-error-600"
+                          : act.type === "user"
+                            ? "bg-success-50 text-success-600"
+                            : "bg-primary-50 text-primary-600",
+                      )}>
+                      {act.type === "alert" ? (
+                        <BadgeCheck className="w-4 h-4 rotate-180" />
+                      ) : act.type === "user" ? (
+                        <Users className="w-4 h-4" />
+                      ) : (
+                        <Terminal className="w-4 h-4" />
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-sm font-black text-gray-900">
+                        {act.action}
+                      </p>
+                      <p className="text-xs text-gray-500 font-medium">
+                        {act.user}
+                      </p>
+                      <p className="text-[10px] text-gray-400 font-bold mt-1 uppercase">
+                        {act.time}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardBody>
+          </Card>
+        </div>
+      </div>
+
       <Card className="border-none shadow-xl shadow-gray-100/50">
         <CardBody className="p-6">
           <div className="flex flex-col sm:flex-row gap-4">
@@ -175,7 +365,7 @@ const AdminPanel = () => {
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search by name or email..."
+                placeholder="Search users..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="input pl-11"
@@ -203,76 +393,75 @@ const AdminPanel = () => {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50/80">
-                  <th className="text-left py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider">User</th>
-                  <th className="text-left py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider">Email</th>
-                  <th className="text-left py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider">Role</th>
-                  <th className="text-right py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider">Actions</th>
+                  <th className="text-left py-4 px-3 sm:px-6 text-[10px] sm:text-xs font-bold text-gray-500 uppercase">
+                    User
+                  </th>
+                  <th className="text-left py-4 px-3 sm:px-6 text-[10px] sm:text-xs font-bold text-gray-500 uppercase">
+                    Email
+                  </th>
+                  <th className="text-left py-4 px-3 sm:px-6 text-[10px] sm:text-xs font-bold text-gray-500 uppercase">
+                    Role
+                  </th>
+                  <th className="text-right py-4 px-3 sm:px-6 text-[10px] sm:text-xs font-bold text-gray-500 uppercase">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {filteredUsers.length === 0 ? (
-                  <tr>
-                    <td colSpan={4} className="py-16 text-center text-gray-500 font-medium">
-                      No users match your search.
+                {filteredUsers.map((u) => (
+                  <tr
+                    key={u.id}
+                    className="hover:bg-gray-50/50 transition-colors">
+                    <td className="py-4 px-3 sm:px-6">
+                      <div className="flex items-center gap-2 sm:gap-3">
+                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-primary-100 flex items-center justify-center text-primary-600 font-bold">
+                          {u.name.charAt(0)}
+                        </div>
+                        <span className="font-bold text-gray-900">
+                          {u.name}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="py-4 px-3 sm:px-6">
+                      <span className="flex items-center gap-2 text-gray-600">
+                        <Mail className="w-3 h-3 sm:w-4 sm:h-4 text-gray-400" />
+                        {u.email}
+                      </span>
+                    </td>
+                    <td className="py-4 px-3 sm:px-6">
+                      {getRoleBadge(u.role)}
+                    </td>
+                    <td className="py-4 px-3 sm:px-6 text-right">
+                      {u.role === "admin" ? (
+                        <span className="text-xs text-gray-400 font-medium">
+                          —
+                        </span>
+                      ) : u.role === "doctor" ? (
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          disabled={assigningId === u.id}
+                          onClick={() => handleRemoveDoctor(u)}
+                          className="text-error-600 border-error-200 hover:bg-error-50 text-xs h-auto py-1.5">
+                          Remove
+                        </Button>
+                      ) : (
+                        <Button
+                          size="sm"
+                          disabled={assigningId === u.id}
+                          onClick={() => handleAssignDoctor(u)}
+                          className="text-xs h-auto py-1.5">
+                          {assigningId === u.id ? "..." : "Assign"}
+                        </Button>
+                      )}
                     </td>
                   </tr>
-                ) : (
-                  filteredUsers.map((u) => (
-                    <tr key={u.id} className="hover:bg-gray-50/50 transition-colors">
-                      <td className="py-4 px-6">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-xl bg-primary-100 flex items-center justify-center text-primary-600 font-bold">
-                            {u.name.charAt(0)}
-                          </div>
-                          <span className="font-bold text-gray-900">{u.name}</span>
-                        </div>
-                      </td>
-                      <td className="py-4 px-6">
-                        <span className="flex items-center gap-2 text-gray-600">
-                          <Mail className="w-4 h-4 text-gray-400" />
-                          {u.email}
-                        </span>
-                      </td>
-                      <td className="py-4 px-6">{getRoleBadge(u.role)}</td>
-                      <td className="py-4 px-6 text-right">
-                        {u.role === "admin" ? (
-                          <span className="text-xs text-gray-400 font-medium">—</span>
-                        ) : u.role === "doctor" ? (
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            disabled={assigningId === u.id}
-                            onClick={() => handleRemoveDoctor(u)}
-                            className="text-error-600 border-error-200 hover:bg-error-50">
-                            {assigningId === u.id ? "Updating..." : "Remove doctor"}
-                          </Button>
-                        ) : (
-                          <Button
-                            size="sm"
-                            disabled={assigningId === u.id}
-                            onClick={() => handleAssignDoctor(u)}
-                            className="gap-2">
-                            {assigningId === u.id ? "Assigning..." : (
-                              <>
-                                <BadgeCheck className="w-4 h-4" />
-                                Assign doctor
-                              </>
-                            )}
-                          </Button>
-                        )}
-                      </td>
-                    </tr>
-                  ))
-                )}
+                ))}
               </tbody>
             </table>
           </div>
         </CardBody>
       </Card>
-
-      <p className="text-xs text-gray-400 text-center">
-        UI only — user list is mock data. Connect your API to load real users and persist role changes.
-      </p>
     </div>
   );
 };

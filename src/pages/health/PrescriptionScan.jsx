@@ -5,7 +5,16 @@ import { Card, CardBody } from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import toast from "react-hot-toast";
-import { Camera, FileText, ScanLine, Save, Trash2, Wand2, AlertTriangle, Loader2 } from "lucide-react";
+import {
+  Camera,
+  FileText,
+  ScanLine,
+  Save,
+  Trash2,
+  Wand2,
+  AlertTriangle,
+  Loader2,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useHealthStore } from "@/store/healthStore";
 import { useAuthStore } from "@/store/authStore";
@@ -54,25 +63,43 @@ function parsePrescriptionText(text) {
 
 const PrescriptionScan = () => {
   const { user } = useAuthStore();
-  const { addPrescription, prescriptions, removePrescription, fetchPrescriptions } = useHealthStore();
-  useEffect(() => { fetchPrescriptions(); }, [fetchPrescriptions]);
+  const {
+    addPrescription,
+    prescriptions,
+    removePrescription,
+    fetchPrescriptions,
+  } = useHealthStore();
   const [imageUrl, setImageUrl] = useState(null);
+  const [imageFile, setImageFile] = useState(null);
   const [rawText, setRawText] = useState("");
   const [isScanning, setIsScanning] = useState(false);
   const [isAiParsing, setIsAiParsing] = useState(false);
   const [note, setNote] = useState("");
   const [aiResult, setAiResult] = useState(null);
+  const [ocrHistory, setOcrHistory] = useState([]);
+  const [isHistoryLoading, setIsHistoryLoading] = useState(false);
 
   const parsed = useMemo(() => {
-    if (aiResult?.meds?.length) return { lines: rawText.split("\n").filter(Boolean), meds: aiResult.meds };
+    if (aiResult?.meds?.length)
+      return {
+        lines: rawText.split("\n").filter(Boolean),
+        meds: aiResult.meds,
+      };
     return parsePrescriptionText(rawText);
   }, [rawText, aiResult]);
 
   const patientHistory = useMemo(() => {
     const conditions = user?.conditions;
-    const meds = prescriptions.flatMap((p) => (p.meds || []).map((m) => m.name)).filter(Boolean);
+    const meds = prescriptions
+      .flatMap((p) => (p.meds || []).map((m) => m.name))
+      .filter(Boolean);
     return {
-      conditions: typeof conditions === "string" ? conditions : conditions ? JSON.stringify(conditions) : "",
+      conditions:
+        typeof conditions === "string"
+          ? conditions
+          : conditions
+            ? JSON.stringify(conditions)
+            : "",
       currentMeds: meds.slice(0, 20).join(", "),
     };
   }, [user?.conditions, prescriptions]);
@@ -81,8 +108,48 @@ const PrescriptionScan = () => {
     if (!file) return;
     const url = URL.createObjectURL(file);
     setImageUrl(url);
+    setImageFile(file);
     setRawText("");
     toast.success("Image loaded. Click Scan to extract text.");
+  };
+
+  const fetchOcrHistory = async () => {
+    setIsHistoryLoading(true);
+    try {
+      const response = await axios.get(API.OCR_HISTORY_LIST, {
+        withCredentials: true,
+      });
+      if (response.data?.status === "success") {
+        setOcrHistory(response.data.data || []);
+      }
+    } catch (err) {
+      console.error("Failed to fetch OCR history", err);
+    } finally {
+      setIsHistoryLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchPrescriptions();
+    fetchOcrHistory();
+  }, [fetchPrescriptions]);
+
+  const handleDeleteHistory = async (id) => {
+    try {
+      const response = await axios.post(
+        API.OCR_HISTORY_DELETE,
+        { id },
+        { withCredentials: true },
+      );
+      if (response.data?.status === "success") {
+        toast.success("History item deleted.");
+        fetchOcrHistory();
+      } else {
+        toast.error(response.data?.message || "Delete failed.");
+      }
+    } catch (err) {
+      toast.error("Error deleting history.");
+    }
   };
 
   const handleScan = async () => {
@@ -119,7 +186,11 @@ const PrescriptionScan = () => {
     setIsAiParsing(true);
     setAiResult(null);
     try {
-      const r = await axios.post(API.AI_PARSE_PRESCRIPTION, { ocrText: rawText, patientHistory }, { withCredentials: true });
+      const r = await axios.post(
+        API.AI_PARSE_PRESCRIPTION,
+        { ocrText: rawText, patientHistory },
+        { withCredentials: true },
+      );
       if (r.data?.status === "success") {
         setAiResult({
           meds: r.data.meds || [],
@@ -152,6 +223,7 @@ const PrescriptionScan = () => {
     toast.success("Prescription saved.");
     setNote("");
     setAiResult(null);
+    fetchOcrHistory();
   };
 
   return (
@@ -161,7 +233,8 @@ const PrescriptionScan = () => {
           Prescription Scan
         </h1>
         <p className="text-gray-500 font-medium mt-1">
-          Scan a handwritten or digital prescription and extract medicines (MVP).
+          Scan a handwritten or digital prescription and extract medicines
+          (MVP).
         </p>
       </div>
 
@@ -208,8 +281,7 @@ const PrescriptionScan = () => {
                   <Button
                     onClick={handleScan}
                     loading={isScanning}
-                    className="gap-2 flex-1"
-                  >
+                    className="gap-2 flex-1">
                     <ScanLine className="w-4 h-4" />
                     Scan
                   </Button>
@@ -217,21 +289,27 @@ const PrescriptionScan = () => {
                     variant="secondary"
                     onClick={() => {
                       setImageUrl(null);
+                      setImageFile(null);
                       setRawText("");
                       setAiResult(null);
                       toast.success("Cleared.");
                     }}
-                    className="gap-2"
-                  >
+                    className="gap-2">
                     <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>
-                {rawText.trim() && (
-                  <Button variant="secondary" onClick={handleAiParse} loading={isAiParsing} className="w-full gap-2">
-                    {isAiParsing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
-                    Parse with AI & check history
-                  </Button>
-                )}
+                <Button
+                  variant="secondary"
+                  onClick={handleAiParse}
+                  loading={isAiParsing}
+                  className="w-full gap-2">
+                  {isAiParsing ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Wand2 className="w-4 h-4" />
+                  )}
+                  Parse with AI & check history
+                </Button>
               </div>
             </CardBody>
           </Card>
@@ -271,10 +349,13 @@ const PrescriptionScan = () => {
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
                   {typeof aiResult?.clarityScore === "number" && (
-                    <span className={cn(
-                      "text-xs font-bold px-3 py-1 rounded-full border",
-                      aiResult.clarityScore >= 70 ? "bg-success-50 text-success-700 border-success-100" : "bg-warning-50 text-warning-700 border-warning-100",
-                    )}>
+                    <span
+                      className={cn(
+                        "text-xs font-bold px-3 py-1 rounded-full border",
+                        aiResult.clarityScore >= 70
+                          ? "bg-success-50 text-success-700 border-success-100"
+                          : "bg-warning-50 text-warning-700 border-warning-100",
+                      )}>
                       Clarity: {aiResult.clarityScore}%
                     </span>
                   )}
@@ -284,8 +365,7 @@ const PrescriptionScan = () => {
                       parsed.meds.length
                         ? "bg-success-50 text-success-700 border-success-100"
                         : "bg-gray-50 text-gray-600 border-gray-100",
-                    )}
-                  >
+                    )}>
                     {parsed.meds.length} medicines found
                   </span>
                 </div>
@@ -305,7 +385,9 @@ const PrescriptionScan = () => {
               <CardBody className="p-6">
                 <div className="flex items-center gap-2 mb-2">
                   <AlertTriangle className="w-5 h-5 text-warning-700" />
-                  <h3 className="font-black text-warning-800">Warnings (check against your history)</h3>
+                  <h3 className="font-black text-warning-800">
+                    Warnings (check against your history)
+                  </h3>
                 </div>
                 <ul className="space-y-1 text-sm text-warning-800">
                   {aiResult.warnings.map((w, i) => (
@@ -318,10 +400,14 @@ const PrescriptionScan = () => {
           {aiResult?.alternatives?.length > 0 && (
             <Card className="border-none shadow-xl shadow-gray-100/50">
               <CardBody className="p-6">
-                <h3 className="font-bold text-gray-900 mb-2">AI suggestions (unclear names)</h3>
+                <h3 className="font-bold text-gray-900 mb-2">
+                  AI suggestions (unclear names)
+                </h3>
                 <ul className="text-sm text-gray-600 space-y-1">
                   {aiResult.alternatives.map((a, i) => (
-                    <li key={i}><strong>{a.for}</strong> → {a.suggested}</li>
+                    <li key={i}>
+                      <strong>{a.for}</strong> → {a.suggested}
+                    </li>
                   ))}
                 </ul>
               </CardBody>
@@ -341,8 +427,7 @@ const PrescriptionScan = () => {
                   {parsed.meds.map((m, idx) => (
                     <div
                       key={idx}
-                      className="p-4 rounded-2xl border border-gray-100 bg-white flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
-                    >
+                      className="p-4 rounded-2xl border border-gray-100 bg-white flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                       <div>
                         <p className="font-black text-gray-900">{m.name}</p>
                         <p className="text-xs text-gray-400 mt-1">{m.raw}</p>
@@ -385,8 +470,7 @@ const PrescriptionScan = () => {
                   {prescriptions.slice(0, 5).map((p) => (
                     <div
                       key={p.id}
-                      className="p-4 rounded-2xl border border-gray-100 bg-white"
-                    >
+                      className="p-4 rounded-2xl border border-gray-100 bg-white">
                       <div className="flex items-start justify-between gap-4">
                         <div>
                           <p className="font-black text-gray-900">
@@ -399,8 +483,7 @@ const PrescriptionScan = () => {
                         </div>
                         <button
                           onClick={() => removePrescription(p.id)}
-                          className="text-xs font-bold text-error-700 hover:bg-error-50 px-3 py-2 rounded-xl transition-colors"
-                        >
+                          className="text-xs font-bold text-error-700 hover:bg-error-50 px-3 py-2 rounded-xl transition-colors">
                           Delete
                         </button>
                       </div>
@@ -409,8 +492,58 @@ const PrescriptionScan = () => {
                 </div>
               )}
               <p className="text-xs text-gray-400 mt-3">
-                Saved to your account. Use Adherence to set reminders for these medicines.
+                Saved to your account. Use Adherence to set reminders for these
+                medicines.
               </p>
+            </CardBody>
+          </Card>
+
+          <Card className="border-none shadow-xl shadow-gray-100/50">
+            <CardBody className="p-6 sm:p-8">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-bold text-gray-900">OCR History</h2>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={fetchOcrHistory}
+                  loading={isHistoryLoading}>
+                  Refresh
+                </Button>
+              </div>
+              {ocrHistory.length === 0 ? (
+                <p className="text-sm text-gray-500 font-medium">
+                  No OCR history found.
+                </p>
+              ) : (
+                <div className="space-y-4">
+                  {ocrHistory.map((item) => (
+                    <div
+                      key={item.id}
+                      className="p-4 rounded-2xl border border-gray-100 bg-white group relative">
+                      <div className="flex justify-between items-start gap-4">
+                        <div
+                          className="flex-1 cursor-pointer hover:opacity-70"
+                          onClick={() => {
+                            setRawText(item.raw_text || "");
+                            toast.success("Loaded from history.");
+                          }}>
+                          <p className="text-xs font-bold text-gray-400 mb-1">
+                            {new Date(item.created_at).toLocaleString()}
+                          </p>
+                          <p className="text-sm text-gray-700 line-clamp-2">
+                            {item.raw_text || "No text extracted"}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => handleDeleteHistory(item.id)}
+                          className="p-2 text-gray-400 hover:text-error-600 transition-colors">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardBody>
           </Card>
         </div>
@@ -420,4 +553,3 @@ const PrescriptionScan = () => {
 };
 
 export default PrescriptionScan;
-

@@ -33,12 +33,25 @@ $apiKey = getenv("GEMINI_API_KEY") ?: $_ENV["GEMINI_API_KEY"] ?? $_SERVER["GEMIN
           getenv("VITE_GEMINI_API_KEY") ?: $_ENV["VITE_GEMINI_API_KEY"] ?? $_SERVER["VITE_GEMINI_API_KEY"] ?? "";
 
 if (empty($apiKey)) {
+    $rootEnv = __DIR__ . '/../../.env';
+    $ocrEnv = __DIR__ . '/../ocr_service/.env';
     $debug = [
-        'env_file_found' => defined('ENV_LOADED') ? ENV_LOADED : 'unknown',
-        'getenv' => getenv("GEMINI_API_KEY") ? 'found' : 'missing',
-        '$_ENV' => isset($_ENV["GEMINI_API_KEY"]) ? 'found' : 'missing',
-        '$_SERVER' => isset($_SERVER["GEMINI_API_KEY"]) ? 'found' : 'missing',
-        'path' => __DIR__
+        'env_loader_status' => defined('ENV_LOADED') ? 'active' : 'not_found',
+        'paths' => [
+            'root_env' => [
+                'path' => $rootEnv,
+                'exists' => file_exists($rootEnv),
+                'readable' => is_readable($rootEnv)
+            ],
+            'ocr_env' => [
+                'path' => $ocrEnv,
+                'exists' => file_exists($ocrEnv),
+                'readable' => is_readable($ocrEnv)
+            ]
+        ],
+        'env_keys' => array_keys($_ENV),
+        'server_keys' => array_keys($_SERVER),
+        'check_dir' => __DIR__
     ];
     echo json_encode(['status' => 'error', 'message' => 'Gemini API key not configured', 'debug' => $debug]);
     exit;

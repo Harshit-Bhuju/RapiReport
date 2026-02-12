@@ -9,9 +9,11 @@ import {
   CheckCircle2,
   FileText,
   LineChart,
+  Brain,
+  UploadCloud,
   ArrowRight,
   Sparkles,
-  Zap,
+  Activity,
 } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import Button from "@/components/ui/Button";
@@ -52,7 +54,7 @@ const HeroSection = () => {
                 {t("hero.badge")}
               </motion.div>
 
-              <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-gray-900 leading-[1.1] mb-8 tracking-tight text-glow">
+              <h1 className="text-5xl sm:text-6xl md:text-7xl font-black text-gray-900 leading-[1.05] mb-10 tracking-tight text-glow">
                 {t("hero.title")
                   .split(" ")
                   .map((word, i) => (

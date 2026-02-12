@@ -17,6 +17,7 @@ import {
   ArrowRight,
   Sparkles,
   Brain,
+  Zap,
 } from "lucide-react";
 import logoIcon from "@/assets/logos/rapireport_logo.png";
 
@@ -219,7 +220,7 @@ const Auth = () => {
                   </span>
                 </div>
                 <div className="flex items-center gap-4 py-3 px-6 rounded-2xl bg-primary-50/50 border border-primary-100 w-full sm:w-auto">
-                  <Activity className="w-5 h-5 text-primary-600" />
+                  <Zap className="w-5 h-5 text-primary-600" />
                   <span className="text-xs font-black text-primary-700 uppercase tracking-widest">
                     Encrypted Data
                   </span>

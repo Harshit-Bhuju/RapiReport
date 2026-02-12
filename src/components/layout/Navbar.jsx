@@ -66,7 +66,7 @@ const Navbar = () => {
               <Link
                 key={link.name}
                 to={link.path}
-                className="text-sm font-medium text-gray-600 hover:text-primary-600 transition-colors">
+                className="text-lg font-bold text-gray-700 hover:text-blue-600 transition-colors font-outfit">
                 {link.name}
               </Link>
             ))}

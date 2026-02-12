@@ -1,14 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useAuthStore } from "@/store/authStore";
-import {
-  CalendarCheck,
-  Clock,
-  Activity,
-  Coffee,
-  Moon,
-  Sun,
-} from "lucide-react";
+import { CalendarCheck, Clock, Coffee, Moon, Sun } from "lucide-react";
 import { Card, CardBody } from "@/components/ui/Card";
 import { DailyRoutineCard } from "@/components/ui/HealthInsightCard";
 import { FamilyMemberCard } from "@/components/ui/FamilyMemberCard";
@@ -281,7 +274,7 @@ const HealthPlanner = () => {
                 </div>
               </div>
               <p className="text-center text-xs font-bold text-gray-500">
-                {t("planner.activitiesCompleted")}
+                {t("planner.activitiesCompleted") || "Progress"}
               </p>
             </CardBody>
           </Card>

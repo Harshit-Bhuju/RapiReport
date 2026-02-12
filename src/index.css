@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+Devanagari:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800;900&family=Noto+Sans+Devanagari:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -56,28 +56,25 @@
   }
 
   .container-custom {
-    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+    @apply max-w-7xl mx-auto px-6 sm:px-8 lg:px-12;
   }
 }
 
 @layer utilities {
   .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary-600 to-indigo-600;
-  }
-
-  .glass-morphism {
-    @apply bg-white/70 backdrop-blur-xl border border-white/20 shadow-2xl;
+    @apply text-primary-600;
   }
 
   .mesh-gradient {
-    background-color: #f8fafc;
-    background-image:
-      radial-gradient(at 0% 0%, hsla(217, 100%, 97%, 1) 0, transparent 50%),
-      radial-gradient(at 50% 0%, hsla(215, 100%, 95%, 1) 0, transparent 50%),
-      radial-gradient(at 100% 0%, hsla(213, 100%, 97%, 1) 0, transparent 50%),
-      radial-gradient(at 40% 40%, hsla(212, 100%, 96%, 1) 0, transparent 40%),
-      radial-gradient(at 90% 80%, hsla(211, 100%, 95%, 1) 0, transparent 50%),
-      radial-gradient(at 10% 90%, hsla(210, 100%, 97%, 1) 0, transparent 50%);
+    background-color: #ffffff;
+  }
+
+  .mesh-gradient-dark {
+    background-color: #020617;
+  }
+
+  .text-glow {
+    text-shadow: 0 0 20px rgba(15, 23, 42, 0.1);
   }
 
   .animate-float {
@@ -91,6 +88,10 @@
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
+  }
+
+  .font-outfit {
+    font-family: 'Outfit', sans-serif;
   }
 
   @keyframes float {

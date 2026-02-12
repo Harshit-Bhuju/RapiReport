@@ -1,7 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useAuthStore } from "@/store/authStore";
-import { ShieldAlert, Activity, ArrowRight, ShieldCheck } from "lucide-react";
+import { ShieldAlert, ArrowRight, ShieldCheck } from "lucide-react";
 import { Card, CardBody } from "@/components/ui/Card";
 import {
   HealthInsightCard,
@@ -70,16 +70,6 @@ const RiskAnalysis = () => {
                           {condition === "Diabetes"
                             ? t("risk.diabetesDiet")
                             : t("risk.generalDiet")}
-                        </p>
-                      </div>
-                      <div className="p-4 border border-success-100 rounded-2xl bg-success-50/30">
-                        <p className="text-[10px] font-black text-success-600 uppercase tracking-[0.2em] mb-2 text-center">
-                          {t("risk.activityGoal")}
-                        </p>
-                        <p className="text-xs font-bold text-gray-600 text-center leading-relaxed">
-                          {condition === "Heart Disease"
-                            ? t("risk.heartActivity")
-                            : t("risk.generalActivity")}
                         </p>
                       </div>
                     </div>

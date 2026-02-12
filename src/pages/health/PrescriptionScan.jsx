@@ -20,6 +20,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useHealthStore } from "@/store/healthStore";
 import { useAuthStore } from "@/store/authStore";
+import { useNavigate } from "react-router-dom";
 import API from "@/Configs/ApiEndpoints";
 
 // Helper to convert File or Blob to base64
@@ -44,6 +45,7 @@ const PrescriptionScan = () => {
     removePrescription,
     fetchPrescriptions,
   } = useHealthStore();
+  const navigate = useNavigate();
 
   const [imageUrl, setImageUrl] = useState(null);
   const [imageFile, setImageFile] = useState(null);
@@ -148,13 +150,13 @@ const PrescriptionScan = () => {
 
     // Create FormData to send image + data
     const formData = new FormData();
-    formData.append('note', note.trim());
-    formData.append('rawText', rawText);
-    formData.append('meds', JSON.stringify(detectedMeds));
+    formData.append("note", note.trim());
+    formData.append("rawText", rawText);
+    formData.append("meds", JSON.stringify(detectedMeds));
 
     // Add image if available
     if (imageFile) {
-      formData.append('image', imageFile);
+      formData.append("image", imageFile);
     }
 
     addPrescription(formData);
@@ -337,6 +339,29 @@ const PrescriptionScan = () => {
                       </div>
                     ))}
                   </div>
+                </div>
+              )}
+
+              {/* Action Button: Ask RapiAI */}
+              {detectedMeds.length > 0 && (
+                <div className="mt-8 pt-6 border-t border-gray-100 flex justify-center">
+                  <Button
+                    onClick={() => {
+                      navigate("/consultation", {
+                        state: {
+                          initialPrescription: {
+                            rawText: rawText,
+                            meds: detectedMeds,
+                          },
+                        },
+                      });
+                    }}
+                    className="gap-3 px-8 py-6 rounded-[2rem] bg-primary-600 hover:bg-primary-700 text-white shadow-xl shadow-primary-200 group transition-all hover:scale-105 active:scale-95">
+                    <Sparkles className="w-5 h-5 group-hover:rotate-12 transition-transform" />
+                    <span className="font-black text-base">
+                      Ask RapiAI about these medicines
+                    </span>
+                  </Button>
                 </div>
               )}
             </CardBody>

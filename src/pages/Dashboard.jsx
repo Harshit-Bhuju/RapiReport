@@ -1,13 +1,14 @@
 import React, { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  TrendingUp,
   Activity,
+  TrendingUp,
   Clock,
   ArrowRight,
   Sparkles,
   ShieldCheck,
   Zap,
+  ClipboardList,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/store/authStore";
@@ -134,7 +135,7 @@ const Dashboard = () => {
           <section>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-black text-gray-900 flex items-center gap-2">
-                <Activity className="w-5 h-5 text-error-600" />
+                <TrendingUp className="w-5 h-5 text-error-600" />
                 {t("dashboardPage.vitalTrends")}
               </h2>
             </div>
@@ -196,7 +197,7 @@ const Dashboard = () => {
             </Card>
           </section>
 
-          <Card className="border-none shadow-xl bg-gradient-to-br from-primary-600 to-primary-700 text-white overflow-hidden">
+          <Card className="border-none shadow-xl bg-primary-600 text-white overflow-hidden">
             <CardBody className="p-6 sm:p-8">
               <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center mb-6">
                 <ShieldCheck className="w-6 h-6" />

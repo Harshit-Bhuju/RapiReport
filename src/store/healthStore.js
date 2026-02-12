@@ -36,7 +36,6 @@ export const useHealthStore = create(
       adherenceLogs: [],
       adherenceReminders: [],
       symptoms: [],
-      activityLogs: [],
       dietLogs: [],
 
       // ---------- Fetch from backend ----------
@@ -60,10 +59,6 @@ export const useHealthStore = create(
         const j = await apiGet(API.SYMPTOMS_LIST);
         if (j?.status === "success") set({ symptoms: j.data ?? [] });
       },
-      fetchActivityLogs: async () => {
-        const j = await apiGet(API.ACTIVITY_LIST);
-        if (j?.status === "success") set({ activityLogs: j.data ?? [] });
-      },
       fetchDietLogs: async () => {
         const j = await apiGet(API.DIET_LIST);
         if (j?.status === "success") set({ dietLogs: j.data ?? [] });
@@ -76,7 +71,6 @@ export const useHealthStore = create(
           g.fetchAdherenceLogs(),
           g.fetchAdherenceReminders(),
           g.fetchSymptoms(),
-          g.fetchActivityLogs(),
           g.fetchDietLogs(),
         ]);
       },
@@ -105,7 +99,11 @@ export const useHealthStore = create(
         else
           set((state) => ({
             prescriptions: [
-              { id: crypto.randomUUID(), createdAt: new Date().toISOString(), ...rx },
+              {
+                id: crypto.randomUUID(),
+                createdAt: new Date().toISOString(),
+                ...rx,
+              },
               ...state.prescriptions,
             ],
           }));
@@ -215,6 +213,7 @@ export const useHealthStore = create(
           }));
       },
 
+
       // ---------- Symptoms ----------
       addSymptom: async (entry) => {
         const res = await apiPost(API.SYMPTOMS_LIST, {
@@ -245,35 +244,6 @@ export const useHealthStore = create(
         else
           set((state) => ({
             symptoms: state.symptoms.filter((s) => s.id !== id),
-          }));
-      },
-
-      // ---------- Activity ----------
-      addActivity: async (entry) => {
-        const res = await apiPost(API.ACTIVITY_LIST, {
-          date: entry.date ?? todayKey(),
-          type: entry.type ?? "steps",
-          value: entry.value ?? 0,
-          unit: entry.unit ?? "",
-          note: entry.note ?? "",
-        });
-        if (res?.ok) await get().fetchActivityLogs();
-        else
-          set((state) => ({
-            activityLogs: [
-              { id: crypto.randomUUID(), date: todayKey(), ...entry },
-              ...state.activityLogs,
-            ],
-          }));
-      },
-      removeActivity: async (id) => {
-        const res = await apiPost(API.ACTIVITY_LIST, {
-          delete_id: parseInt(id, 10),
-        });
-        if (res?.ok) await get().fetchActivityLogs();
-        else
-          set((state) => ({
-            activityLogs: state.activityLogs.filter((a) => a.id !== id),
           }));
       },
 
@@ -309,31 +279,7 @@ export const useHealthStore = create(
             dietLogs: state.dietLogs.filter((d) => d.id !== id),
           }));
       },
-
-      getAdherenceStreak: () => {
-        const logs = get().adherenceLogs;
-        const takenByDate = new Set();
-        logs.filter((l) => l.taken).forEach((l) => takenByDate.add(l.date));
-        const sortedDates = [...takenByDate].sort().reverse();
-        let streak = 0;
-        const today = todayKey();
-        for (let i = 0; i < sortedDates.length; i++) {
-          const expected = new Date(today);
-          expected.setDate(expected.getDate() - i);
-          const key = expected.toISOString().slice(0, 10);
-          if (sortedDates[i] === key) streak++;
-          else break;
-        }
-        return streak;
-      },
-      getAdherencePointsToday: () => {
-        const today = todayKey();
-        return (
-          get().adherenceLogs.filter((l) => l.date === today && l.taken).length *
-          10
-        );
-      },
     }),
-    { name: "health-storage" }
-  )
+    { name: "health-storage" },
+  ),
 );

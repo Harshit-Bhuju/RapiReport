@@ -292,7 +292,7 @@ const AdminPanel = () => {
             </CardBody>
           </Card>
 
-          <Card className="border-none shadow-xl shadow-gray-100/50 bg-gradient-to-br from-primary-600 to-indigo-700 text-white">
+          <Card className="border-none shadow-xl shadow-gray-100/50 bg-primary-600 text-white">
             <CardBody className="p-6">
               <div className="flex items-center gap-2 mb-6">
                 <Globe className="w-5 h-5 text-primary-200" />

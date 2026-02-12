@@ -437,17 +437,18 @@ const QuestGame = () => {
 
                 )}
 
-                {!isAITracking && (
-                  <div className="space-y-3">
-                    {/* Manual completion removed to enforce AI verification */}
-
-                    <button
-                      onClick={() => skipQuest(engagedQuest.id)}
-                      className="w-full py-4 bg-gray-100 text-gray-400 hover:bg-gray-200 rounded-[2rem] font-bold uppercase text-xs tracking-widest transition-all">
-                      Skip This Quest (0 Points)
-                    </button>
-                  </div>
-                )}
+                {/* Skip button - ALWAYS visible for flexibility */}
+                <div className="space-y-3">
+                  <button
+                    onClick={() => {
+                      if (window.confirm(`Skip this quest? You'll get 0 points but it will count toward your daily limit (${user.questsToday + 1}/10).`)) {
+                        skipQuest(engagedQuest.id);
+                      }
+                    }}
+                    className="w-full py-4 bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-800 rounded-[2rem] font-bold uppercase text-xs tracking-widest transition-all border-2 border-gray-200 hover:border-gray-300">
+                    ⏭️ Skip This Quest (0 Points)
+                  </button>
+                </div>
               </div>
 
               <p className="text-center text-[10px] text-gray-400 font-bold uppercase tracking-widest">

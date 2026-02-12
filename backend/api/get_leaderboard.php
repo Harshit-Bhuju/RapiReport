@@ -30,14 +30,7 @@ if ($result && $result->num_rows > 0) {
     }
 }
 
-// Fallback for empty leaderboard in testing
-if (empty($leaderboard)) {
-    $leaderboard = [
-        ["rank" => 1, "name" => "Alpha", "points" => 2500],
-        ["rank" => 2, "name" => "Bravo", "points" => 1800],
-        ["rank" => 3, "name" => "Charlie", "points" => 1200]
-    ];
-}
 
+// Return empty array if no data (shows "No explorers yet" instead of mock data)
 echo json_encode(["status" => "success", "data" => $leaderboard]);
 $conn->close();

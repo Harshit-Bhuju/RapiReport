@@ -23,10 +23,14 @@ const RewardsPanel = () => {
 
   const pointsToUse = user.weeklyPoints ?? 0;
 
-  const handleRedeem = (reward) => {
+  const handleRedeem = async (reward) => {
     if (pointsToUse >= reward.pointsRequired) {
-      redeemReward(reward.id);
-      toast.success(`Redeemed ${reward.title}!`);
+      const result = await redeemReward(reward.id);
+      if (result.success) {
+        toast.success(result.message || `Redeemed ${reward.title}!`);
+      } else {
+        toast.error(result.message || 'Redemption failed. Please try again.');
+      }
     } else {
       toast.error(
         `Keep moving! You need ${reward.pointsRequired - pointsToUse} more valid points.`,

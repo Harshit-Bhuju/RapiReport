@@ -39,7 +39,9 @@ const QuestGame = () => {
     setEngagedQuest,
     isAITracking,
     setIsAITracking,
-    skipQuest
+    skipQuest,
+    fetchLeaderboard,
+    fetchRewards
   } = useGameStore();
 
   const [showSuccess, setShowSuccess] = useState(false);
@@ -58,14 +60,18 @@ const QuestGame = () => {
 
   useEffect(() => {
     fetchUserStats();
-    // fetchLeaderboard(); // Removed as per instruction's implied change
+    fetchLeaderboard();
+    fetchRewards();
     fetchQuests();
+
+    // Refresh leaderboard and rewards every 30 seconds
     const interval = setInterval(() => {
-      // fetchLeaderboard(); // Removed as per instruction's implied change
       fetchUserStats();
-    }, 10000);
+      fetchLeaderboard();
+    }, 30000);
+
     return () => clearInterval(interval);
-  }, [fetchUserStats, fetchQuests]); // Removed fetchLeaderboard from dependencies
+  }, [fetchUserStats, fetchQuests, fetchLeaderboard, fetchRewards]);
 
   useEffect(() => {
     if (currentLocation && !anchored) {
@@ -284,95 +290,110 @@ const QuestGame = () => {
 
       {/* ─── MOBILE VIEW ─── */}
       <div className="lg:hidden flex flex-col gap-6 pb-24">
-        <div className="relative h-[50vh] rounded-[2.5rem] overflow-hidden shadow-xl border border-gray-100">
+        {/* Mobile Header */}
+        <div className="px-4 pt-4">
+          <h1 className="text-2xl font-black text-gray-900 tracking-tight uppercase">
+            Quest Game
+          </h1>
+          <p className="text-gray-500 font-medium text-sm">
+            Complete pushup challenges
+          </p>
+        </div>
+
+        {/* Mobile Map - Improved height */}
+        <div className="relative h-[40vh] min-h-[300px] rounded-[2.5rem] overflow-hidden shadow-xl border border-gray-100 mx-4">
           <QuestMap />
         </div>
 
-        <div className="bg-white rounded-[2.5rem] p-6 border border-gray-100 shadow-sm space-y-8">
-          <div className="flex justify-around items-center bg-gray-50 p-6 rounded-3xl">
+        {/* Mobile Stats - Touch-friendly */}
+        <div className="bg-white rounded-[2.5rem] p-5 mx-4 border border-gray-100 shadow-sm">
+          <div className="flex justify-around items-center bg-gradient-to-br from-indigo-50 to-purple-50 p-6 rounded-3xl gap-4">
             <div className="text-center">
-              <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Today</p>
-              <p className="text-2xl font-black text-gray-900">{user.questsToday || 0}/10</p>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Quests</p>
+              <p className="text-3xl font-black text-gray-900">{user.questsToday || 0}/10</p>
             </div>
-            <div className="w-px h-8 bg-gray-200" />
+            <div className="w-px h-12 bg-gray-200" />
             <div className="text-center">
-              <p className="text-[8px] font-black text-indigo-500 uppercase tracking-widest">Points</p>
-              <p className="text-2xl font-black text-indigo-600">{user.pointsToday || 0}</p>
+              <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-1">Points</p>
+              <p className="text-3xl font-black text-indigo-600">{user.pointsToday || 0}</p>
             </div>
-            <div className="w-px h-8 bg-gray-200" />
+            <div className="w-px h-12 bg-gray-200" />
             <div className="text-center">
-              <p className="text-[8px] font-black text-emerald-500 uppercase tracking-widest">Dist</p>
-              <p className="text-xl font-black text-emerald-600">{(distanceWalkedMeters / 1000).toFixed(1)} km</p>
+              <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">Walked</p>
+              <p className="text-2xl font-black text-emerald-600">{(distanceWalkedMeters / 1000).toFixed(1)}km</p>
             </div>
           </div>
+        </div>
 
-          <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+        {/* Mobile Tab Switcher - Touch-optimized */}
+        <div className="px-4">
+          <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
             {["quests", "leaderboard", "rewards"].map(tab => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all ${activeTab === tab ? "bg-indigo-600 text-white shadow-lg shadow-indigo-100" : "bg-gray-100 text-gray-400"
+                className={`px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === tab ? "bg-indigo-600 text-white shadow-lg shadow-indigo-200" : "bg-gray-100 text-gray-400 active:scale-95"
                   }`}>
                 {tab}
               </button>
             ))}
           </div>
+        </div>
 
-          {activeTab === "quests" && (
-            <div className="space-y-6">
-              <div>
-                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Places to Visit</p>
-                <div className="grid gap-3">
-                  {placeQuests.map(q => (
-                    <button
-                      key={q.id}
-                      onClick={() => { setSelectedQuest(q.id); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-                      className={`p-5 rounded-[2rem] border-2 text-left transition-all ${selectedQuestId === q.id ? "border-indigo-600 bg-indigo-50/50" : "border-gray-50 bg-white"
-                        }`}>
-                      <div className="flex justify-between items-start mb-2">
-                        <h4 className="font-black text-gray-900">{q.title}</h4>
-                        <span className="text-[8px] font-black text-indigo-600 px-2 py-1 bg-indigo-50 rounded-lg">+{q.points} P</span>
-                      </div>
-                      <p className="text-xs text-gray-500 font-medium mb-2">{q.description}</p>
-                      {currentLocation && q.lat && (
-                        <p className="text-[9px] font-black text-indigo-500 uppercase">
-                          {Math.round(distanceMeters(currentLocation.lat, currentLocation.lng, q.lat, q.lng))}m away
-                        </p>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Walk Progress</p>
-                <div className="grid gap-3">
-                  {walkQuests.map(q => (
-                    <button
-                      key={q.id}
-                      onClick={() => { setSelectedQuest(q.id); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-                      className={`p-6 rounded-[2rem] border-2 text-left transition-all ${selectedQuestId === q.id ? "border-indigo-600 bg-indigo-50/50" : "border-gray-50 bg-white"
-                        }`}>
-                      <h4 className="font-black text-gray-900 mb-4">{q.title}</h4>
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-[8px] font-black uppercase text-indigo-600">
-                          <span>{Math.round(distanceWalkedMeters)}m covered</span>
-                          <span>Target: {q.targetMeters}m</span>
-                        </div>
-                        <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                          <div className="h-full bg-indigo-600" style={{ width: `${Math.min(100, (distanceWalkedMeters / q.targetMeters) * 100)}%` }} />
-                        </div>
-                      </div>
-                    </button>
-                  ))}
-                </div>
+        {activeTab === "quests" && (
+          <div className="space-y-6">
+            <div>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Places to Visit</p>
+              <div className="grid gap-3">
+                {placeQuests.map(q => (
+                  <button
+                    key={q.id}
+                    onClick={() => { setSelectedQuest(q.id); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                    className={`p-5 rounded-[2rem] border-2 text-left transition-all ${selectedQuestId === q.id ? "border-indigo-600 bg-indigo-50/50" : "border-gray-50 bg-white"
+                      }`}>
+                    <div className="flex justify-between items-start mb-2">
+                      <h4 className="font-black text-gray-900">{q.title}</h4>
+                      <span className="text-[8px] font-black text-indigo-600 px-2 py-1 bg-indigo-50 rounded-lg">+{q.points} P</span>
+                    </div>
+                    <p className="text-xs text-gray-500 font-medium mb-2">{q.description}</p>
+                    {currentLocation && q.lat && (
+                      <p className="text-[9px] font-black text-indigo-500 uppercase">
+                        {Math.round(distanceMeters(currentLocation.lat, currentLocation.lng, q.lat, q.lng))}m away
+                      </p>
+                    )}
+                  </button>
+                ))}
               </div>
             </div>
-          )}
 
-          {activeTab === "leaderboard" && <Leaderboard />}
-          {activeTab === "rewards" && <RewardsPanel />}
-        </div>
+            <div>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Walk Progress</p>
+              <div className="grid gap-3">
+                {walkQuests.map(q => (
+                  <button
+                    key={q.id}
+                    onClick={() => { setSelectedQuest(q.id); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                    className={`p-6 rounded-[2rem] border-2 text-left transition-all ${selectedQuestId === q.id ? "border-indigo-600 bg-indigo-50/50" : "border-gray-50 bg-white"
+                      }`}>
+                    <h4 className="font-black text-gray-900 mb-4">{q.title}</h4>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-[8px] font-black uppercase text-indigo-600">
+                        <span>{Math.round(distanceWalkedMeters)}m covered</span>
+                        <span>Target: {q.targetMeters}m</span>
+                      </div>
+                      <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                        <div className="h-full bg-indigo-600" style={{ width: `${Math.min(100, (distanceWalkedMeters / q.targetMeters) * 100)}%` }} />
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === "leaderboard" && <Leaderboard />}
+        {activeTab === "rewards" && <RewardsPanel />}
       </div>
 
       {/* QUEST INTERACTION OVERLAY ─── */}
@@ -388,106 +409,115 @@ const QuestGame = () => {
             <p className="text-[10px] font-bold text-indigo-100 uppercase tracking-widest mt-1">Click to Start Objective</p>
           </button>
         </div>
-      )}
-
-      {engagedQuest && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/80 backdrop-blur-md">
-          <div className="bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl overflow-hidden border border-gray-100">
-            <div className="relative h-40 bg-indigo-600 p-8 flex flex-col justify-end">
-              <button onClick={() => setEngagedQuest(null)} className="absolute top-6 right-6 p-2 bg-white/20 rounded-xl text-white hover:bg-white/30 transition-all"><X className="w-5 h-5" /></button>
-              <div className="flex items-center gap-2 mb-1">
-                <Target className="w-4 h-4 text-indigo-200" />
-                <p className="text-indigo-100 font-black text-[10px] uppercase tracking-widest">Active Objective</p>
-              </div>
-              <h2 className="text-3xl font-black text-white uppercase tracking-tight leading-none">{engagedQuest.title}</h2>
-            </div>
-
-            <div className="p-8 space-y-8">
-              <div className="bg-gray-50 p-6 rounded-3xl border border-gray-100 text-center">
-                <p className="text-gray-400 font-black text-xs uppercase tracking-widest mb-2">Instructions</p>
-                <h3 className="text-xl font-black text-gray-900 leading-tight">
-                  {engagedQuest.targetReps ? `Do ${engagedQuest.targetReps} ${engagedQuest.exercise}` : engagedQuest.description}
-                </h3>
-              </div>
-
-              <div className="space-y-4">
-                {engagedQuest.videoVerification && !isAITracking && (
-                  <button
-                    onClick={startAITracker}
-                    className="w-full group relative flex items-center justify-center gap-4 py-6 bg-orange-500 hover:bg-orange-600 text-white rounded-[2rem] font-black uppercase tracking-widest transition-all shadow-xl shadow-orange-100">
-                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-white text-orange-600 px-3 py-1 rounded-full text-[9px] border border-orange-100">RECOMMENDED</div>
-                    <Video className="w-6 h-6 group-hover:scale-110 transition-transform" />
-                    <span>Start Live Video AI Tracking</span>
-                  </button>
-                )}
-
-                {isAITracking && (
-                  <div className="rounded-3xl overflow-hidden shadow-2xl bg-black border-4 border-orange-500 aspect-[9/16] md:aspect-video relative">
-                    {/* Client-Side AI Tracker */}
-                    <AITracker
-                      targetReps={engagedQuest.targetReps || 20}
-                      onRepCount={(count) => setAiReps(count)}
-                      onTargetReached={() => {
-                        setAiReps(engagedQuest.targetReps || 20);
-                        handleQuestComplete();
-                      }}
-                      onClose={() => setIsAITracking(false)}
-                    />
-                  </div>
-
-                )}
-
-                {/* Skip button - ALWAYS visible for flexibility */}
-                <div className="space-y-3">
-                  <button
-                    onClick={() => {
-                      if (window.confirm(`Skip this quest? You'll get 0 points but it will count toward your daily limit (${user.questsToday + 1}/10).`)) {
-                        skipQuest(engagedQuest.id);
-                      }
-                    }}
-                    className="w-full py-4 bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-800 rounded-[2rem] font-bold uppercase text-xs tracking-widest transition-all border-2 border-gray-200 hover:border-gray-300">
-                    ⏭️ Skip This Quest (0 Points)
-                  </button>
-                </div>
-              </div>
-
-              <p className="text-center text-[10px] text-gray-400 font-bold uppercase tracking-widest">
-                Completion awards <span className="text-indigo-600">+{engagedQuest.points} Points</span>
-              </p>
-            </div>
-          </div>
-        </div>
       )
       }
 
-      {/* QUEST SUCCESS OVERLAY ─── */}
-      {
-        showSuccess && lastQuestDone && (
-          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-indigo-600/90 backdrop-blur-xl">
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              className="bg-white w-full max-w-sm rounded-[3rem] p-10 text-center shadow-2xl">
-              <div className="w-24 h-24 bg-green-100 rounded-[2.5rem] flex items-center justify-center text-green-600 mx-auto mb-6">
-                <CheckCircle2 className="w-12 h-12" />
-              </div>
-              <h2 className="text-3xl font-black text-gray-900 uppercase tracking-tight mb-2">Objective Cleared!</h2>
-              <p className="text-gray-500 font-bold text-sm mb-8">You've successfully completed the {lastQuestDone.exercise || 'objective'} and earned <span className="text-indigo-600">+{lastQuestDone.points} Points</span>!</p>
+      {/* QUEST ENGAGEMENT MODAL */}
+      {engagedQuest && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-300">
+          <div className="bg-white rounded-[2.5rem] p-8 max-w-lg w-full shadow-2xl relative border-4 border-indigo-100">
+            <button
+              onClick={() => setEngagedQuest(null)}
+              className="absolute top-6 right-6 text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <X size={28} />
+            </button>
 
-              <div className="bg-gray-50 p-6 rounded-3xl mb-8">
-                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Weekly Validity</p>
-                <p className="text-xs font-bold text-gray-600 leading-relaxed">Your points are valid until {new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString()}.</p>
+            <div className="text-center mb-8">
+              <div className="w-20 h-20 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full mx-auto mb-6 flex items-center justify-center shadow-xl shadow-indigo-200">
+                <Target className="w-10 h-10 text-white" />
               </div>
+              <h2 className="text-3xl font-black text-gray-900 mb-3 tracking-tight">
+                {engagedQuest.title}
+              </h2>
+              <p className="text-gray-600 font-medium text-lg mb-4">
+                {engagedQuest.description}
+              </p>
 
+              {/* PROMINENT POINTS DISPLAY */}
+              <div className="inline-flex items-center gap-3 bg-gradient-to-r from-emerald-50 to-green-50 px-8 py-4 rounded-full border-2 border-emerald-200 shadow-lg shadow-emerald-100">
+                <Zap className="w-6 h-6 text-emerald-600" />
+                <div className="text-left">
+                  <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Points Reward</p>
+                  <p className="text-3xl font-black text-emerald-700">+{engagedQuest.points}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              {/* SKIP BUTTON - SHOWN FIRST, ALWAYS VISIBLE */}
               <button
-                onClick={handleNextQuest}
-                className="w-full py-6 bg-indigo-600 hover:bg-indigo-700 text-white rounded-[2rem] font-black uppercase tracking-widest shadow-xl shadow-indigo-100 transition-all flex items-center justify-center gap-3">
-                <span>Proceed to Next Objective</span>
-                <ChevronRight className="w-5 h-5" />
+                onClick={() => {
+                  if (window.confirm(`Skip this quest? You'll get 0 points but it will count toward your daily limit (${user.questsToday + 1}/10).`)) {
+                    skipQuest(engagedQuest.id);
+                  }
+                }}
+                className="w-full py-4 bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-800 rounded-[2rem] font-bold uppercase text-sm tracking-widest transition-all border-2 border-gray-200 hover:border-gray-300 flex items-center justify-center gap-2">
+                <X className="w-5 h-5" />
+                ⏭️ Skip This Quest (0 Points)
               </button>
-            </motion.div>
+
+              {/* AI TRACKING BUTTON */}
+              {engagedQuest.videoVerification && !isAITracking && (
+                <button
+                  onClick={startAITracker}
+                  className="w-full group relative flex items-center justify-center gap-4 py-6 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white rounded-[2rem] font-black uppercase tracking-widest transition-all shadow-xl shadow-orange-200">
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-white text-orange-600 px-4 py-1.5 rounded-full text-xs border-2 border-orange-200 font-black uppercase">✨ Recommended</div>
+                  <Video className="w-6 h-6 group-hover:scale-110 transition-transform" />
+                  <span>Start AI Tracking</span>
+                </button>
+              )}
+
+              {isAITracking && (
+                <div className="rounded-3xl overflow-hidden shadow-2xl bg-black border-4 border-orange-500 aspect-[9/16] md:aspect-video relative">
+                  {/* Client-Side AI Tracker */}
+                  <AITracker
+                    targetReps={engagedQuest.targetReps || 20}
+                    onRepCount={(count) => setAiReps(count)}
+                    onTargetReached={() => {
+                      setAiReps(engagedQuest.targetReps || 20);
+                      handleQuestComplete();
+                    }}
+                    onClose={() => setIsAITracking(false)}
+                  />
+                </div>
+              )}
+            </div>
+
+            <p className="text-center text-xs text-gray-400 font-bold uppercase tracking-widest mt-6">
+              Quest {(user.questsToday || 0) + 1} of 10 Today
+            </p>
           </div>
-        )
+        </div>
+      )}
+
+      {/* QUEST SUCCESS OVERLAY ─── */}
+      {showSuccess && lastQuestDone && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-indigo-600/90 backdrop-blur-xl">
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="bg-white w-full max-w-sm rounded-[3rem] p-10 text-center shadow-2xl">
+            <div className="w-24 h-24 bg-green-100 rounded-[2.5rem] flex items-center justify-center text-green-600 mx-auto mb-6">
+              <CheckCircle2 className="w-12 h-12" />
+            </div>
+            <h2 className="text-3xl font-black text-gray-900 uppercase tracking-tight mb-2">Objective Cleared!</h2>
+            <p className="text-gray-500 font-bold text-sm mb-8">You've successfully completed the {lastQuestDone.exercise || 'objective'} and earned <span className="text-indigo-600">+{lastQuestDone.points} Points</span>!</p>
+
+            <div className="bg-gray-50 p-6 rounded-3xl mb-8">
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Weekly Validity</p>
+              <p className="text-xs font-bold text-gray-600 leading-relaxed">Your points are valid until {new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString()}.</p>
+            </div>
+
+            <button
+              onClick={handleNextQuest}
+              className="w-full py-6 bg-indigo-600 hover:bg-indigo-700 text-white rounded-[2rem] font-black uppercase tracking-widest shadow-xl shadow-indigo-100 transition-all flex items-center justify-center gap-3">
+              <span>Proceed to Next Objective</span>
+              <ChevronRight className="w-5 h-5" />
+            </button>
+          </motion.div>
+        </div>
+      )
       }
     </div >
   );

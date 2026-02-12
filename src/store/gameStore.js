@@ -545,5 +545,62 @@ export const useGameStore = create((set, get) => ({
     } catch (e) {
       console.error("Quest status fetch error:", e);
     }
+
+  },
+
+  // Fetch leaderboard from backend
+  fetchLeaderboard: async () => {
+    try {
+      const response = await fetch(getAPIBaseUrl() + '/api/get_leaderboard.php');
+      const data = await response.json();
+      if (data.status === 'success' && data.data) {
+        set({ leaderboard: data.data });
+      }
+    } catch (error) {
+      console.error('Failed to fetch leaderboard:', error);
+    }
+  },
+
+  // Fetch rewards from backend
+  fetchRewards: async () => {
+    try {
+      const response = await fetch(getAPIBaseUrl() + '/health/rewards_list.php', {
+        credentials: 'include'
+      });
+      const data = await response.json();
+      if (data.status === 'success' && data.data) {
+        set({
+          rewards: data.data,
+          user: { ...get().user, cumulativePoints: data.userPoints || 0 }
+        });
+      }
+    } catch (error) {
+      console.error('Failed to fetch rewards:', error);
+    }
+  },
+
+  // Redeem a reward
+  redeemReward: async (rewardId) => {
+    try {
+      const response = await fetch(getAPIBaseUrl() + '/health/rewards_redeem.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ reward_id: rewardId })
+      });
+      const data = await response.json();
+
+      if (data.status === 'success') {
+        // Refresh rewards list to update user points
+        get().fetchRewards();
+        get().fetchUserStats();
+        return { success: true, message: data.message || 'Reward redeemed!' };
+      } else {
+        return { success: false, message: data.message || 'Redemption failed' };
+      }
+    } catch (error) {
+      console.error('Failed to redeem reward:', error);
+      return { success: false, message: 'Network error. Please try again.' };
+    }
   },
 }));

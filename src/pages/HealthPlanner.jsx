@@ -151,64 +151,71 @@ const HealthPlanner = () => {
 
           {/* Family Section */}
           <section>
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-black text-gray-900">
-                Family Circle
-              </h2>
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <h2 className="text-xl font-black text-gray-900">
+                  Family Circle
+                </h2>
+                <p className="text-xs font-bold text-gray-400 mt-1 uppercase tracking-widest">
+                  Monitor loved ones
+                </p>
+              </div>
               <button
                 onClick={() => setShowAddMember(true)}
-                className="px-4 py-2 bg-primary-50 text-primary-600 rounded-xl text-sm font-bold hover:bg-primary-100 transition-colors">
+                className="px-5 py-2.5 bg-primary-600 text-white rounded-xl text-xs font-black shadow-lg shadow-primary-200 hover:shadow-xl hover:-translate-y-0.5 transition-all">
                 + {t("family.addMember")}
               </button>
             </div>
 
             {showAddMember && (
-              <Card className="mb-6 border-primary-100 bg-primary-50/30">
-                <CardBody className="p-6">
+              <Card className="mb-8 border-primary-100 bg-primary-50/50 rounded-[2rem]">
+                <CardBody className="p-8">
                   <form
                     onSubmit={handleAddMember}
-                    className="flex gap-4 items-end">
-                    <div className="flex-1 space-y-1">
-                      <label className="text-xs font-bold text-gray-500">
+                    className="grid grid-cols-1 sm:grid-cols-3 gap-6 items-end">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-1">
                         {t("planner.addMember.nameLabel")}
                       </label>
                       <input
                         type="text"
                         value={newMemberName}
                         onChange={(e) => setNewMemberName(e.target.value)}
-                        className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:border-primary-500 focus:ring-0"
+                        className="w-full px-5 py-3 rounded-2xl border border-gray-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-100 transition-all font-bold text-sm"
                         placeholder={t("planner.addMember.placeholderName")}
                       />
                     </div>
-                    <div className="flex-1 space-y-1">
-                      <label className="text-xs font-bold text-gray-500">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-1">
                         {t("planner.addMember.relationLabel")}
                       </label>
                       <input
                         type="text"
                         value={newMemberRelation}
                         onChange={(e) => setNewMemberRelation(e.target.value)}
-                        className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:border-primary-500 focus:ring-0"
+                        className="w-full px-5 py-3 rounded-2xl border border-gray-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-100 transition-all font-bold text-sm"
                         placeholder={t("planner.addMember.placeholderRelation")}
                       />
                     </div>
-                    <button
-                      type="submit"
-                      className="px-6 py-2.5 bg-primary-600 text-white font-bold rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all">
-                      {t("planner.addMember.save")}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setShowAddMember(false)}
-                      className="px-4 py-2.5 text-gray-400 font-bold hover:text-gray-600">
-                      {t("planner.addMember.cancel")}
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        type="submit"
+                        className="flex-1 px-6 py-3 bg-primary-600 text-white font-black text-sm rounded-2xl shadow-lg shadow-primary-200 hover:shadow-xl hover:-translate-y-1 transition-all">
+                        {t("planner.addMember.save")}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowAddMember(false)}
+                        className="px-6 py-3 text-gray-400 font-bold hover:text-gray-600 text-sm">
+                        {t("planner.addMember.cancel")}
+                      </button>
+                    </div>
                   </form>
                 </CardBody>
               </Card>
             )}
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               {familyMembers.map((member) => (
                 <FamilyMemberCard key={member.id} member={member} />
               ))}

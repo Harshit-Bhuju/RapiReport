@@ -33,10 +33,20 @@ import DoctorConsultation from "@/pages/DoctorConsultation";
 import QuestGame from "@/pages/QuestGame";
 import Family from "@/pages/Family";
 import Profile from "@/pages/Profile";
-import AdminPanel from "@/pages/AdminPanel";
-import DoctorProfile from "@/pages/DoctorProfile";
+import { AdminPanel, AdminLayout } from "@/pages/admin";
+import { DoctorDashboard, DoctorProfile, DoctorLayout } from "@/pages/doctor";
 import ProfileSetup from "@/components/features/ProfileSetup";
 import DashboardLayout from "@/components/layout/DashboardLayout";
+import PrescriptionScan from "@/pages/health/PrescriptionScan";
+import Adherence from "@/pages/health/Adherence";
+import Symptoms from "@/pages/health/Symptoms";
+import Activity from "@/pages/health/Activity";
+import Diet from "@/pages/health/Diet";
+import Marketplace from "@/pages/health/Marketplace";
+import Campaigns from "@/pages/health/Campaigns";
+import MedicalHistory from "@/pages/health/MedicalHistory";
+import Alerts from "@/pages/health/Alerts";
+import CommunityInsights from "@/pages/health/CommunityInsights";
 
 function App() {
   const { checkAuth, isAuthenticated } = useAuthStore();
@@ -203,12 +213,112 @@ function App() {
                 }
               />
               <Route
-                path="/admin"
+                path="/prescriptions"
                 element={
                   <ProtectedRoute>
                     <DashboardLayout>
-                      <AdminPanel />
+                      <PrescriptionScan />
                     </DashboardLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/adherence"
+                element={
+                  <ProtectedRoute>
+                    <DashboardLayout>
+                      <Adherence />
+                    </DashboardLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/symptoms"
+                element={
+                  <ProtectedRoute>
+                    <DashboardLayout>
+                      <Symptoms />
+                    </DashboardLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/activity"
+                element={
+                  <ProtectedRoute>
+                    <DashboardLayout>
+                      <Activity />
+                    </DashboardLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/diet"
+                element={
+                  <ProtectedRoute>
+                    <DashboardLayout>
+                      <Diet />
+                    </DashboardLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/marketplace"
+                element={
+                  <ProtectedRoute>
+                    <DashboardLayout>
+                      <Marketplace />
+                    </DashboardLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/campaigns"
+                element={
+                  <ProtectedRoute>
+                    <DashboardLayout>
+                      <Campaigns />
+                    </DashboardLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/medical-history"
+                element={
+                  <ProtectedRoute>
+                    <DashboardLayout>
+                      <MedicalHistory />
+                    </DashboardLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/alerts"
+                element={
+                  <ProtectedRoute>
+                    <DashboardLayout>
+                      <Alerts />
+                    </DashboardLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/community"
+                element={
+                  <ProtectedRoute>
+                    <DashboardLayout>
+                      <CommunityInsights />
+                    </DashboardLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin"
+                element={
+                  <ProtectedRoute>
+                    <AdminLayout>
+                      <AdminPanel />
+                    </AdminLayout>
                   </ProtectedRoute>
                 }
               />
@@ -216,9 +326,19 @@ function App() {
                 path="/doctor-profile"
                 element={
                   <ProtectedRoute>
-                    <DashboardLayout>
+                    <DoctorLayout>
                       <DoctorProfile />
-                    </DashboardLayout>
+                    </DoctorLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/doctor-dashboard"
+                element={
+                  <ProtectedRoute>
+                    <DoctorLayout>
+                      <DoctorDashboard />
+                    </DoctorLayout>
                   </ProtectedRoute>
                 }
               />

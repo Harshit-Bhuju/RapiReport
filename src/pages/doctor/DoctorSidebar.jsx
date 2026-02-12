@@ -3,6 +3,7 @@ import { NavLink, useNavigate, Link } from "react-router-dom";
 import {
   Stethoscope,
   ClipboardList,
+  LayoutDashboard,
   LogOut,
   X,
   ChevronDown,
@@ -19,6 +20,7 @@ const DoctorSidebar = ({ isOpen, onClose }) => {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
   const doctorNavItems = [
+    { name: "Dashboard", path: "/doctor-dashboard", icon: LayoutDashboard },
     { name: "Doctor Profile", path: "/doctor-profile", icon: ClipboardList },
   ];
 
@@ -39,7 +41,7 @@ const DoctorSidebar = ({ isOpen, onClose }) => {
         )}>
         <div className="flex flex-col h-full">
           <div className="p-6 flex items-center justify-between">
-            <Link to="/doctor-profile" className="flex items-center group">
+            <Link to="/doctor-dashboard" className="flex items-center group">
               <div className="relative">
                 <img
                   src={logoIcon}

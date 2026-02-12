@@ -44,7 +44,7 @@ const Navbar = () => {
             <img
               src={logoIcon}
               alt="R"
-              className="h-20 w-20 object-contain transform  transition-transform duration-200"
+              className="h-14 w-14 sm:h-20 sm:w-20 object-contain transform transition-transform duration-200"
             />
             <div className="absolute inset-0 bg-primary-600/10 blur-xl rounded-full -z-10 opacity-0 group-hover:opacity-100 transition-opacity" />
           </div>

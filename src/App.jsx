@@ -17,6 +17,7 @@ import {
   ProtectedRoute,
   PublicRoute,
   FlowRoute,
+  RoleRoute,
 } from "@/components/layout/RouteGuards";
 
 // Pages
@@ -316,9 +317,11 @@ function App() {
                 path="/admin"
                 element={
                   <ProtectedRoute>
-                    <AdminLayout>
-                      <AdminPanel />
-                    </AdminLayout>
+                    <RoleRoute allowedRoles={["admin"]}>
+                      <AdminLayout>
+                        <AdminPanel />
+                      </AdminLayout>
+                    </RoleRoute>
                   </ProtectedRoute>
                 }
               />
@@ -326,9 +329,11 @@ function App() {
                 path="/doctor-profile"
                 element={
                   <ProtectedRoute>
-                    <DoctorLayout>
-                      <DoctorProfile />
-                    </DoctorLayout>
+                    <RoleRoute allowedRoles={["doctor"]}>
+                      <DoctorLayout>
+                        <DoctorProfile />
+                      </DoctorLayout>
+                    </RoleRoute>
                   </ProtectedRoute>
                 }
               />
@@ -336,9 +341,11 @@ function App() {
                 path="/doctor-dashboard"
                 element={
                   <ProtectedRoute>
-                    <DoctorLayout>
-                      <DoctorDashboard />
-                    </DoctorLayout>
+                    <RoleRoute allowedRoles={["doctor"]}>
+                      <DoctorLayout>
+                        <DoctorDashboard />
+                      </DoctorLayout>
+                    </RoleRoute>
                   </ProtectedRoute>
                 }
               />

@@ -62,11 +62,13 @@ const Adherence = () => {
     toast.success("Logged as taken!");
   };
 
+  const todayTotal = adherenceLogs.filter((l) => l.date === today).length || 1;
+  const todayTaken = adherenceLogs.filter((l) => l.date === today && l.taken).length;
+
   const missions = [
     { id: "streak7", title: "7-day adherence streak", target: 7, current: Math.min(streak, 7), points: 50 },
     { id: "today", title: "Take all doses today", target: 1, current: todayTotal > 0 && todayTaken >= todayTotal ? 1 : 0, points: 10 },
   ];
-  const todayTotal = adherenceLogs.filter((l) => l.date === today).length || 1;
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">

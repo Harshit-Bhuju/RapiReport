@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+rapidocr_onnxruntime
+opencv-python-headless
+google-generativeai
+python-multipart
+python-dotenv
+openai
+mysql-connector-python

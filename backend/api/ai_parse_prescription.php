@@ -55,7 +55,7 @@ if ($historyNote) {
 }
 $prompt .= "\n\nOutput only the JSON object.";
 
-$modelId = getenv("GEMINI_MODEL") ?: "gemini-2.5-flash";
+$modelId = getenv("GEMINI_MODEL") ?: "gemini-1.5-flash";
 $url = "https://generativelanguage.googleapis.com/v1beta/models/{$modelId}:generateContent?key={$apiKey}";
 $postData = [
     'contents' => [['parts' => [['text' => $prompt]]]],

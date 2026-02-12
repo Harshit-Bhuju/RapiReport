@@ -26,3 +26,15 @@ export const FlowRoute = ({ children }) => {
   if (isProfileComplete) return <Navigate to="/dashboard" replace />;
   return children;
 };
+
+export const RoleRoute = ({ children, allowedRoles }) => {
+  const { isAuthenticated, user } = useAuthStore();
+
+  if (!isAuthenticated) return <Navigate to="/auth" replace />;
+
+  if (!allowedRoles.includes(user?.role)) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return children;
+};

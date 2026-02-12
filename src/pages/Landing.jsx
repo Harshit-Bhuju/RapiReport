@@ -42,7 +42,7 @@ const HeroSection = () => {
                 </span>
                 {t("hero.badge")}
               </motion.span>
-              <h1 className="text-5xl md:text-7xl font-black text-gray-900 leading-[1.05] mb-8 tracking-tighter">
+              <h1 className="text-4xl sm:text-6xl md:text-7xl font-black text-gray-900 leading-[1.05] mb-8 tracking-tighter">
                 {t("hero.title")}
               </h1>
               <p className="text-xl md:text-2xl text-gray-600 mb-12 max-w-2xl mx-auto lg:mx-0 leading-relaxed font-medium">
@@ -92,7 +92,7 @@ const HeroSection = () => {
                     {t("hero.mockTitle")}
                   </div>
                 </div>
-                <div className="p-10">
+                <div className="p-6 sm:p-10">
                   <div className="grid grid-cols-2 gap-8 mb-10">
                     <div className="p-6 rounded-3xl bg-primary-50/50 border border-primary-100 relative overflow-hidden group">
                       <div className="absolute top-0 right-0 p-4 opacity-10 scale-150 rotate-12 group-hover:rotate-0 transition-transform">
@@ -155,7 +155,7 @@ const HeroSection = () => {
                   repeat: Infinity,
                   ease: "easeInOut",
                 }}
-                className="absolute -top-12 -right-12 p-6 rounded-3xl glass-morphism shadow-2xl z-30 border-white/40">
+                className="absolute -top-6 -right-6 sm:-top-12 sm:-right-12 p-4 sm:p-6 rounded-3xl glass-morphism shadow-2xl z-30 border-white/40">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary-500 to-indigo-600 flex items-center justify-center text-white shadow-lg">
                     <Brain className="w-7 h-7" />
@@ -179,7 +179,7 @@ const HeroSection = () => {
                   ease: "easeInOut",
                   delay: 1,
                 }}
-                className="absolute -bottom-10 -left-12 p-6 rounded-3xl glass-morphism shadow-2xl z-30 border-white/40">
+                className="absolute -bottom-6 -left-6 sm:-bottom-10 sm:-left-12 p-4 sm:p-6 rounded-3xl glass-morphism shadow-2xl z-30 border-white/40">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-success-500 to-emerald-600 flex items-center justify-center text-white shadow-lg">
                     <Shield className="w-7 h-7" />

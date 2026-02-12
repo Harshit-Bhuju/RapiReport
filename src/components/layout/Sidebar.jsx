@@ -47,7 +47,8 @@ const Sidebar = ({ isOpen, onClose }) => {
 
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 w-72 bg-white border-r border-gray-100 z-50 transition-transform duration-300 transform lg:translate-x-0",
+          "fixed inset-y-0 left-0 w-72 bg-white border-r border-gray-100 z-50 transition-all duration-300",
+          "lg:translate-x-0",
           isOpen ? "translate-x-0" : "-translate-x-full",
         )}>
         <div className="flex flex-col h-full">
@@ -69,7 +70,7 @@ const Sidebar = ({ isOpen, onClose }) => {
           </div>
 
           {/* Navigation Links */}
-          <nav className="flex-grow px-4 space-y-2 py-4">
+          <nav className="flex-grow px-4 space-y-2 py-4 overflow-y-auto scrollbar-hide">
             {navItems.map((item) => (
               <NavLink
                 key={item.path}
@@ -89,7 +90,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                     "group-hover:text-primary-600",
                   )}
                 />
-                {item.name}
+                <span className="truncate">{item.name}</span>
               </NavLink>
             ))}
           </nav>

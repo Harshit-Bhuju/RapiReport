@@ -8,7 +8,7 @@ export const ProtectedRoute = ({ children, requireProfile = true }) => {
   if (!isAuthenticated) return <Navigate to="/auth" replace />;
 
   if (requireProfile && !isProfileComplete) {
-    // return <Navigate to="/profile-setup" replace />;
+    return <Navigate to="/profile-setup" replace />;
   }
 
   return children;

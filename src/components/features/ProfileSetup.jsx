@@ -26,6 +26,7 @@ const ProfileSetup = () => {
     conditions: [],
     customConditions: "",
     parentalHistory: [],
+    customParentalHistory: "",
     language: "en",
   });
 
@@ -237,7 +238,7 @@ const ProfileSetup = () => {
                   <label className="text-sm font-bold text-gray-700 mb-3 block">
                     {t("profile.setup.step3.parentsLabel")}
                   </label>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-2 mb-6">
                     {conditions.map((c) => (
                       <button
                         key={c.key}
@@ -251,6 +252,23 @@ const ProfileSetup = () => {
                         {c.label}
                       </button>
                     ))}
+                  </div>
+
+                  <div className="space-y-3">
+                    <label className="text-sm font-bold text-gray-700 block">
+                      {t("profile.setup.step3.customLabel")}
+                    </label>
+                    <textarea
+                      placeholder={t("profile.setup.step3.customPlaceholder")}
+                      className="w-full p-4 rounded-xl border-2 border-gray-100 focus:border-primary-500 focus:ring-0 transition-all min-h-[120px] resize-none text-sm"
+                      value={formData.customParentalHistory}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          customParentalHistory: e.target.value,
+                        })
+                      }
+                    />
                   </div>
                 </div>
               </div>

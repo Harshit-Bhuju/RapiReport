@@ -272,7 +272,9 @@
       "step3": {
         "title": "Family History",
         "subtitle": "Risk assessment based on parental complications.",
-        "parentsLabel": "Parents' medical complications?"
+        "parentsLabel": "Parents' medical complications?",
+        "customLabel": "Other Family Health Issues",
+        "customPlaceholder": "Type any other parental health conditions or details here..."
       },
       "finish": "Complete Setup"
     }

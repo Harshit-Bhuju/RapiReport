@@ -13,6 +13,7 @@ import {
 import { useAuthStore } from "@/store/authStore";
 import { cn } from "@/lib/utils";
 import Button from "@/components/ui/Button";
+import logoIcon from "@/assets/logos/rapireport_logo.png";
 
 const Navbar = () => {
   const { t, i18n } = useTranslation();
@@ -35,13 +36,23 @@ const Navbar = () => {
     <nav className="sticky top-0 z-40 w-full bg-white/80 backdrop-blur-md border-b border-gray-100">
       <div className="container-custom h-20 flex items-center justify-between">
         {/* Logo */}
-        <Link to="/" className="flex items-center gap-2">
-          <div className="w-10 h-10 bg-primary-600 rounded-xl flex items-center justify-center text-white font-bold text-xl">
-            R
+        <Link to="/" className="flex items-center  group">
+          <div className="relative">
+            <img
+              src={logoIcon}
+              alt="R"
+              className="h-20 w-20 object-contain transform  transition-transform duration-200"
+            />
+            <div className="absolute inset-0 bg-primary-600/10 blur-xl rounded-full -z-10 opacity-0 group-hover:opacity-100 transition-opacity" />
           </div>
-          <span className="text-xl font-bold text-gray-900 tracking-tight">
-            Rapi<span className="text-primary-600">Report</span>
-          </span>
+          <div className="flex flex-col">
+            <span className="text-2xl font-black text-gray-900 tracking-tighter leading-none flex items-center">
+              Rapi<span className="text-primary-600">Report</span>
+            </span>
+            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] leading-none mt-1">
+              Precision Health Insights
+            </span>
+          </div>
         </Link>
 
         {/* Desktop Nav */}

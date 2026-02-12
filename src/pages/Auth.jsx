@@ -17,6 +17,7 @@ import {
   ArrowRight,
   Sparkles,
 } from "lucide-react";
+import logoIcon from "@/assets/logos/rapireport_logo.png";
 
 const Auth = () => {
   const { t } = useTranslation();
@@ -168,8 +169,12 @@ const Auth = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="text-center mb-10">
-            <div className="lg:hidden inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-primary-600 text-white font-black text-2xl shadow-xl shadow-primary-200 mb-6 mx-auto">
-              R
+            <div className="lg:hidden mb-6 mx-auto">
+              <img
+                src={logoIcon}
+                alt="RapiReport"
+                className="w-16 h-16 rounded-2xl shadow-xl shadow-primary-100"
+              />
             </div>
             <h2 className="text-3xl font-black text-gray-900 mb-3 tracking-tight">
               {t("auth.createTitle")}

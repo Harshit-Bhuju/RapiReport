@@ -22,7 +22,6 @@
     "title": "Save 8 Hours Monthly on Health Tracking",
     "subtitle": "Convert messy diagnostic data into professional reports. AI-powered medical insights for Nepal.",
     "cta": "Start Free Version",
-    "demo": "Watch Demo",
     "badge": "🚀 RapiReport v1.0 is Live",
     "noCard": "No credit card required",
     "trustedLabs": "Trusted by 50+ Labs",
@@ -59,6 +58,28 @@
     "reportsProcessed": "Reports Processed",
     "partnerLabs": "Partner Labs",
     "userRating": "User Rating"
+  },
+  "howItWorks": {
+    "title": "Your Health Journey in 3 Steps",
+    "subtitle": "How RapiReport Works",
+    "step1": {
+      "title": "Secure Upload",
+      "desc": "Upload your lab reports in PDF or image format safely."
+    },
+    "step2": {
+      "title": "AI Analysis",
+      "desc": "Our specialized AI reads and interprets the medical data."
+    },
+    "step3": {
+      "title": "Personalized Insights",
+      "desc": "Get a simple, actionable report with tailored health tips."
+    }
+  },
+  "trust": {
+    "title": "Trusted Healthcare Intelligence",
+    "security": "Military-grade 256-bit encryption for all health data.",
+    "hipaa": "HIPAA Compliant",
+    "encryption": "End-to-end Encrypted"
   },
   "auth": {
     "login": "Login to Your Account",

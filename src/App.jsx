@@ -29,8 +29,9 @@ import RiskAnalysis from "@/pages/RiskAnalysis";
 import HealthPlanner from "@/pages/HealthPlanner";
 import NotFound from "@/pages/NotFound";
 import DoctorConsultation from "@/pages/DoctorConsultation";
-import TerritoryGame from "@/pages/TerritoryGame";
+import QuestGame from "@/pages/QuestGame";
 import Family from "@/pages/Family";
+import Profile from "@/pages/Profile";
 import ProfileSetup from "@/components/features/ProfileSetup";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 
@@ -150,11 +151,11 @@ function App() {
                 }
               />
               <Route
-                path="/territory-game"
+                path="/quest-game"
                 element={
                   <ProtectedRoute>
                     <DashboardLayout>
-                      <TerritoryGame />
+                      <QuestGame />
                     </DashboardLayout>
                   </ProtectedRoute>
                 }
@@ -180,6 +181,16 @@ function App() {
                 }
               />
 
+              <Route
+                path="/profile"
+                element={
+                  <ProtectedRoute>
+                    <DashboardLayout>
+                      <Profile />
+                    </DashboardLayout>
+                  </ProtectedRoute>
+                }
+              />
               <Route path="/404" element={<NotFound />} />
               <Route path="*" element={<Navigate to="/404" replace />} />
             </Routes>

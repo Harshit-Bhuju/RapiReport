@@ -37,11 +37,17 @@ const Leaderboard = () => {
                             `}>
                 #{user.rank}
               </div>
-              <img
-                src={user.avatar}
-                alt={user.name}
-                className="w-8 h-8 rounded-full bg-gray-200"
-              />
+              {user.avatar ? (
+                <img
+                  src={user.avatar}
+                  alt={user.name}
+                  className="w-8 h-8 rounded-full bg-gray-200 object-cover"
+                />
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-sm">
+                  {user.name?.charAt(0) || "#"}
+                </div>
+              )}
               <span className="font-medium text-gray-700">{user.name}</span>
             </div>
             <span className="font-bold text-gray-900">{user.points} pts</span>

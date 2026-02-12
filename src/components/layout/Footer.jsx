@@ -1,6 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { Heart, Mail, Phone, MapPin } from "lucide-react";
+import logoIcon from "@/assets/logos/rapireport_logo.png";
 
 const Footer = () => {
   const { t } = useTranslation();
@@ -12,11 +13,13 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
           {/* Brand */}
           <div className="col-span-1 md:col-span-1">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">
-                R
-              </div>
-              <span className="text-lg font-bold text-gray-900 tracking-tight">
+            <div className="flex items-center mb-6">
+              <img
+                src={logoIcon}
+                alt="R"
+                className="h-20 w-20 object-contain transition-all"
+              />
+              <span className="text-xl font-black text-gray-900 tracking-tighter leading-none">
                 Rapi<span className="text-primary-600">Report</span>
               </span>
             </div>

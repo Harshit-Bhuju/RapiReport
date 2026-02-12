@@ -55,7 +55,12 @@ const Auth = () => {
             i18n.changeLanguage(response.data.user.language);
           }
           toast.success(`Welcome back, ${response.data.user.name}!`);
-          navigate("/dashboard");
+
+          if (response.data.user.profileComplete) {
+            navigate("/dashboard");
+          } else {
+            navigate("/profile-setup");
+          }
         } else {
           console.error("Login Response Error Data:", response.data);
           toast.error(response.data.message || "Login failed");

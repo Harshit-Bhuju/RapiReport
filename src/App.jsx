@@ -32,6 +32,7 @@ import Booking from "@/pages/Booking";
 import BookingSuccess from "@/pages/BookingSuccess";
 import BookingFailed from "@/pages/BookingFailed";
 import MyAppointments from "@/pages/MyAppointments";
+import UserAppointments from "@/pages/UserAppointments";
 import RiskAnalysis from "@/pages/RiskAnalysis";
 
 
@@ -43,7 +44,9 @@ import QuestGame from "@/pages/QuestGame";
 import Family from "@/pages/Family";
 import Profile from "@/pages/Profile";
 import { AdminPanel, AdminLayout, ConsultantsManagement } from "@/pages/admin";
-import { DoctorDashboard, DoctorProfile, DoctorLayout } from "@/pages/doctor";
+import { DoctorDashboard, DoctorProfile, DoctorLayout, DoctorTransactions, DoctorAppointments } from "@/pages/doctor";
+import ConsultationRoom from "@/pages/ConsultationRoom";
+import ConsultantProfile from "@/pages/ConsultantProfile";
 import ProfileSetup from "@/components/features/ProfileSetup";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import PrescriptionScan from "@/pages/health/PrescriptionScan";
@@ -385,6 +388,66 @@ function App() {
                         <DoctorDashboard />
                       </DoctorLayout>
                     </RoleRoute>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/doctor-transactions"
+                element={
+                  <ProtectedRoute>
+                    <RoleRoute allowedRoles={["doctor"]}>
+                      <DoctorLayout>
+                        <DoctorTransactions />
+                      </DoctorLayout>
+                    </RoleRoute>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/doctor-appointments"
+                element={
+                  <ProtectedRoute>
+                    <RoleRoute allowedRoles={["doctor"]}>
+                      <DoctorLayout>
+                        <DoctorAppointments />
+                      </DoctorLayout>
+                    </RoleRoute>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/consultation/live/:roomId"
+                element={
+                  <ProtectedRoute>
+                    <ConsultationRoom />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/my-appointments"
+                element={
+                  <ProtectedRoute>
+                    <DashboardLayout>
+                      <UserAppointments />
+                    </DashboardLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/consultant-profile/:id"
+                element={
+                  <ProtectedRoute>
+                    <DashboardLayout>
+                      <ConsultantProfile />
+                    </DashboardLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/consultation-room/:roomId"
+                element={
+                  <ProtectedRoute>
+                    <ConsultationRoom />
                   </ProtectedRoute>
                 }
               />

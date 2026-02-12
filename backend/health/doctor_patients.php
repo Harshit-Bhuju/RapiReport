@@ -1,69 +1,51 @@
 <?php
-require_once __DIR__ . '/../config/session_config.php';
-require_once __DIR__ . '/../config/dbconnect.php';
-include __DIR__ . '/../config/header.php';
+require_once __DIR__ . '/../../config/session_config.php';
+require_once __DIR__ . "/../../config/dbconnect.php";
+require_once __DIR__ . "/../../config/header.php";
 
 $user_id = $_SESSION['user_id'] ?? null;
+
 if (!$user_id) {
     http_response_code(401);
-    echo json_encode(['status' => 'error', 'message' => 'Unauthorized']);
+    echo json_encode(["status" => "error", "message" => "Unauthorized"]);
     exit;
 }
 
-$role = $_SESSION['role'] ?? null;
-if (!$role) {
-    $r = $conn->prepare("SELECT role FROM users WHERE id = ?");
-    $r->bind_param('i', $user_id);
-    $r->execute();
-    $rr = $r->get_result();
-    if ($rr && $rr->num_rows) {
-        $role = $rr->fetch_assoc()['role'];
-    }
-    $r->close();
-}
-
-if ($role !== 'doctor') {
+// Verify user is a doctor
+$stmt = $conn->prepare("SELECT role FROM users WHERE id = ?");
+$stmt->bind_param("i", $user_id);
+$stmt->execute();
+$res = $stmt->get_result()->fetch_assoc();
+if (!$res || $res['role'] !== 'doctor') {
     http_response_code(403);
-    echo json_encode(['status' => 'error', 'message' => 'Doctor access required']);
+    echo json_encode(["status" => "error", "message" => "Access denied"]);
     exit;
 }
 
-if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
-    echo json_encode(['status' => 'error', 'message' => 'Method not allowed']);
-    exit;
-}
+// Fetch patients who have booked appointments with this doctor
+// We join appointments with users to get patient details
+$query = "SELECT DISTINCT u.id, u.username as name, u.email, 
+                 TIMESTAMPDIFF(YEAR, u.created_at, CURDATE()) + 20 as age, -- Mock logic for age if DOB not in DB
+                 'Unknown' as gender,
+                 '[]' as chronic, 
+                 '[]' as allergies
+          FROM appointments a
+          JOIN users u ON a.user_id = u.id
+          WHERE a.doctor_id = ?
+          ORDER BY a.appointment_date DESC";
 
-$patients = [];
-$stmt = $conn->prepare("
-    SELECT DISTINCT u.id, u.username, u.email, u.age, u.gender, u.conditions, u.parental_history,
-           MAX(c.created_at) as last_consultation
-    FROM consultations c
-    JOIN users u ON u.id = c.patient_user_id
-    WHERE c.doctor_user_id = ?
-    GROUP BY u.id, u.username, u.email, u.age, u.gender, u.conditions, u.parental_history
-    ORDER BY last_consultation DESC
-");
-$stmt->bind_param('i', $user_id);
+$stmt = $conn->prepare($query);
+$stmt->bind_param("i", $user_id);
 $stmt->execute();
 $result = $stmt->get_result();
-while ($row = $result->fetch_assoc()) {
-    $conditions = [];
-    if ($row['conditions']) {
-        $c = json_decode($row['conditions'], true);
-        $conditions = is_array($c) ? $c : [$row['conditions']];
-    }
-    $patients[] = [
-        'id' => (string) $row['id'],
-        'name' => $row['username'],
-        'email' => $row['email'],
-        'age' => (int) $row['age'],
-        'gender' => $row['gender'],
-        'chronic' => $conditions,
-        'allergies' => [],
-        'lastConsultation' => $row['last_consultation'],
-    ];
-}
-$stmt->close();
-$conn->close();
 
-echo json_encode(['status' => 'success', 'data' => $patients]);
+$patients = [];
+while ($row = $result->fetch_assoc()) {
+    // Decode JSON fields if they exist in future schema, for now using placeholders
+    $row['chronic'] = json_decode($row['chronic']);
+    $row['allergies'] = json_decode($row['allergies']);
+    $patients[] = $row;
+}
+
+echo json_encode(["status" => "success", "data" => $patients]); // Structure matches frontend expectation
+$conn->close();

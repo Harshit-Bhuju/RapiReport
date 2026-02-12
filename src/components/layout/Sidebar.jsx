@@ -18,6 +18,7 @@ import {
   Activity,
   Gift,
   History,
+  Calendar, // Added
 } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { cn } from "@/lib/utils";
@@ -58,7 +59,8 @@ const Sidebar = ({ isOpen, onClose }) => {
           path: "/consultation",
           icon: MessageSquare,
         },
-        { name: t("sidebar.doctors"), path: "/doctors", icon: Stethoscope },
+        { name: "My Appointments", path: "/my-appointments", icon: Calendar },
+        { name: "Consult Doctor", path: "/consultants", icon: Stethoscope },
         { name: "Family Health", path: "/family", icon: Users },
       ],
     },
@@ -75,12 +77,12 @@ const Sidebar = ({ isOpen, onClose }) => {
   const systemItems = [
     ...(user?.role === "doctor"
       ? [
-          {
-            name: "Doctor Profile",
-            path: "/doctor-profile",
-            icon: ClipboardList,
-          },
-        ]
+        {
+          name: "Doctor Profile",
+          path: "/doctor-profile",
+          icon: ClipboardList,
+        },
+      ]
       : []),
     ...(user?.role === "admin"
       ? [{ name: "Admin Panel", path: "/admin", icon: Shield }]

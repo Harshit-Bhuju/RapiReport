@@ -9,6 +9,9 @@ import {
   ChevronDown,
   UserCog,
   ArrowLeft,
+  FileText, // Added
+  DollarSign, // Added
+  Calendar, // Added
 } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { cn } from "@/lib/utils";
@@ -21,7 +24,9 @@ const DoctorSidebar = ({ isOpen, onClose }) => {
 
   const doctorNavItems = [
     { name: "Dashboard", path: "/doctor-dashboard", icon: LayoutDashboard },
-    { name: "Doctor Profile", path: "/doctor-profile", icon: ClipboardList },
+    { name: "Appointments", path: "/doctor-appointments", icon: Calendar },
+    { name: "My Profile", path: "/doctor-profile", icon: FileText },
+    { name: "Transactions", path: "/doctor-transactions", icon: DollarSign },
   ];
 
   return (

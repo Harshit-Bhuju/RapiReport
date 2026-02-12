@@ -90,12 +90,20 @@ const Profile = () => {
             Update your medical background and preferences
           </p>
         </div>
-        <Button
-          variant="secondary"
-          onClick={() => navigate(-1)}
-          className="hidden sm:flex">
-          <ArrowLeft className="w-4 h-4 mr-2" /> {t("common.back")}
-        </Button>
+        <div className="flex gap-3">
+          <Button
+            variant="outline"
+            onClick={() => navigate("/my-appointments")}
+            className="hidden sm:flex border-primary-200 text-primary-700 bg-primary-50">
+            My Appointments
+          </Button>
+          <Button
+            variant="secondary"
+            onClick={() => navigate(-1)}
+            className="hidden sm:flex">
+            <ArrowLeft className="w-4 h-4 mr-2" /> {t("common.back")}
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

@@ -17,7 +17,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                      dp.display_name, dp.specialty, dp.experience_years, dp.consultation_rate, dp.bio, dp.is_available, dp.availability_json
               FROM users u
               JOIN doctor_profiles dp ON u.id = dp.user_id
-              WHERE u.role = 'doctor' AND dp.is_available = 1";
+             WHERE u.role = 'doctor' 
+                /* 
+                AND dp.is_available = 1
+                AND dp.specialty IS NOT NULL AND dp.specialty != ''
+                AND dp.consultation_rate IS NOT NULL AND dp.consultation_rate > 0
+                AND dp.availability_json IS NOT NULL
+                AND dp.experience_years IS NOT NULL 
+                */";
 
     $result = $conn->query($query);
     $doctors = [];

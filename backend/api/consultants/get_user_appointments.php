@@ -13,10 +13,11 @@ if (!$user_id) {
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     // Fetch user appointments with doctor details
     $query = "SELECT a.id, a.appointment_date, a.appointment_time_slot, a.status, a.consultation_fee, a.notes, a.created_at,
-                     dp.display_name as doctor_name, dp.specialty as doctor_specialty, u.profile_pic as doctor_pic,
+                     COALESCE(dp.display_name, u.username) as doctor_name, dp.specialty, u.profile_pic as doctor_profile_pic,
+                     a.doctor_user_id,
                      cc.room_id
               FROM appointments a
-              JOIN doctor_profiles dp ON a.doctor_user_id = dp.user_id
+              LEFT JOIN doctor_profiles dp ON a.doctor_user_id = dp.user_id
               JOIN users u ON a.doctor_user_id = u.id
               LEFT JOIN consultation_calls cc ON a.id = cc.appointment_id
               WHERE a.patient_user_id = ?

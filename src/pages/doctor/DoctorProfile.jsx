@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import {
   Stethoscope,
   Briefcase,
@@ -15,6 +16,7 @@ import Button from "@/components/ui/Button";
 import { useAuthStore } from "@/store/authStore";
 import { cn } from "@/lib/utils";
 import toast from "react-hot-toast";
+import API from "@/Configs/ApiEndpoints";
 
 import Select from "@/components/ui/Select";
 
@@ -74,11 +76,21 @@ const DoctorProfile = () => {
         profile_languages: formData.languages,
       };
 
-      const result = await updateProfile(profileData);
-      if (result.success) {
-        toast.success("Doctor profile saved successfully!");
+      const availabilityPromise = axios.post(
+        API.DOCTOR_AVAILABILITY,
+        { availability: formData.availability },
+        { withCredentials: true }
+      );
+
+      const [result, availResult] = await Promise.all([
+        updateProfile(profileData),
+        availabilityPromise
+      ]);
+
+      if (result.success && availResult.data.status === "success") {
+        toast.success("Doctor profile and availability saved successfully!");
       } else {
-        toast.error(result.message || "Failed to save profile");
+        toast.error(result.message || availResult.data.message || "Failed to save profile");
       }
     } catch (error) {
       console.error("Save Profile Error:", error);
@@ -253,6 +265,82 @@ const DoctorProfile = () => {
                   setFormData({ ...formData, bio: e.target.value })
                 }
               />
+            </CardBody>
+          </Card>
+
+          <Card className="border-none shadow-xl shadow-gray-100/50">
+            <CardBody className="p-6 sm:p-8">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center text-purple-600">
+                  <Clock className="w-5 h-5" />
+                </div>
+                <h2 className="text-lg font-bold text-gray-900">Availability</h2>
+              </div>
+
+              <div className="space-y-4">
+                <p className="text-sm text-gray-500 mb-4">Set your weekly availability for consultations. Patients can only book slots within these times.</p>
+                {/* Simple Availability UI - can be expanded */}
+                {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map(day => (
+                  <div key={day} className="flex items-center gap-4 p-3 border border-gray-100 rounded-xl">
+                    <div className="w-24 font-bold text-sm">{day}</div>
+                    <select
+                      className="p-2 border rounded-lg text-sm bg-gray-50"
+                      value={formData.availability?.find(s => s.day === day)?.startTime || "09:00"}
+                      onChange={(e) => {
+                        const newAv = [...(formData.availability || [])];
+                        const idx = newAv.findIndex(s => s.day === day);
+                        if (idx >= 0) newAv[idx].startTime = e.target.value;
+                        else newAv.push({ day, startTime: e.target.value, endTime: "17:00" });
+                        setFormData({ ...formData, availability: newAv });
+                      }}
+                    >
+                      <option value="09:00">09:00 AM</option>
+                      <option value="10:00">10:00 AM</option>
+                      <option value="11:00">11:00 AM</option>
+                      <option value="12:00">12:00 PM</option>
+                      <option value="13:00">01:00 PM</option>
+                    </select>
+                    <span className="text-gray-400">-</span>
+                    <select
+                      className="p-2 border rounded-lg text-sm bg-gray-50"
+                      value={formData.availability?.find(s => s.day === day)?.endTime || "17:00"}
+                      onChange={(e) => {
+                        const newAv = [...(formData.availability || [])];
+                        const idx = newAv.findIndex(s => s.day === day);
+                        if (idx >= 0) newAv[idx].endTime = e.target.value;
+                        else newAv.push({ day, startTime: "09:00", endTime: e.target.value });
+                        setFormData({ ...formData, availability: newAv });
+                      }}
+                    >
+                      <option value="12:00">12:00 PM</option>
+                      <option value="13:00">01:00 PM</option>
+                      <option value="14:00">02:00 PM</option>
+                      <option value="15:00">03:00 PM</option>
+                      <option value="16:00">04:00 PM</option>
+                      <option value="17:00">05:00 PM</option>
+                      <option value="18:00">06:00 PM</option>
+                    </select>
+                    <label className="flex items-center gap-2 text-xs font-bold cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={!!formData.availability?.find(s => s.day === day)}
+                        onChange={(e) => {
+                          let newAv = [...(formData.availability || [])];
+                          if (e.target.checked) {
+                            if (!newAv.find(s => s.day === day)) {
+                              newAv.push({ day, startTime: "09:00", endTime: "17:00" });
+                            }
+                          } else {
+                            newAv = newAv.filter(s => s.day !== day);
+                          }
+                          setFormData({ ...formData, availability: newAv });
+                        }}
+                      />
+                      Active
+                    </label>
+                  </div>
+                ))}
+              </div>
             </CardBody>
           </Card>
 

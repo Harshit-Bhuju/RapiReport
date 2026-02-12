@@ -67,6 +67,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $merchant_id = "EPAYTEST";
         $secret_key = "8gBm/:&EnhH.1/q";
 
+        // Determine frontend URL for redirection after callback
+        $frontend_url = "http://localhost:5173";
+        if (isset($_SERVER['HTTP_HOST']) && strpos($_SERVER['HTTP_HOST'], 'harmanbhuju.com.np') !== false) {
+            $frontend_url = "https://harmanbhuju.com.np";
+        } elseif (isset($_SERVER['HTTP_REFERER'])) {
+            // Try to use referrer as frontend URL if available
+            $parsed = parse_url($_SERVER['HTTP_REFERER']);
+            if ($parsed && isset($parsed['scheme']) && isset($parsed['host'])) {
+                $port = isset($parsed['port']) ? ":" . $parsed['port'] : "";
+                $frontend_url = $parsed['scheme'] . "://" . $parsed['host'] . $port;
+            }
+        }
+
+        // Store in session for retrieval in callback
+        $_SESSION['frontend_url'] = $frontend_url;
+
+        // Callback URLs without query params (cleaner and safer for some gateways)
         $success_url = $base_url . "/backend/api/payments/payment_success.php";
         $failure_url = $base_url . "/backend/api/payments/payment_failure.php";
 

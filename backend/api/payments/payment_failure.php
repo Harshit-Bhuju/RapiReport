@@ -3,5 +3,13 @@ require_once __DIR__ . '/../../config/dbconnect.php';
 
 // eSewa Failure Callback
 // Just redirects back to frontend with failure message
-header("Location: http://localhost:5173/booking-failed?error=Payment Cancelled or Failed");
+
+$frontend_url = $_GET['frontend_url'] ?? "http://localhost:5173";
+
+// Fallback if not provided
+if (!isset($_GET['frontend_url']) && isset($_SERVER['HTTP_HOST']) && strpos($_SERVER['HTTP_HOST'], 'harmanbhuju.com.np') !== false) {
+    $frontend_url = "https://harmanbhuju.com.np";
+}
+
+header("Location: " . $frontend_url . "/booking-failed?error=Payment Cancelled or Failed");
 exit;

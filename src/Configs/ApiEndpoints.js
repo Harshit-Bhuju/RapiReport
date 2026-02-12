@@ -108,8 +108,20 @@ const API = {
 
   // Consultants & Appointments
   CONSULTANTS_LIST: `${BASE_URL}/api/consultants/get_consultants.php`,
+  GET_CONSULTANT_PROFILE: `${BASE_URL}/api/consultants/get_consultant_profile.php`,
   USER_APPOINTMENTS: `${BASE_URL}/api/consultants/get_user_appointments.php`,
+  DOCTOR_AVAILABILITY: `${BASE_URL}/api/doctor/update_availability.php`,
+  DOCTOR_SLOTS: `${BASE_URL}/api/consultants/get_doctor_slots.php`,
   ESEWA_INITIATE: `${BASE_URL}/api/payments/initiate_esewa.php`,
+  DOCTOR_TRANSACTIONS: `${BASE_URL}/api/payments/doctor_transactions.php`,
+
+  // Consultation WebRTC
+  CONSULTATION_SIGNAL: `${BASE_URL}/api/consultants/consultation_call_signal.php`,
+  CONSULTATION_STATUS: `${BASE_URL}/api/consultants/consultation_call_status.php`,
+  GET_CONSULTATION_DETAILS: `${BASE_URL}/api/consultants/get_consultation_details.php`,
+
+  // Prescriptions
+  SAVE_PRESCRIPTION: `${BASE_URL}/health/prescriptions_create.php`,
 
   // Optional Python OCR microservice (FastAPI/EasyOCR)
   OCR_UPLOAD: OCR_SERVICE_BASE_URL ? `${OCR_SERVICE_BASE_URL}/upload` : null,

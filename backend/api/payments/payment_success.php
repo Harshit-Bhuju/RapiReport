@@ -1,12 +1,30 @@
 <?php
 require_once __DIR__ . '/../../config/dbconnect.php';
 
+// Debug Logging - Log EVERYTHING
+file_put_contents(__DIR__ . '/esewa_debug.log', "=== NEW SUCCESS CALLBACK ===\n", FILE_APPEND);
+file_put_contents(__DIR__ . '/esewa_debug.log', "GET: " . print_r($_GET, true) . "\n", FILE_APPEND);
+file_put_contents(__DIR__ . '/esewa_debug.log', "POST: " . print_r($_POST, true) . "\n", FILE_APPEND);
+file_put_contents(__DIR__ . '/esewa_debug.log', "REQUEST: " . print_r($_REQUEST, true) . "\n", FILE_APPEND);
+
 // eSewa Success Callback
-// It receives a base64 encoded JSON string in 'data' parameter (for v2)
-$data = $_GET['data'] ?? '';
+$data = $_GET['data'] ?? ($_POST['data'] ?? null);
+
+// If using SDK's decode, it might check other places. 
+// But manual decoding needs the string.
+
+$frontend_url = $_SESSION['frontend_url'] ?? "http://localhost:5173";
+// Fallback
+if (isset($_SERVER['HTTP_HOST']) && strpos($_SERVER['HTTP_HOST'], 'harmanbhuju.com.np') !== false) {
+    if ($frontend_url === "http://localhost:5173") {
+        $frontend_url = "https://harmanbhuju.com.np";
+    }
+}
 
 if (empty($data)) {
-    die("Error: No data received from eSewa.");
+    file_put_contents(__DIR__ . '/esewa_debug.log', "ERROR: No data received.\n", FILE_APPEND);
+    // Try to be helpful - if we have a q or other param?
+    die("Error: No data received from eSewa. Debug info written to log.");
 }
 
 // Decode eSewa data
@@ -28,6 +46,10 @@ if (!$response) {
 }
 */
 
+// Debug Logging
+file_put_contents(__DIR__ . '/esewa_debug.log', "Received Data: " . $data . "\n", FILE_APPEND);
+file_put_contents(__DIR__ . '/esewa_debug.log', "Decoded JSON: " . $json_data . "\n", FILE_APPEND);
+
 $status = $response['status'] ?? '';
 $signature = $response['signature'] ?? '';
 $transaction_uuid = $response['transaction_uuid'] ?? '';
@@ -36,9 +58,29 @@ $total_amount = $response['total_amount'] ?? '';
 
 // 1. Verify Signature
 $secret_key = "8gBm/:&EnhH.1/q";
-$message = "total_amount=" . $total_amount . ",transaction_uuid=" . $transaction_uuid . ",product_code=EPAYTEST";
+
+// Construct message based on signed_field_names if available
+$signed_field_names = $response['signed_field_names'] ?? '';
+if (!empty($signed_field_names)) {
+    $fields = explode(',', $signed_field_names);
+    $message_array = [];
+    foreach ($fields as $field) {
+        $message_array[] = $field . "=" . ($response[$field] ?? '');
+    }
+    $message = implode(',', $message_array);
+} else {
+    // Fallback to standard if not present (though it seems it IS present)
+    $message = "total_amount=" . $total_amount . ",transaction_uuid=" . $transaction_uuid . ",product_code=EPAYTEST";
+}
+
 $s = hash_hmac('sha256', $message, $secret_key, true);
 $expected_signature = base64_encode($s);
+
+file_put_contents(__DIR__ . '/esewa_debug.log', "Status: $status\n", FILE_APPEND);
+file_put_contents(__DIR__ . '/esewa_debug.log', "Message: $message\n", FILE_APPEND);
+file_put_contents(__DIR__ . '/esewa_debug.log', "Calculated Sig: $expected_signature\n", FILE_APPEND);
+file_put_contents(__DIR__ . '/esewa_debug.log', "Received Sig: $signature\n", FILE_APPEND);
+file_put_contents(__DIR__ . '/esewa_debug.log', "--------------------------------\n", FILE_APPEND);
 
 if ($status === 'COMPLETE' && $signature === $expected_signature) {
     // 2. Update Database
@@ -74,17 +116,18 @@ if ($status === 'COMPLETE' && $signature === $expected_signature) {
 
         $conn->commit();
 
-        // Redirect to Frontend Success Page
-        // Assuming frontend is at http://localhost:5173
-        // In local development, we often use the host or a config
-        header("Location: http://localhost:5173/booking-success?appointment_id=" . $appointment_id);
+        header("Location: " . $frontend_url . "/booking-success?appointment_id=" . $appointment_id);
         exit;
     } catch (Exception $e) {
         $conn->rollback();
+        file_put_contents(__DIR__ . '/esewa_debug.log', "DB Error: " . $e->getMessage() . "\n", FILE_APPEND);
         die("Database Error: " . $e->getMessage());
     }
 } else {
     // Invalid signature or payment failed
-    header("Location: http://localhost:5173/booking-failed?error=Signature Verification Failed");
+    $error_msg = "Signature Verification Failed. Status: $status. RecSig: $signature. ExpSig: $expected_signature";
+    file_put_contents(__DIR__ . '/esewa_debug.log', "Error: $error_msg\n", FILE_APPEND);
+
+    header("Location: " . $frontend_url . "/booking-failed?error=" . urlencode($error_msg));
     exit;
 }

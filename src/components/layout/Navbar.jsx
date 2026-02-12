@@ -51,7 +51,6 @@ const Navbar = () => {
     return [
       { name: t("nav.home"), path: "/" },
       { name: t("nav.dashboard"), path: "/dashboard" },
-      { name: t("nav.consultants"), path: "/consultants" },
     ];
   };
 

@@ -1,5 +1,4 @@
-import React, { useState, useEffect, Fragment } from "react";
-import axios from "axios";
+import { useTranslation } from "react-i18next";
 import { Card, CardBody } from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
 import {
@@ -25,6 +24,7 @@ import { format } from "date-fns";
 import { Dialog, Transition } from "@headlessui/react";
 
 const Marketplace = () => {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState("browse"); // 'browse' | 'history'
   const [rewards, setRewards] = useState([]);
   const [history, setHistory] = useState([]);
@@ -56,7 +56,7 @@ const Marketplace = () => {
       }
     } catch (e) {
       console.warn("Rewards fetch failed", e);
-      toast.error("Could not load rewards.");
+      toast.error(t("form.error"));
     } finally {
       setLoading(false);
     }
@@ -95,7 +95,11 @@ const Marketplace = () => {
     const reward = selectedReward;
 
     if (userPoints < reward.pointsRequired) {
-      toast.error(`Need ${reward.pointsRequired - userPoints} more points.`);
+      toast.error(
+        t("marketplace.insufficientPoints", {
+          needed: reward.pointsRequired - userPoints,
+        }),
+      );
       return;
     }
     setRedeeming(reward.id);
@@ -158,11 +162,10 @@ const Marketplace = () => {
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
           <h1 className="text-4xl font-black text-gray-900 tracking-tight">
-            Marketplace
+            {t("marketplace.title")}
           </h1>
           <p className="text-lg text-gray-500 font-medium mt-2 max-w-2xl">
-            Redeem your hard-earned points for exclusive health rewards,
-            discounts, and services.
+            {t("marketplace.subtitle")}
           </p>
         </div>
 
@@ -171,10 +174,12 @@ const Marketplace = () => {
             <div className="flex items-center justify-between gap-4">
               <div>
                 <p className="text-primary-100 text-sm font-semibold uppercase tracking-wider">
-                  Available Balance
+                  {t("marketplace.availableBalance")}
                 </p>
                 <p className="text-4xl font-black mt-1">{userPoints}</p>
-                <p className="text-primary-200 text-sm mt-1">Points</p>
+                <p className="text-primary-200 text-sm mt-1">
+                  {t("marketplace.points")}
+                </p>
               </div>
               <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
                 <Gift className="w-7 h-7 text-white" />
@@ -195,7 +200,7 @@ const Marketplace = () => {
                 ? "border-primary-600 text-primary-600"
                 : "border-transparent text-gray-400 hover:text-gray-600",
             )}>
-            Browse Rewards
+            {t("marketplace.browse")}
           </button>
           <button
             onClick={() => setActiveTab("history")}
@@ -205,7 +210,7 @@ const Marketplace = () => {
                 ? "border-primary-600 text-primary-600"
                 : "border-transparent text-gray-400 hover:text-gray-600",
             )}>
-            Redemption History
+            {t("marketplace.history")}
           </button>
         </div>
       </div>
@@ -219,7 +224,7 @@ const Marketplace = () => {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search rewards..."
+                placeholder={t("marketplace.searchPlaceholder")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border-none rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary-500 transition-all text-gray-900 placeholder:text-gray-400"
@@ -239,7 +244,7 @@ const Marketplace = () => {
                         ? "bg-white text-primary-600 shadow-sm"
                         : "text-gray-500 hover:text-gray-700",
                     )}>
-                    {c}
+                    {c === "all" ? t("marketplace.all") : c}
                   </button>
                 ))}
               </div>
@@ -251,8 +256,12 @@ const Marketplace = () => {
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
                   className="appearance-none bg-gray-50 text-gray-600 text-sm font-bold py-2.5 pl-4 pr-10 rounded-xl border-none focus:ring-2 focus:ring-primary-500 cursor-pointer outline-none">
-                  <option value="points_asc">Points: Low to High</option>
-                  <option value="points_desc">Points: High to Low</option>
+                  <option value="points_asc">
+                    {t("marketplace.price")}: Low to High
+                  </option>
+                  <option value="points_desc">
+                    {t("marketplace.price")}: High to Low
+                  </option>
                 </select>
                 <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
               </div>
@@ -299,7 +308,9 @@ const Marketplace = () => {
                           "text-sm font-bold flex items-center gap-1",
                           canRedeem ? "text-primary-600" : "text-gray-400",
                         )}>
-                        {canRedeem ? "Redeem Now" : "Not Enough Points"}
+                        {canRedeem
+                          ? t("marketplace.redeemNow")
+                          : t("marketplace.notEnoughPoints")}
                         {canRedeem && <ArrowRight className="w-4 h-4" />}
                       </span>
                     </div>
@@ -312,10 +323,10 @@ const Marketplace = () => {
                   <Search className="w-8 h-8 text-gray-300" />
                 </div>
                 <h3 className="text-lg font-bold text-gray-900">
-                  No rewards found
+                  {t("marketplace.noProducts")}
                 </h3>
                 <p className="text-gray-500">
-                  Try adjusting your search or filters.
+                  {t("consultantsPage.noSpecialistsDesc")}
                 </p>
               </div>
             )}
@@ -353,7 +364,7 @@ const Marketplace = () => {
                       -{h.pointsSpent} PTS
                     </div>
                     <span className="text-xs font-bold text-green-600 bg-green-50 px-3 py-1 rounded-lg border border-green-100 uppercase tracking-wider">
-                      Redeemed
+                      {t("quest.completedQuests")}
                     </span>
                   </div>
                 </div>
@@ -365,11 +376,9 @@ const Marketplace = () => {
                 <History className="w-8 h-8 text-gray-300" />
               </div>
               <h3 className="text-lg font-bold text-gray-900">
-                No redemption history
+                {t("marketplace.history")}
               </h3>
-              <p className="text-gray-500">
-                You haven't redeemed any rewards yet.
-              </p>
+              <p className="text-gray-500">{t("marketplace.noProducts")}</p>
             </div>
           )}
         </div>
@@ -427,16 +436,17 @@ const Marketplace = () => {
                             {selectedReward.title}
                           </Dialog.Title>
                           <p className="text-gray-500">
-                            Redeem this reward using your points.
+                            {t("marketplace.modalSubtitle")}
                           </p>
                         </div>
 
                         <div className="bg-gray-50 rounded-2xl p-4 mb-8 flex items-center justify-between border border-gray-100">
                           <span className="text-sm font-bold text-gray-500">
-                            Cost
+                            {t("marketplace.cost")}
                           </span>
                           <span className="text-xl font-black text-primary-600">
-                            {selectedReward.pointsRequired} Points
+                            {selectedReward.pointsRequired}{" "}
+                            {t("marketplace.points")}
                           </span>
                         </div>
 
@@ -458,12 +468,16 @@ const Marketplace = () => {
                             ) : (
                               <Gift className="w-5 h-5 mr-2" />
                             )}
-                            {redeeming ? "Processing..." : "Confirm Redemption"}
+                            {redeeming
+                              ? t("marketplace.processing")
+                              : t("marketplace.confirmRedemption")}
                           </Button>
                           {userPoints < selectedReward.pointsRequired && (
                             <p className="text-center text-xs font-bold text-red-500">
-                              Insufficient points. You need{" "}
-                              {selectedReward.pointsRequired - userPoints} more.
+                              {t("marketplace.insufficientPoints", {
+                                needed:
+                                  selectedReward.pointsRequired - userPoints,
+                              })}
                             </p>
                           )}
                         </div>

@@ -31,7 +31,7 @@ const Sidebar = ({ isOpen, onClose }) => {
 
   const mainGroups = [
     {
-      title: "Overview",
+      title: t("footer.quickLinks"),
       items: [
         {
           name: t("sidebar.dashboard"),
@@ -39,19 +39,23 @@ const Sidebar = ({ isOpen, onClose }) => {
           icon: LayoutDashboard,
         },
         { name: t("sidebar.reports"), path: "/reports", icon: FileText },
-        { name: "Medical history", path: "/medical-history", icon: History },
+        { name: t("sidebar.history"), path: "/medical-history", icon: History },
       ],
     },
     {
-      title: "Health Intelligence",
+      title: t("sidebar.intelligence"),
       items: [
-        { name: "Symptoms", path: "/symptoms", icon: Activity },
+        { name: t("sidebar.symptoms"), path: "/symptoms", icon: Activity },
 
-        { name: "Prescriptions", path: "/prescriptions", icon: ScanLine },
+        {
+          name: t("sidebar.prescriptions"),
+          path: "/prescriptions",
+          icon: ScanLine,
+        },
       ],
     },
     {
-      title: "Connect & Community",
+      title: t("sidebar.connect"),
       items: [
         {
           name: t("sidebar.consultation"),
@@ -59,14 +63,14 @@ const Sidebar = ({ isOpen, onClose }) => {
           icon: MessageSquare,
         },
         { name: t("sidebar.doctors"), path: "/doctors", icon: Stethoscope },
-        { name: "Family Health", path: "/family", icon: Users },
+        { name: t("family.title"), path: "/family", icon: Users },
       ],
     },
     {
-      title: "Discover",
+      title: t("sidebar.discover"),
       items: [
-        { name: "Quest Game", path: "/quest-game", icon: Map },
-        { name: "Marketplace", path: "/marketplace", icon: Gift },
+        { name: t("quest.title"), path: "/quest-game", icon: Map },
+        { name: t("marketplace.title"), path: "/marketplace", icon: Gift },
       ],
     },
   ];
@@ -76,20 +80,20 @@ const Sidebar = ({ isOpen, onClose }) => {
     ...(user?.role === "doctor"
       ? [
           {
-            name: "Doctor Profile",
+            name: t("sidebar.doctorProfile"),
             path: "/doctor-profile",
             icon: ClipboardList,
           },
         ]
       : []),
     ...(user?.role === "admin"
-      ? [{ name: "Admin Panel", path: "/admin", icon: Shield }]
+      ? [{ name: t("nav.adminPanel"), path: "/admin", icon: Shield }]
       : []),
   ];
 
   if (systemItems.length > 0) {
     mainGroups.push({
-      title: "System",
+      title: t("sidebar.system"),
       items: systemItems,
     });
   }

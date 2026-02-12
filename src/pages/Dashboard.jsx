@@ -113,12 +113,12 @@ const Dashboard = () => {
     reports.length > 0
       ? reports[0]
       : {
-        id: "mock-report",
-        type: "General Blood Panel",
-        date: new Date().toISOString(),
-        lab: "MediCare Labs",
-        status: "normal",
-      };
+          id: "mock-report",
+          type: "General Blood Panel",
+          date: new Date().toISOString(),
+          lab: "MediCare Labs",
+          status: "normal",
+        };
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -327,9 +327,9 @@ const Dashboard = () => {
                   {displayReport.lab || "Unknown Lab"} •{" "}
                   {displayReport.date
                     ? new Date(displayReport.date).toLocaleDateString("en-GB", {
-                      month: "short",
-                      day: "numeric",
-                    })
+                        month: "short",
+                        day: "numeric",
+                      })
                     : "No Date"}
                 </p>
 
@@ -348,15 +348,15 @@ const Dashboard = () => {
                 <Stethoscope className="w-6 h-6 text-primary-600" />
               </div>
               <h3 className="text-xl font-black mb-2 text-gray-900">
-                Consult a Specialist
+                {t("dashboardPage.consultSpecialist")}
               </h3>
               <p className="text-sm font-bold text-gray-500 leading-relaxed mb-8">
-                Connect with professional doctors for live video consultations and expert advice.
+                {t("dashboardPage.consultDesc")}
               </p>
               <Button
                 className="w-full bg-primary-600 text-white hover:bg-primary-700 shadow-lg shadow-primary-100 font-black rounded-2xl py-4 flex items-center justify-center gap-2"
                 onClick={() => navigate("/consultants")}>
-                Find a Doctor
+                {t("dashboardPage.findDoctor")}
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </Button>
             </CardBody>
@@ -382,7 +382,6 @@ const Dashboard = () => {
               </Button>
             </CardBody>
           </Card>
-
         </div>
       </div>
       <ChatInterface />

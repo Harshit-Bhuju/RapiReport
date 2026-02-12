@@ -24,12 +24,10 @@ const Footer = () => {
               </span>
             </div>
             <p className="text-sm text-gray-500 leading-relaxed mb-6">
-              Empowering Nepali citizens with AI-driven healthcare intelligence
-              and simplified medical reporting.
+              {t("hero.subtitle")}
             </p>
             <div className="flex items-center gap-1 text-sm text-gray-400">
-              Built with{" "}
-              <Heart className="w-4 h-4 text-error-500 fill-current" /> in Nepal
+              {t("footer.builtInNepal")}
             </div>
           </div>
 
@@ -63,7 +61,9 @@ const Footer = () => {
 
           {/* Legal */}
           <div>
-            <h4 className="font-bold text-gray-900 mb-6">Legal</h4>
+            <h4 className="font-bold text-gray-900 mb-6">
+              {t("footer.quickLinks")}
+            </h4>
             <ul className="space-y-4">
               <li>
                 <a

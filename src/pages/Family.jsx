@@ -1214,7 +1214,7 @@ const Family = () => {
             ? t("family.healthDetails", {
                 name: healthModalMember.name,
               }) || `${healthModalMember.name}'s Health`
-            : "Health Details"
+            : t("family.viewHealthDetails")
         }
         size="lg">
         {healthModalMember && healthModalMember.health && (
@@ -1242,7 +1242,8 @@ const Family = () => {
                 <div className="flex gap-3 mt-2">
                   {healthModalMember.health.profile?.age && (
                     <span className="text-xs font-bold text-gray-600 bg-white px-2 py-1 rounded-lg border border-gray-100">
-                      {healthModalMember.health.profile.age} years
+                      {healthModalMember.health.profile.age}{" "}
+                      {t("consultantsPage.years")}
                     </span>
                   )}
                   {healthModalMember.health.profile?.gender && (
@@ -1266,14 +1267,16 @@ const Family = () => {
               <div className="bg-white border border-gray-100 p-4 rounded-2xl shadow-sm">
                 <div className="flex items-center gap-2 mb-3 text-gray-900 font-black">
                   <Heart className="w-4 h-4 text-primary-500" />
-                  {t("family.conditions") || "Conditions"}
+                  {t("family.conditions")}
                 </div>
                 {healthModalMember.health.profile?.conditions ? (
                   <p className="text-sm text-gray-600 leading-relaxed">
                     {healthModalMember.health.profile.conditions}
                   </p>
                 ) : (
-                  <p className="text-xs text-gray-400 italic">None listed</p>
+                  <p className="text-xs text-gray-400 italic">
+                    {t("family.noneListed")}
+                  </p>
                 )}
               </div>
 
@@ -1281,14 +1284,16 @@ const Family = () => {
               <div className="bg-white border border-gray-100 p-4 rounded-2xl shadow-sm">
                 <div className="flex items-center gap-2 mb-3 text-gray-900 font-black">
                   <ShieldAlert className="w-4 h-4 text-warning-500" />
-                  {t("family.allergies") || "Allergies"}
+                  {t("family.allergies")}
                 </div>
                 {healthModalMember.health.profile?.allergies ? (
                   <p className="text-sm text-gray-600 leading-relaxed">
                     {healthModalMember.health.profile.allergies}
                   </p>
                 ) : (
-                  <p className="text-xs text-gray-400 italic">None listed</p>
+                  <p className="text-xs text-gray-400 italic">
+                    {t("family.noneListed")}
+                  </p>
                 )}
               </div>
             </div>
@@ -1300,7 +1305,7 @@ const Family = () => {
                 <div className="bg-white border border-gray-100 p-4 rounded-2xl shadow-sm">
                   <div className="flex items-center gap-2 mb-3 text-gray-900 font-black">
                     <Users className="w-4 h-4 text-purple-500" />
-                    {t("family.parentalHistory") || "Parental History"}
+                    {t("family.parentalHistory")}
                   </div>
                   <div className="flex flex-wrap gap-2 mb-2">
                     {healthModalMember.health.profile.parentalHistory.map(
@@ -1315,7 +1320,7 @@ const Family = () => {
                   </div>
                   {healthModalMember.health.profile.customParentalHistory && (
                     <p className="text-xs text-gray-500 mt-2 border-t border-gray-50 pt-2">
-                      <span className="font-bold">Other:</span>{" "}
+                      <span className="font-bold">{t("family.other")}:</span>{" "}
                       {healthModalMember.health.profile.customParentalHistory}
                     </p>
                   )}
@@ -1327,7 +1332,7 @@ const Family = () => {
               <div className="flex items-center justify-between mb-3 px-1">
                 <div className="flex items-center gap-2 text-gray-900 font-black">
                   <Thermometer className="w-4 h-4 text-error-500" />
-                  {t("family.recentSymptoms") || "Recent Symptoms"}
+                  {t("family.recentSymptoms")}
                 </div>
                 <span className="text-xs font-bold text-gray-400">
                   Last {healthModalMember.health.symptoms?.length || 0} entries
@@ -1375,7 +1380,7 @@ const Family = () => {
                 <div className="text-center py-6 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
                   <Thermometer className="w-6 h-6 text-gray-300 mx-auto mb-2" />
                   <p className="text-xs text-gray-400 font-medium">
-                    No symptoms logged recently
+                    {t("family.noSymptoms")}
                   </p>
                 </div>
               )}
@@ -1386,7 +1391,7 @@ const Family = () => {
               <div className="flex items-center justify-between mb-3 px-1">
                 <div className="flex items-center gap-2 text-gray-900 font-black">
                   <FileText className="w-4 h-4 text-blue-500" />
-                  {t("family.recentReports") || "Recent Reports"}
+                  {t("family.recentReports")}
                 </div>
                 <span className="text-xs font-bold text-gray-400">
                   Last {healthModalMember.health.reports?.length || 0} entries
@@ -1446,7 +1451,7 @@ const Family = () => {
                 <div className="text-center py-6 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
                   <FileText className="w-6 h-6 text-gray-300 mx-auto mb-2" />
                   <p className="text-xs text-gray-400 font-medium">
-                    No reports uploaded recently
+                    {t("family.noReports")}
                   </p>
                 </div>
               )}

@@ -14,6 +14,8 @@ import {
   Users,
   ChevronDown,
   UserCog,
+  Shield,
+  ClipboardList,
 } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { cn } from "@/lib/utils";
@@ -25,7 +27,7 @@ const Sidebar = ({ isOpen, onClose }) => {
   const { logout, user } = useAuthStore();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
-  const navItems = [
+  const baseNavItems = [
     { name: t("sidebar.dashboard"), path: "/dashboard", icon: LayoutDashboard },
     { name: t("sidebar.reports"), path: "/reports", icon: FileText },
     {
@@ -38,6 +40,19 @@ const Sidebar = ({ isOpen, onClose }) => {
     { name: "Quest Game", path: "/quest-game", icon: Map },
     { name: t("sidebar.risk"), path: "/prevention", icon: ShieldAlert },
     { name: t("sidebar.planner"), path: "/planner", icon: CalendarCheck },
+  ];
+
+  const adminNav = { name: "Admin Panel", path: "/admin", icon: Shield };
+  const doctorProfileNav = {
+    name: "Doctor Profile",
+    path: "/doctor-profile",
+    icon: ClipboardList,
+  };
+
+  const navItems = [
+    ...baseNavItems,
+    ...(user?.role === "doctor" ? [doctorProfileNav] : []),
+    ...(user?.role === "admin" ? [adminNav] : []),
   ];
 
   return (
@@ -85,7 +100,10 @@ const Sidebar = ({ isOpen, onClose }) => {
           </div>
 
           {/* Navigation Links */}
-          <nav className="flex-grow px-4 space-y-2 py-4 overflow-y-auto scrollbar-hide">
+          <nav className="flex-grow px-4 space-y-1.5 py-6 overflow-visible">
+            <div className="mb-4 px-4 text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">
+              Menu
+            </div>
             {navItems.map((item) => (
               <NavLink
                 key={item.path}
@@ -93,84 +111,107 @@ const Sidebar = ({ isOpen, onClose }) => {
                 onClick={() => window.innerWidth < 1024 && onClose()}
                 className={({ isActive }) =>
                   cn(
-                    "flex items-center gap-4 px-4 py-3.5 rounded-2xl font-bold transition-all duration-200 group",
+                    "relative flex items-center gap-3.5 px-4 py-3 rounded-xl font-semibold transition-all duration-300 group overflow-hidden",
                     isActive
-                      ? "bg-primary-50 text-primary-600 shadow-sm"
-                      : "text-gray-500 hover:bg-gray-50 hover:text-gray-700",
+                      ? "bg-primary-50 text-primary-600"
+                      : "text-gray-500 hover:bg-gray-50 hover:text-gray-900",
                   )
                 }>
-                <item.icon
-                  className={cn(
-                    "w-5 h-5 transition-colors",
-                    "group-hover:text-primary-600",
-                  )}
-                />
-                <span className="truncate">{item.name}</span>
+                {({ isActive }) => (
+                  <>
+                    {/* Active Accent Bar */}
+                    <div
+                      className={cn(
+                        "absolute left-0 top-0 bottom-0 w-1 bg-primary-600 transition-transform duration-300",
+                        isActive ? "scale-y-100" : "scale-y-0",
+                      )}
+                    />
+
+                    <item.icon
+                      className={cn(
+                        "w-5 h-5 transition-all duration-300",
+                        isActive
+                          ? "text-primary-600"
+                          : "group-hover:text-primary-600 group-hover:scale-110",
+                      )}
+                    />
+                    <span className="truncate tracking-wide">{item.name}</span>
+
+                    {/* Hover Glow Effect */}
+                    <div className="absolute inset-0 bg-primary-600/0 group-hover:bg-primary-600/[0.02] transition-colors pointer-events-none" />
+                  </>
+                )}
               </NavLink>
             ))}
           </nav>
 
           {/* User Profile / Logout */}
-          <div className="p-4 border-t border-gray-50 mt-auto bg-white/50 backdrop-blur-sm">
-            <button
-              onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-              className={cn(
-                "w-full flex items-center gap-4 p-3 rounded-2xl transition-all duration-200 group",
-                isUserMenuOpen ? "bg-gray-50" : "hover:bg-gray-50",
-              )}>
-              <div className="w-10 h-10 rounded-xl bg-primary-50 flex items-center justify-center text-primary-600 overflow-hidden shrink-0">
-                {user?.avatar ? (
-                  <img
-                    src={user.avatar}
-                    alt={user.name}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <span className="font-black text-base">
-                    {user?.name?.charAt(0)}
-                  </span>
-                )}
-              </div>
-              <div className="flex-grow min-w-0 text-left">
-                <p className="text-sm font-black text-gray-900 truncate">
-                  {user?.name}
-                </p>
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider truncate">
-                  {user?.email}
-                </p>
-              </div>
-              <ChevronDown
+          <div className="p-4 border-t border-gray-100/60 mt-auto bg-gray-50/30 backdrop-blur-sm">
+            <div className="relative">
+              <button
+                onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                 className={cn(
-                  "w-4 h-4 text-gray-400 transition-transform duration-200",
-                  isUserMenuOpen && "rotate-180",
-                )}
-              />
-            </button>
+                  "w-full flex items-center gap-3 p-2.5 rounded-xl transition-all duration-300 group",
+                  isUserMenuOpen
+                    ? "bg-white shadow-sm ring-1 ring-gray-100"
+                    : "hover:bg-white hover:shadow-sm",
+                )}>
+                <div className="relative shrink-0">
+                  <div className="w-10 h-10 rounded-xl bg-primary-100 flex items-center justify-center text-primary-600 overflow-hidden ring-2 ring-white">
+                    {user?.avatar ? (
+                      <img
+                        src={user.avatar}
+                        alt={user.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="font-bold text-base">
+                        {user?.name?.charAt(0)}
+                      </span>
+                    )}
+                  </div>
+                  <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-success-500 border-2 border-white rounded-full" />
+                </div>
+                <div className="flex-grow min-w-0 text-left">
+                  <p className="text-sm font-bold text-gray-900 truncate">
+                    {user?.name}
+                  </p>
+                  <p className="text-[10px] font-medium text-gray-400 truncate">
+                    {user?.email}
+                  </p>
+                </div>
+                <ChevronDown
+                  className={cn(
+                    "w-4 h-4 text-gray-400 transition-transform duration-300",
+                    isUserMenuOpen && "rotate-180",
+                  )}
+                />
+              </button>
 
-            {/* Collapsible Sign Out */}
-            <div
-              className={cn(
-                "overflow-hidden transition-all duration-300",
-                isUserMenuOpen
-                  ? "max-h-40 mt-2 opacity-100"
-                  : "max-h-0 opacity-0",
-              )}>
-              <button
-                onClick={() => {
-                  navigate("/profile");
-                  setIsUserMenuOpen(false);
-                  if (window.innerWidth < 1024) onClose();
-                }}
-                className="w-full flex items-center gap-4 px-4 py-3 rounded-xl font-bold text-gray-600 hover:bg-gray-50 transition-all duration-200">
-                <UserCog className="w-5 h-5 text-primary-500" />
-                {t("common.edit") || "Edit"} Profile
-              </button>
-              <button
-                onClick={logout}
-                className="w-full flex items-center gap-4 px-4 py-3 rounded-xl font-bold text-error-600 hover:bg-error-50 transition-all duration-200">
-                <LogOut className="w-5 h-5" />
-                {t("sidebar.signout")}
-              </button>
+              {/* Floating Menu on the Right */}
+              {isUserMenuOpen && (
+                <div className="absolute left-full bottom-0 ml-4 w-56 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden animate-in fade-in slide-in-from-left-2 duration-200 z-[60]">
+                  <div className="p-2 space-y-1">
+                    <button
+                      onClick={() => {
+                        navigate("/profile");
+                        setIsUserMenuOpen(false);
+                        if (window.innerWidth < 1024) onClose();
+                      }}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-sm font-semibold text-gray-600 hover:bg-primary-50 hover:text-primary-600 rounded-xl transition-colors">
+                      <UserCog className="w-4 h-4" />
+                      {t("common.edit") || "Edit"} Profile
+                    </button>
+                    <div className="h-px bg-gray-50 mx-2" />
+                    <button
+                      onClick={logout}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-sm font-semibold text-error-600 hover:bg-error-50 rounded-xl transition-colors">
+                      <LogOut className="w-4 h-4" />
+                      {t("sidebar.signout")}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

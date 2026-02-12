@@ -7,6 +7,7 @@ import {
 } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { useAuthStore } from "./store/authStore";
+import { useEffect } from "react";
 
 // Layout
 import Navbar from "@/components/layout/Navbar";
@@ -32,10 +33,20 @@ import DoctorConsultation from "@/pages/DoctorConsultation";
 import QuestGame from "@/pages/QuestGame";
 import Family from "@/pages/Family";
 import Profile from "@/pages/Profile";
+import AdminPanel from "@/pages/AdminPanel";
+import DoctorProfile from "@/pages/DoctorProfile";
 import ProfileSetup from "@/components/features/ProfileSetup";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 
 function App() {
+  const { checkAuth, isAuthenticated } = useAuthStore();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      checkAuth();
+    }
+  }, []);
+
   return (
     <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <div className="flex flex-col min-h-screen">
@@ -187,6 +198,26 @@ function App() {
                   <ProtectedRoute>
                     <DashboardLayout>
                       <Profile />
+                    </DashboardLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin"
+                element={
+                  <ProtectedRoute>
+                    <DashboardLayout>
+                      <AdminPanel />
+                    </DashboardLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/doctor-profile"
+                element={
+                  <ProtectedRoute>
+                    <DashboardLayout>
+                      <DoctorProfile />
                     </DashboardLayout>
                   </ProtectedRoute>
                 }

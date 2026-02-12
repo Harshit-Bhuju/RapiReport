@@ -106,7 +106,7 @@ const QuestMap = () => {
         )}
 
         {/* Quest targets */}
-        {quests.map((q) => (
+        {quests.filter((q) => q.type === "place").map((q) => (
           <Marker
             key={q.id}
             position={[q.lat, q.lng]}

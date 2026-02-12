@@ -36,7 +36,6 @@ export const useAuthStore = create(
         try {
           const response = await api.post(API.UPDATE_PROFILE, profileData);
 
-
           if (response.data.status === "success") {
             const userData = response.data.user;
             set({
@@ -57,12 +56,40 @@ export const useAuthStore = create(
           user: userData,
           isProfileComplete: !!userData?.profileComplete,
         }),
+
+      checkAuth: async () => {
+        try {
+          const response = await api.get(API.GET_CURRENT_USER);
+          if (response.data.status === "success" && response.data.user) {
+            const userData = response.data.user;
+            set({
+              user: userData,
+              isAuthenticated: true,
+              isProfileComplete: !!userData.profileComplete,
+            });
+            return true;
+          }
+          return false;
+        } catch (error) {
+          if (error.response?.status === 401) {
+            localStorage.removeItem("auth_token");
+            set({
+              user: null,
+              token: null,
+              isAuthenticated: false,
+              isProfileComplete: false,
+            });
+          }
+          return false;
+        }
+      },
     }),
     {
       name: "auth-storage",
       partialize: (state) => ({
         user: state.user,
         isAuthenticated: state.isAuthenticated,
+        isProfileComplete: state.isProfileComplete,
       }),
     },
   ),

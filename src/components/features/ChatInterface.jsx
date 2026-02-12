@@ -66,11 +66,12 @@ const ChatInterface = ({ isFullPage = false }) => {
       };
       setMessages((prev) => [...prev, botMsg]);
     } catch (error) {
+      console.error("Chat Error:", error);
       const errorMsg = {
         role: "bot",
         text: {
-          en: "I'm sorry, I'm having trouble connecting right now. Please try again later.",
-          ne: "माफ गर्नुहोस्, म अहिले जडान गर्न असमर्थ छु। कृपया पछि फेरि प्रयास गर्नुहोस्।",
+          en: `Connection Error: ${error.message || "I'm having trouble connecting right now. Please try again later."}`,
+          ne: `जडान त्रुटि: ${error.message || "म अहिले जडान गर्न असमर्थ छु। कृपया पछि फेरि प्रयास गर्नुहोस्।"}`,
         },
         timestamp: new Date().toISOString(),
       };

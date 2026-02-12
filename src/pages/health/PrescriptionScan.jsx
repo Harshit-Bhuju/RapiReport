@@ -16,6 +16,7 @@ import {
   Pill,
   Loader2,
   Sparkles,
+  BrainCircuit,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useHealthStore } from "@/store/healthStore";
@@ -436,6 +437,21 @@ const PrescriptionScan = () => {
                           className="text-xs font-black text-primary-600 hover:text-primary-700 flex items-center gap-1">
                           View details
                           <Sparkles className="w-3 h-3" />
+                        </button>
+                        <button
+                          onClick={() => {
+                            navigate("/consultation", {
+                              state: {
+                                initialPrescription: {
+                                  rawText: item.raw_text || "",
+                                  meds: [],
+                                },
+                              },
+                            });
+                          }}
+                          className="text-xs font-black text-indigo-600 hover:text-indigo-700 flex items-center gap-1 bg-indigo-50 px-3 py-1.5 rounded-lg border border-indigo-100 hover:bg-indigo-100 transition-colors">
+                          Analyze with AI
+                          <BrainCircuit className="w-3 h-3" />
                         </button>
                       </div>
                     </div>

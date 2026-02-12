@@ -16,7 +16,6 @@ import {
   Shield,
   ClipboardList,
   Activity,
-  Utensils,
   Gift,
   History,
 } from "lucide-react";
@@ -47,7 +46,7 @@ const Sidebar = ({ isOpen, onClose }) => {
       title: "Health Intelligence",
       items: [
         { name: "Symptoms", path: "/symptoms", icon: Activity },
-        { name: "Diet", path: "/diet", icon: Utensils },
+
         { name: "Prescriptions", path: "/prescriptions", icon: ScanLine },
       ],
     },

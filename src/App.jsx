@@ -40,7 +40,7 @@ import ProfileSetup from "@/components/features/ProfileSetup";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import PrescriptionScan from "@/pages/health/PrescriptionScan";
 import Symptoms from "@/pages/health/Symptoms";
-import Diet from "@/pages/health/Diet";
+
 import Marketplace from "@/pages/health/Marketplace";
 import Campaigns from "@/pages/health/Campaigns";
 import MedicalHistory from "@/pages/health/MedicalHistory";
@@ -231,16 +231,7 @@ function App() {
                   </ProtectedRoute>
                 }
               />
-              <Route
-                path="/diet"
-                element={
-                  <ProtectedRoute>
-                    <DashboardLayout>
-                      <Diet />
-                    </DashboardLayout>
-                  </ProtectedRoute>
-                }
-              />
+
               <Route
                 path="/marketplace"
                 element={

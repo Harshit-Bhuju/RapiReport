@@ -36,7 +36,8 @@ export const useHealthStore = create(
       adherenceLogs: [],
       adherenceReminders: [],
       symptoms: [],
-      dietLogs: [],
+
+      historyAnalysis: null,
 
       // ---------- Fetch from backend ----------
       fetchPrescriptions: async () => {
@@ -59,9 +60,13 @@ export const useHealthStore = create(
         const j = await apiGet(API.SYMPTOMS_LIST);
         if (j?.status === "success") set({ symptoms: j.data ?? [] });
       },
-      fetchDietLogs: async () => {
-        const j = await apiGet(API.DIET_LIST);
-        if (j?.status === "success") set({ dietLogs: j.data ?? [] });
+
+      fetchHistoryAnalysis: async () => {
+        const res = await apiPost(API.AI_ANALYZE_HISTORY, {});
+        if (res?.ok) {
+          const json = await res.json();
+          set({ historyAnalysis: json.analysis });
+        }
       },
       fetchHealthData: async () => {
         const g = get();
@@ -71,7 +76,6 @@ export const useHealthStore = create(
           g.fetchAdherenceLogs(),
           g.fetchAdherenceReminders(),
           g.fetchSymptoms(),
-          g.fetchDietLogs(),
         ]);
       },
 
@@ -171,7 +175,7 @@ export const useHealthStore = create(
         else
           set((state) => ({
             adherenceLogs: state.adherenceLogs.map((l) =>
-              l.id === logId ? { ...l, taken } : l
+              l.id === logId ? { ...l, taken } : l,
             ),
           }));
       },
@@ -198,7 +202,7 @@ export const useHealthStore = create(
         else
           set((state) => ({
             adherenceReminders: state.adherenceReminders.map((r) =>
-              r.id === id ? { ...r, enabled: !r.enabled } : r
+              r.id === id ? { ...r, enabled: !r.enabled } : r,
             ),
           }));
       },
@@ -209,10 +213,11 @@ export const useHealthStore = create(
         if (res?.ok) await get().fetchAdherenceReminders();
         else
           set((state) => ({
-            adherenceReminders: state.adherenceReminders.filter((r) => r.id !== id),
+            adherenceReminders: state.adherenceReminders.filter(
+              (r) => r.id !== id,
+            ),
           }));
       },
-
 
       // ---------- Symptoms ----------
       addSymptom: async (entry) => {
@@ -244,39 +249,6 @@ export const useHealthStore = create(
         else
           set((state) => ({
             symptoms: state.symptoms.filter((s) => s.id !== id),
-          }));
-      },
-
-      // ---------- Diet ----------
-      addDietLog: async (entry) => {
-        const res = await apiPost(API.DIET_LIST, {
-          date: entry.date ?? todayKey(),
-          mealType: entry.mealType ?? entry.meal_type ?? "breakfast",
-          items: entry.items ?? "",
-          note: entry.note ?? "",
-        });
-        if (res?.ok) await get().fetchDietLogs();
-        else
-          set((state) => ({
-            dietLogs: [
-              {
-                id: crypto.randomUUID(),
-                date: todayKey(),
-                mealType: "breakfast",
-                ...entry,
-              },
-              ...state.dietLogs,
-            ],
-          }));
-      },
-      removeDietLog: async (id) => {
-        const res = await apiPost(API.DIET_LIST, {
-          delete_id: parseInt(id, 10),
-        });
-        if (res?.ok) await get().fetchDietLogs();
-        else
-          set((state) => ({
-            dietLogs: state.dietLogs.filter((d) => d.id !== id),
           }));
       },
     }),

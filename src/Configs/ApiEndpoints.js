@@ -54,7 +54,7 @@ const API = {
   PRESCRIPTIONS_CREATE: `${BASE_URL}/health/prescriptions_create.php`,
   PRESCRIPTIONS_DELETE: `${BASE_URL}/health/prescriptions_delete.php`,
   SYMPTOMS_LIST: `${BASE_URL}/health/symptoms_list.php`,
-  DIET_LIST: `${BASE_URL}/health/diet_list.php`,
+
   CHAT: `${BASE_URL}/api/chat.php`,
   CHAT_HISTORY: `${BASE_URL}/api/get_chat_history.php`,
   REWARDS_LIST: `${BASE_URL}/health/rewards_list.php`,
@@ -67,12 +67,13 @@ const API = {
   DOCTOR_PATIENTS: `${BASE_URL}/health/doctor_patients.php`,
   DOCTOR_PATIENT_TIMELINE: `${BASE_URL}/health/doctor_patient_timeline.php`,
   PRESCRIPTION_STATS: `${BASE_URL}/health/prescription_stats.php`,
-  AI_DIET_SUGGESTION: `${BASE_URL}/api/ai_diet_suggestion.php`,
+
   OCR_HISTORY_LIST: `${BASE_URL}/health/ocr_history_list.php`,
   OCR_HISTORY_DELETE: `${BASE_URL}/health/ocr_history_delete.php`,
   OCR_HISTORY_SAVE: `${BASE_URL}/health/ocr_history_save.php`,
   GEMINI_OCR: `${BASE_URL}/api/gemini_ocr.php`,
   GEMINI_ANALYZE_REPORT: `${BASE_URL}/api/gemini_analyze_report.php`,
+  AI_ANALYZE_HISTORY: `${BASE_URL}/api/ai_analyze_history.php`,
 
   // Reports (lab/diagnostic)
   REPORTS_LIST: `${BASE_URL}/health/reports_list.php`,

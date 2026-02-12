@@ -1,15 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useAuthStore } from "@/store/authStore";
-import {
-  CalendarCheck,
-  Clock,
-  CalendarCheck,
-  Clock,
-  Coffee,
-  Moon,
-  Sun,
-} from "lucide-react";
+import { CalendarCheck, Clock, Coffee, Moon, Sun } from "lucide-react";
 import { Card, CardBody } from "@/components/ui/Card";
 import { DailyRoutineCard } from "@/components/ui/HealthInsightCard";
 import { FamilyMemberCard } from "@/components/ui/FamilyMemberCard";

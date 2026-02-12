@@ -17,7 +17,7 @@ import chatService from "@/lib/chatService";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
-const ChatInterface = ({ isFullPage = false }) => {
+const ChatInterface = ({ isFullPage = false, initialPrescription = null }) => {
   const { t, i18n } = useTranslation();
   const [isOpen, setIsOpen] = useState(isFullPage);
   const [isLoading, setIsLoading] = useState(false);
@@ -41,18 +41,34 @@ const ChatInterface = ({ isFullPage = false }) => {
 
   // Fetch chat history from backend on mount
   useEffect(() => {
-    const fetchHistory = async () => {
+    const fetchHistoryAndCheckInitial = async () => {
       try {
         const history = await chatService.getChatHistory();
         if (history && history.length > 0) {
           setMessages(history);
         }
+
+        // If we have an initial prescription, trigger the AI analysis
+        if (initialPrescription && initialPrescription.meds?.length > 0) {
+          const medNames = initialPrescription.meds
+            .map((m) => m.name)
+            .join(", ");
+          const autoPrompt = `I have a scanned prescription with these medicines: ${medNames}. 
+          Please provide:
+          1. Common brand alternatives for each (available in Nepal).
+          2. Estimated market prices in NPR for these brands.
+          3. A brief explanation of how each medicine works (mechanism of action).
+          
+          Raw prescription context: ${initialPrescription.rawText}`;
+
+          handleSend(autoPrompt);
+        }
       } catch (error) {
         console.error("Error fetching history:", error);
       }
     };
-    fetchHistory();
-  }, []);
+    fetchHistoryAndCheckInitial();
+  }, [initialPrescription]);
 
   useEffect(() => {
     localStorage.setItem("chat_history", JSON.stringify(messages));
@@ -61,12 +77,13 @@ const ChatInterface = ({ isFullPage = false }) => {
     }
   }, [messages, isOpen]);
 
-  const handleSend = async () => {
-    if (!inputValue.trim() || isLoading) return;
+  const handleSend = async (customText = null) => {
+    const textToSend = customText || inputValue;
+    if (!textToSend.trim() || isLoading) return;
 
     const userMsg = {
       role: "user",
-      text: { en: inputValue, ne: inputValue },
+      text: { en: textToSend, ne: textToSend },
       timestamp: new Date().toISOString(),
     };
 
@@ -75,7 +92,7 @@ const ChatInterface = ({ isFullPage = false }) => {
     setIsLoading(true);
 
     try {
-      const response = await chatService.sendMessage(inputValue, i18n.language);
+      const response = await chatService.sendMessage(textToSend, i18n.language);
       const botMsg = {
         role: "bot",
         text: response.text,

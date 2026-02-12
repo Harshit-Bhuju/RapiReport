@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { useTranslation } from "react-i18next";
+import { useLocation } from "react-router-dom";
 import ChatInterface from "@/components/features/ChatInterface";
 import {
   MessageSquare,
@@ -18,6 +19,8 @@ import API from "@/Configs/ApiEndpoints";
 
 const Consultation = () => {
   const { t } = useTranslation();
+  const location = useLocation();
+  const initialPrescription = location.state?.initialPrescription;
   const [asyncOpen, setAsyncOpen] = useState(false);
   const [symptomsText, setSymptomsText] = useState("");
   const [dietActivityNote, setDietActivityNote] = useState("");
@@ -65,7 +68,7 @@ const Consultation = () => {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 flex-1 min-h-0">
         {/* Chat Main Area */}
         <div className="lg:col-span-3 min-h-0 flex flex-col border border-gray-100 rounded-[2rem] bg-white shadow-sm overflow-hidden">
-          <ChatInterface isFullPage />
+          <ChatInterface isFullPage initialPrescription={initialPrescription} />
         </div>
 
         {/* Sidebar Info */}

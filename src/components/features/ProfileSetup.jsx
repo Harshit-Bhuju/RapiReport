@@ -37,7 +37,13 @@ const ProfileSetup = () => {
       const user = useAuthStore.getState().user;
       setFormData(prev => ({
         ...prev,
-        name: user.name || "",
+        name: user.name || prev.name,
+        age: user.age || prev.age,
+        gender: user.gender || prev.gender,
+        conditions: Array.isArray(user.conditions) ? user.conditions : prev.conditions,
+        customConditions: user.customConditions || prev.customConditions,
+        parentalHistory: Array.isArray(user.parentalHistory) ? user.parentalHistory : prev.parentalHistory,
+        customParentalHistory: user.customParentalHistory || prev.customParentalHistory,
         language: user.language || i18n.language
       }));
     }

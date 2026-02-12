@@ -14,14 +14,27 @@ const Profile = () => {
   const navigate = useNavigate();
   const { user, updateProfile } = useAuthStore();
 
+  const parseArray = (data) => {
+    if (Array.isArray(data)) return data;
+    if (typeof data === "string") {
+      try {
+        return JSON.parse(data);
+      } catch (e) {
+        return [];
+      }
+    }
+    return [];
+  };
+
   const [formData, setFormData] = useState({
     name: user?.name || "",
     age: user?.age || "",
     gender: user?.gender || "",
-    conditions: user?.conditions || [],
+    conditions: parseArray(user?.conditions),
     customConditions: user?.customConditions || "",
-    parentalHistory: user?.parentalHistory || [],
+    parentalHistory: parseArray(user?.parentalHistory),
     customParentalHistory: user?.customParentalHistory || "",
+    language: user?.language || "en",
   });
 
   const conditionsList = [
@@ -40,16 +53,30 @@ const Profile = () => {
     }));
   };
 
-  const handleSave = () => {
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSave = async () => {
     if (!formData.name || !formData.age || !formData.gender) {
       toast.error(
         t("auth.setupRequiredFields") || "Please fill in all basic information",
       );
       return;
     }
-    updateProfile(formData);
-    toast.success(t("common.saveSuccess") || "Profile updated successfully!");
-    navigate("/dashboard");
+
+    setIsSaving(true);
+    try {
+      const result = await updateProfile(formData);
+      if (result.success) {
+        toast.success("Profile updated successfully!");
+        // Navigation removed as requested
+      } else {
+        toast.error(result.message || "Failed to update profile");
+      }
+    } catch (error) {
+      toast.error("An error occurred while saving your profile.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -109,6 +136,7 @@ const Profile = () => {
                     {["Male", "Female", "Other"].map((g) => (
                       <button
                         key={g}
+                        type="button"
                         onClick={() => setFormData({ ...formData, gender: g })}
                         className={cn(
                           "py-2 rounded-xl border-2 font-bold text-sm transition-all",
@@ -117,6 +145,32 @@ const Profile = () => {
                             : "border-gray-50 hover:border-gray-100 text-gray-400",
                         )}>
                         {g}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className="text-sm font-bold text-gray-700 mb-2 block">
+                    Preferred Language
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      { key: "ne", label: "Nepali" },
+                      { key: "en", label: "English" },
+                    ].map((l) => (
+                      <button
+                        key={l.key}
+                        type="button"
+                        onClick={() => {
+                          setFormData({ ...formData, language: l.key });
+                        }}
+                        className={cn(
+                          "py-2 rounded-xl border-2 font-bold text-sm transition-all",
+                          formData.language === l.key
+                            ? "bg-primary-50 border-primary-600 text-primary-700"
+                            : "border-gray-50 hover:border-gray-100 text-gray-400",
+                        )}>
+                        {l.label}
                       </button>
                     ))}
                   </div>

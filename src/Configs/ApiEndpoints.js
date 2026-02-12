@@ -3,7 +3,8 @@ const getBaseUrl = () => {
 
     // Local development
     if (hostname === "localhost" || hostname === "127.0.0.1") {
-        return "http://localhost/RapiReport/backend";
+        // Return relative path when local to benefit from Vite proxy
+        return "/api";
     }
 
     // Production

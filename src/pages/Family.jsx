@@ -84,15 +84,15 @@ const Family = () => {
         <div>
           <h1 className="text-2xl font-black text-gray-900 tracking-tight flex items-center gap-3">
             <Users className="w-7 h-7 text-primary-600" />
-            Family Health
+            {t("family.title")}
           </h1>
           <p className="text-gray-500 font-bold mt-1 text-sm">
-            Monitor and support your family's health journey
+            {t("family.subtitle")}
           </p>
         </div>
         <Button onClick={() => setIsAddModalOpen(true)}>
           <Plus className="w-5 h-5 mr-2" />
-          Add Member
+          {t("family.addMember")}
         </Button>
       </div>
 
@@ -116,7 +116,7 @@ const Family = () => {
                 size="sm"
                 onClick={() => handleChat(member)}>
                 <MessageSquare className="w-4 h-4 mr-2 text-primary-600" />
-                Chat
+                {t("family.chat")}
               </Button>
               <Button
                 variant="outline"
@@ -124,7 +124,7 @@ const Family = () => {
                 size="sm"
                 onClick={() => handleCall(member)}>
                 <Phone className="w-4 h-4 mr-2 text-success-600" />
-                Call
+                {t("family.call")}
               </Button>
             </div>
           </div>
@@ -138,9 +138,11 @@ const Family = () => {
             <Plus className="w-7 h-7 group-hover:text-primary-600" />
           </div>
           <span className="font-black text-gray-900 group-hover:text-primary-700">
-            Add Family Member
+            {t("family.addMemberEmpty")}
           </span>
-          <p className="text-xs font-bold mt-1 opacity-60">Invite via Email</p>
+          <p className="text-xs font-bold mt-1 opacity-60">
+            {t("family.inviteViaEmail")}
+          </p>
         </button>
       </div>
 
@@ -148,15 +150,14 @@ const Family = () => {
       <Modal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
-        title="Add Family Member">
+        title={t("family.addMemberEmpty")}>
         <form onSubmit={handleAddMember} className="space-y-4">
           <p className="text-sm text-gray-500">
-            Enter the email address of the family member you want to add. We
-            will send them an invitation to join your family circle.
+            {t("family.modalDescription")}
           </p>
           <Input
-            label="Email Address"
-            placeholder="member@example.com"
+            label={t("family.emailLabel")}
+            placeholder={t("family.emailPlaceholder")}
             type="email"
             required
             value={newMemberEmail}
@@ -167,10 +168,10 @@ const Family = () => {
               type="button"
               variant="ghost"
               onClick={() => setIsAddModalOpen(false)}>
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button type="submit" loading={isLoading}>
-              Send Invitation
+              {t("family.sendInvitation")}
             </Button>
           </div>
         </form>
@@ -180,7 +181,11 @@ const Family = () => {
       <Modal
         isOpen={isChatModalOpen}
         onClose={() => setIsChatModalOpen(false)}
-        title={activeMember ? `Chat with ${activeMember.name}` : "Chat"}
+        title={
+          activeMember
+            ? t("family.chatWith", { name: activeMember.name })
+            : t("family.chat")
+        }
         size="lg">
         <div className="h-[500px]">
           {/* We reuse ChatInterface but ideally we would pass context. 

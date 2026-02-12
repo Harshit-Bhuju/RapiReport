@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuthStore } from "@/store/authStore";
 import { useNavigate } from "react-router-dom";
@@ -15,7 +15,7 @@ import {
 import { cn } from "@/lib/utils";
 
 const ProfileSetup = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { updateProfile } = useAuthStore();
   const [step, setStep] = useState(1);
@@ -27,8 +27,12 @@ const ProfileSetup = () => {
     customConditions: "",
     parentalHistory: [],
     customParentalHistory: "",
-    language: "en",
+    language: i18n.language || "en",
   });
+
+  useEffect(() => {
+    setFormData((prev) => ({ ...prev, language: i18n.language }));
+  }, [i18n.language]);
 
   const conditions = [
     { key: "diabetes", label: t("conditions.diabetes") },
@@ -146,9 +150,10 @@ const ProfileSetup = () => {
                       ].map((l) => (
                         <button
                           key={l.key}
-                          onClick={() =>
-                            setFormData({ ...formData, language: l.key })
-                          }
+                          onClick={() => {
+                            setFormData({ ...formData, language: l.key });
+                            i18n.changeLanguage(l.key);
+                          }}
                           className={cn(
                             "py-2 rounded-xl border-2 font-bold text-xs transition-all",
                             formData.language === l.key

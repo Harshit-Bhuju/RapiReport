@@ -89,7 +89,11 @@
     "termsAgree": "जारी राखेर, तपाईं हाम्रो",
     "terms": "सेवा सर्तहरू",
     "privacy": "गोपनीयता नीति",
-    "and": "र"
+    "and": "र",
+    "welcome": "स्वागत छ {{name}}!",
+    "loginFailed": "लगइन असफल भयो",
+    "googleLoginError": "Google मार्फत लगइन गर्न असफल भयो",
+    "googleLoginFailed": "Google लगइन असफल भयो"
   },
   "dashboardPage": {
     "greeting": "शुभ प्रभात, {{name}}!",
@@ -168,7 +172,16 @@
     "todaysProgress": "आजको प्रगति",
     "activitiesCompleted": "३ मध्ये २ गतिविधिहरू पूरा",
     "healthTip": "स्वास्थ्य सुझाव",
-    "tipText": "नयाँ दिनचर्या सुरु गर्दा तीव्रता भन्दा निरन्तरता बढी महत्त्वपूर्ण छ।"
+    "tipText": "नयाँ दिनचर्या सुरु गर्दा तीव्रता भन्दा निरन्तरता बढी महत्त्वपूर्ण छ।",
+    "addMember": {
+      "title": "परिवारको सदस्य थप्नुहोस्",
+      "nameLabel": "नाम",
+      "relationLabel": "सम्बन्ध",
+      "save": "सुरक्षित गर्नुहोस्",
+      "cancel": "रद्द गर्नुहोस्",
+      "placeholderName": "जस्तै : आमा",
+      "placeholderRelation": "जस्तै : आमा"
+    }
   },
   "notFound": {
     "title": "पृष्ठ भेटिएन",
@@ -284,5 +297,19 @@
     "bp": "रक्तचाप (BP)",
     "heart": "मुटु रोग (Heart Disease)",
     "thyroid": "थाइराइड (Thyroid)"
+  },
+  "family": {
+    "title": "पारिवारिक स्वास्थ्य",
+    "subtitle": "तपाईंको परिवारको स्वास्थ्य यात्राको निगरानी र समर्थन गर्नुहोस्",
+    "addMember": "सदस्य थप्नुहोस्",
+    "chat": "च्याट",
+    "call": "कल",
+    "addMemberEmpty": "परिवारको सदस्य थप्नुहोस्",
+    "inviteViaEmail": "इमेल मार्फत निमन्त्रणा पठाउनुहोस्",
+    "modalDescription": "तपाईंले थप्न चाहनुभएको परिवारको सदस्यको इमेल ठेगाना प्रविष्ट गर्नुहोस्। हामी उनीहरूलाई तपाईंको पारिवारिक सर्कलमा सामेल हुन निमन्त्रणा पठाउनेछौं।",
+    "emailLabel": "इमेल ठेगाना",
+    "emailPlaceholder": "member@example.com",
+    "sendInvitation": "निमन्त्रणा पठाउनुहोस्",
+    "chatWith": "{{name}} सँग च्याट गर्नुहोस्"
   }
 }

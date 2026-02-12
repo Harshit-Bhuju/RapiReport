@@ -158,7 +158,7 @@ const HealthPlanner = () => {
               <button
                 onClick={() => setShowAddMember(true)}
                 className="px-4 py-2 bg-primary-50 text-primary-600 rounded-xl text-sm font-bold hover:bg-primary-100 transition-colors">
-                + Add Member
+                + {t("family.addMember")}
               </button>
             </div>
 
@@ -170,38 +170,38 @@ const HealthPlanner = () => {
                     className="flex gap-4 items-end">
                     <div className="flex-1 space-y-1">
                       <label className="text-xs font-bold text-gray-500">
-                        Name
+                        {t("planner.addMember.nameLabel")}
                       </label>
                       <input
                         type="text"
                         value={newMemberName}
                         onChange={(e) => setNewMemberName(e.target.value)}
                         className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:border-primary-500 focus:ring-0"
-                        placeholder="e.g. Mom"
+                        placeholder={t("planner.addMember.placeholderName")}
                       />
                     </div>
                     <div className="flex-1 space-y-1">
                       <label className="text-xs font-bold text-gray-500">
-                        Relation
+                        {t("planner.addMember.relationLabel")}
                       </label>
                       <input
                         type="text"
                         value={newMemberRelation}
                         onChange={(e) => setNewMemberRelation(e.target.value)}
                         className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:border-primary-500 focus:ring-0"
-                        placeholder="e.g. Mother"
+                        placeholder={t("planner.addMember.placeholderRelation")}
                       />
                     </div>
                     <button
                       type="submit"
                       className="px-6 py-2.5 bg-primary-600 text-white font-bold rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all">
-                      Save
+                      {t("planner.addMember.save")}
                     </button>
                     <button
                       type="button"
                       onClick={() => setShowAddMember(false)}
                       className="px-4 py-2.5 text-gray-400 font-bold hover:text-gray-600">
-                      Cancel
+                      {t("planner.addMember.cancel")}
                     </button>
                   </form>
                 </CardBody>

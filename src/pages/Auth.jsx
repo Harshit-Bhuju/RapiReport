@@ -33,7 +33,7 @@ const Auth = () => {
           "https://www.googleapis.com/oauth2/v3/userinfo",
           {
             headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
-          }
+          },
         );
 
         const { sub, email, name, picture } = userInfo.data;
@@ -49,24 +49,23 @@ const Auth = () => {
 
         if (response.data.status === "success") {
           setAuth(response.data.user, tokenResponse.access_token);
-          toast.success(`Welcome ${response.data.user.name}!`);
+          toast.success(t("auth.welcome", { name: response.data.user.name }));
           navigate("/dashboard");
         } else {
-          toast.error(response.data.message || "Login failed");
+          toast.error(t("auth.loginFailed"));
         }
       } catch (error) {
         console.error("Google Login Error:", error);
-        toast.error("Failed to login with Google");
+        toast.error(t("auth.googleLoginError"));
       } finally {
         setIsLoading(false);
       }
     },
     onError: (error) => {
       console.error("Login Failed:", error);
-      toast.error("Google Login Failed");
+      toast.error(t("auth.googleLoginFailed"));
     },
   });
-
 
   const features = [
     {

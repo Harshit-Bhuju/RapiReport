@@ -24,6 +24,7 @@ import {
   Zap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import DoctorProfessionalPrompt from "@/components/features/DoctorProfessionalPrompt";
 
 // MVP mock patients (replace with backend later)
 const MOCK_PATIENTS = [
@@ -72,29 +73,6 @@ const MOCK_SYMPTOMS = {
   p3: [{ at: "2026-02-11", text: "Itchy rash on arms", severity: "moderate" }],
 };
 
-const MOCK_WAITING_ROOM = [
-  {
-    id: "w1",
-    name: "John Doe",
-    time: "10:30 AM",
-    type: "Follow-up",
-    urgent: false,
-  },
-  {
-    id: "w2",
-    name: "Jane Smith",
-    time: "10:45 AM",
-    type: "Reports Review",
-    urgent: true,
-  },
-  {
-    id: "w3",
-    name: "Mike Ross",
-    time: "11:00 AM",
-    type: "New Patient",
-    urgent: false,
-  },
-];
 
 const MOCK_VITALS = [
   {
@@ -189,7 +167,7 @@ const DoctorDashboard = () => {
         if (statsRes.data?.status === "success") {
           setPrescriptionStats(statsRes.data.data);
         }
-      } catch (_) {}
+      } catch (_) { }
     };
     fetchData();
   }, []);
@@ -206,7 +184,7 @@ const DoctorDashboard = () => {
           setTimeline(r.data.timeline || []);
           setMissedDoses(r.data.missedDosesLast7Days || 0);
         }
-      } catch (_) {}
+      } catch (_) { }
     };
     fetchTimeline();
   }, [selectedId]);
@@ -316,6 +294,7 @@ Clinical Info:
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
+      <DoctorProfessionalPrompt />
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-black text-gray-900 tracking-tight">
@@ -391,68 +370,9 @@ Clinical Info:
         )}
       </div>
 
-      {/* Waiting Room & Quick Actions */}
+      {/* Quick Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2 border-none shadow-xl shadow-gray-100/50">
-          <CardBody className="p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-black text-gray-900 flex items-center gap-2">
-                <Clock className="w-5 h-5 text-primary-600" />
-                Waiting Room
-              </h2>
-              <Badge variant="primary" className="px-3 py-1 text-xs">
-                {MOCK_WAITING_ROOM.length} Pending
-              </Badge>
-            </div>
-            <div className="space-y-3">
-              {MOCK_WAITING_ROOM.map((w) => (
-                <div
-                  key={w.id}
-                  className={cn(
-                    "flex items-center justify-between p-4 rounded-2xl border transition-all",
-                    w.urgent
-                      ? "bg-error-50/50 border-error-100"
-                      : "bg-white border-gray-100",
-                  )}>
-                  <div className="flex items-center gap-4">
-                    <div
-                      className={cn(
-                        "w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg",
-                        w.urgent
-                          ? "bg-error-100 text-error-600"
-                          : "bg-gray-100 text-gray-600",
-                      )}>
-                      {w.name.charAt(0)}
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <p className="font-bold text-gray-900">{w.name}</p>
-                        {w.urgent && (
-                          <span className="px-2 py-0.5 rounded-full bg-error-100 text-error-600 text-[10px] font-black uppercase tracking-wider">
-                            Urgent
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-xs text-gray-500 font-medium">
-                        {w.type} • Appt: {w.time}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button variant="ghost" size="sm" className="text-xs h-9">
-                      Review File
-                    </Button>
-                    <Button size="sm" className="text-xs h-9">
-                      Start Call
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardBody>
-        </Card>
-
-        <Card className="border-none shadow-xl shadow-gray-100/50 bg-gray-900 text-white">
+        <Card className="lg:col-span-3 border-none shadow-xl shadow-gray-100/50 bg-gray-900 text-white">
           <CardBody className="p-6">
             <h2 className="text-xl font-black mb-6 flex items-center gap-2">
               <Zap className="w-5 h-5 text-warning-400" />
@@ -508,40 +428,6 @@ Clinical Info:
         </Card>
       )}
 
-      {asyncRequests.length > 0 && (
-        <Card className="border-none shadow-xl shadow-gray-100/50 border-l-4 border-primary-500">
-          <CardBody className="p-6">
-            <h2 className="text-lg font-black text-gray-900 mb-3">
-              Async consultation requests (telemedicine)
-            </h2>
-            <p className="text-sm text-gray-600 mb-4">
-              Patients submitted symptoms/vitals for your review.
-            </p>
-            <div className="space-y-3">
-              {asyncRequests.slice(0, 5).map((req) => (
-                <div
-                  key={req.id}
-                  className="p-4 rounded-xl border border-gray-100 bg-white">
-                  <p className="font-bold text-gray-900">
-                    {req.patientName || "Patient"} • {req.patientEmail}
-                  </p>
-                  <p className="text-sm text-gray-600 mt-1">
-                    {req.symptomsText || "—"}
-                  </p>
-                  {req.dietActivityNote && (
-                    <p className="text-xs text-gray-500 mt-1">
-                      Diet/activity: {req.dietActivityNote}
-                    </p>
-                  )}
-                  <p className="text-xs text-gray-400 mt-2">
-                    {new Date(req.createdAt).toLocaleString()}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </CardBody>
-        </Card>
-      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Patient list */}

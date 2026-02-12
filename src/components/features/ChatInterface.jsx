@@ -10,7 +10,6 @@ import {
   Trash2,
   Loader2,
 } from "lucide-react";
-import Button from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import chatService from "@/lib/chatService";
@@ -22,49 +21,39 @@ const ChatInterface = ({ isFullPage = false, initialPrescription = null }) => {
   const [isOpen, setIsOpen] = useState(isFullPage);
   const [isLoading, setIsLoading] = useState(false);
   const [messages, setMessages] = useState(() => {
-    const saved = localStorage.getItem("chat_history");
+    const saved = localStorage.getItem("chat_history_v2");
     return saved
       ? JSON.parse(saved)
       : [
-          {
-            role: "bot",
-            text: {
-              en: "Namaste! I am RapiReport AI. How can I help you with your health today?",
-              ne: "नमस्ते! म रापिरिपोर्ट एआई हुँ। तपाईंको स्वास्थ्यको बारेमा आज म कसरी सहयोग गर्न सक्छु?",
-            },
-            timestamp: new Date().toISOString(),
+        {
+          role: "bot",
+          text: {
+            en: "Namaste! I am RapiReport AI. How can I help you with your health today?",
+            ne: "नमस्ते! म रापिरिपोर्ट एआई हुँ। तपाईंको स्वास्थ्यको बारेमा आज म कसरी सहयोग गर्न सक्छु?",
           },
-        ];
+          timestamp: new Date().toISOString(),
+        },
+      ];
   });
   const [inputValue, setInputValue] = useState("");
   const scrollRef = useRef(null);
 
-  // Fetch chat history from backend on mount
+  // Handle initial prescription if provided
   useEffect(() => {
-    const fetchHistoryAndCheckInitial = async () => {
-      try {
-        const history = await chatService.getChatHistory();
-        if (history && history.length > 0) {
-          setMessages(history);
-        }
+    if (initialPrescription) {
+      let autoPrompt = "";
 
-        // If we have an initial prescription, trigger the AI analysis
-        if (initialPrescription) {
-          let autoPrompt = "";
-
-          if (initialPrescription.meds?.length > 0) {
-            const medNames = initialPrescription.meds
-              .map((m) => m.name)
-              .join(", ");
-            autoPrompt = `I have a scanned prescription with these medicines: ${medNames}. 
-            Please provide:
-            1. Common brand alternatives for each (available in Nepal).
-            2. Estimated market prices in NPR for these brands.
-            3. A brief explanation of how each medicine works (mechanism of action).
-            
-            Raw prescription context: ${initialPrescription.rawText}`;
-          } else if (initialPrescription.rawText) {
-            autoPrompt = `I have a scanned prescription text:
+      if (initialPrescription.meds?.length > 0) {
+        const medNames = initialPrescription.meds.map((m) => m.name).join(", ");
+        autoPrompt = `I have a scanned prescription with these medicines: ${medNames}. 
+      Please provide:
+      1. Common brand alternatives for each (available in Nepal).
+      2. Estimated market prices in NPR for these brands.
+      3. A brief explanation of how each medicine works (mechanism of action).
+      
+      Raw prescription context: ${initialPrescription.rawText}`;
+      } else if (initialPrescription.rawText) {
+        autoPrompt = `I have a scanned prescription text:
             
             "${initialPrescription.rawText}"
             
@@ -72,21 +61,17 @@ const ChatInterface = ({ isFullPage = false, initialPrescription = null }) => {
             1. Any identified medicines and their uses.
             2. Common brand alternatives in Nepal if applicable.
             3. General health advice based on this prescription text.`;
-          }
-
-          if (autoPrompt) {
-            handleSend(autoPrompt);
-          }
-        }
-      } catch (error) {
-        console.error("Error fetching history:", error);
       }
-    };
-    fetchHistoryAndCheckInitial();
+
+      if (autoPrompt) {
+        handleSend(autoPrompt);
+      }
+    }
   }, [initialPrescription]);
 
+  // Save to local storage and scroll to bottom
   useEffect(() => {
-    localStorage.setItem("chat_history", JSON.stringify(messages));
+    localStorage.setItem("chat_history_v2", JSON.stringify(messages));
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
@@ -134,8 +119,8 @@ const ChatInterface = ({ isFullPage = false, initialPrescription = null }) => {
     }
   };
 
-  const clearHistory = () => {
-    if (window.confirm(t("chat.clearHistory"))) {
+  const clearChat = () => {
+    if (window.confirm(t("chat.clearHistory") || "Are you sure you want to clear this chat?")) {
       const initialMsg = [
         {
           role: "bot",
@@ -147,7 +132,7 @@ const ChatInterface = ({ isFullPage = false, initialPrescription = null }) => {
         },
       ];
       setMessages(initialMsg);
-      localStorage.removeItem("chat_history");
+      localStorage.removeItem("chat_history_v2");
     }
   };
 
@@ -193,20 +178,20 @@ const ChatInterface = ({ isFullPage = false, initialPrescription = null }) => {
         </div>
         <div className="flex items-center gap-2">
           <button
-            onClick={clearHistory}
+            onClick={clearChat}
             className={cn(
               "p-2 rounded-lg transition-colors",
               isFullPage
                 ? "text-gray-400 hover:bg-gray-50 hover:text-error-500"
                 : "text-white/60 hover:bg-white/10 hover:text-white",
             )}
-            title="Clear History">
+            title="Clear Chat">
             <Trash2 className="w-5 h-5" />
           </button>
           {!isFullPage && (
             <button
               onClick={() => setIsOpen(false)}
-              className="p-2 hover:bg-white/10 rounded-lg transition-colors">
+              className="p-2 hover:bg-white/10 rounded-lg transition-colors text-white/60 hover:text-white">
               <X className="w-5 h-5" />
             </button>
           )}

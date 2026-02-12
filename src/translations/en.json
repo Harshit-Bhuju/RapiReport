@@ -7,8 +7,11 @@
     "login": "Login",
     "signup": "Sign Up",
     "logout": "Logout",
-    "language": "Language"
+    "language": "Language",
+    "consultants": "Consultants",
+    "myAppointments": "My Appointments"
   },
+
   "sidebar": {
     "dashboard": "Dashboard",
     "reports": "My Reports",

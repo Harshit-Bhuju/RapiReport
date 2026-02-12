@@ -15,15 +15,23 @@ export const ProtectedRoute = ({ children, requireProfile = true }) => {
 };
 
 export const PublicRoute = ({ children }) => {
-  const { isAuthenticated } = useAuthStore();
-  if (isAuthenticated) return <Navigate to="/dashboard" replace />;
+  const { isAuthenticated, user } = useAuthStore();
+  if (isAuthenticated) {
+    if (user?.role === "admin") return <Navigate to="/admin" replace />;
+    if (user?.role === "doctor") return <Navigate to="/doctor-dashboard" replace />;
+    return <Navigate to="/dashboard" replace />;
+  }
   return children;
 };
 
 export const FlowRoute = ({ children }) => {
-  const { isAuthenticated, isProfileComplete } = useAuthStore();
+  const { isAuthenticated, isProfileComplete, user } = useAuthStore();
   if (!isAuthenticated) return <Navigate to="/auth" replace />;
-  if (isProfileComplete) return <Navigate to="/dashboard" replace />;
+  if (isProfileComplete) {
+    if (user?.role === "admin") return <Navigate to="/admin" replace />;
+    if (user?.role === "doctor") return <Navigate to="/doctor-dashboard" replace />;
+    return <Navigate to="/dashboard" replace />;
+  }
   return children;
 };
 
@@ -33,6 +41,8 @@ export const RoleRoute = ({ children, allowedRoles }) => {
   if (!isAuthenticated) return <Navigate to="/auth" replace />;
 
   if (!allowedRoles.includes(user?.role)) {
+    if (user?.role === "admin") return <Navigate to="/admin" replace />;
+    if (user?.role === "doctor") return <Navigate to="/doctor-dashboard" replace />;
     return <Navigate to="/dashboard" replace />;
   }
 

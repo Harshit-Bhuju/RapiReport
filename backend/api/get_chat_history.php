@@ -11,10 +11,16 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 $user_id = $_SESSION['user_id'];
+$session_id = $_GET['session_id'] ?? null;
 
-// Fetch last 50 messages
-$stmt = $conn->prepare("SELECT role, content_en, content_ne, created_at FROM chat_messages WHERE user_id = ? ORDER BY created_at ASC LIMIT 50");
-$stmt->bind_param("i", $user_id);
+if (!$session_id) {
+    echo json_encode(["status" => "error", "message" => "Session ID is required."]);
+    exit;
+}
+
+// Fetch all messages for the session
+$stmt = $conn->prepare("SELECT role, content_en, content_ne, created_at FROM chat_messages WHERE user_id = ? AND session_id = ? ORDER BY created_at ASC");
+$stmt->bind_param("ii", $user_id, $session_id);
 $stmt->execute();
 $result = $stmt->get_result();
 

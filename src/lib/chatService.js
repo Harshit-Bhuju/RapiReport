@@ -4,7 +4,7 @@ import API from "@/Configs/ApiEndpoints";
 
 /**
  * RapiReport AI Chat Service
- * Tries backend first (chat.php); on CORS/network error falls back to client-side Gemini.
+ * Tries backend first (chat.php); on failure falls back to client-side Gemini.
  */
 
 const SYSTEM_PROMPT = `
@@ -60,24 +60,6 @@ const chatService = {
         }
       }
       throw backendError;
-    }
-  },
-
-  /**
-   * Fetch chat history from backend. Returns [] on failure (e.g. CORS, 404).
-   */
-  getChatHistory: async () => {
-    try {
-      const response = await axios.get(API.CHAT_HISTORY, {
-        withCredentials: true,
-        timeout: 10000,
-      });
-      const data = response.data;
-      if (Array.isArray(data)) return data;
-      return [];
-    } catch (error) {
-      console.warn("Chat history unavailable (using local):", error?.message || error);
-      return [];
     }
   },
 };

@@ -2,12 +2,16 @@ const getBaseUrl = () => {
   const hostname = window.location.hostname;
 
   // Detect if we are in local development (localhost, 127.0.0.1, or LAN IP)
+  // Also support common tunnels like Cloudflare and Ngrok
   const isLocal =
     hostname === "localhost" ||
     hostname === "127.0.0.1" ||
     hostname.startsWith("192.168.") ||
     hostname.startsWith("10.") ||
-    hostname.endsWith(".local");
+    hostname.endsWith(".local") ||
+    hostname.endsWith(".trycloudflare.com") ||
+    hostname.endsWith(".ngrok-free.app") ||
+    hostname.endsWith(".ngrok.io");
 
   if (isLocal) {
     // Return relative path to benefit from Vite proxy
@@ -27,7 +31,10 @@ const getOcrServiceBaseUrl = () => {
     hostname === "127.0.0.1" ||
     hostname.startsWith("192.168.") ||
     hostname.startsWith("10.") ||
-    hostname.endsWith(".local");
+    hostname.endsWith(".local") ||
+    hostname.endsWith(".trycloudflare.com") ||
+    hostname.endsWith(".ngrok-free.app") ||
+    hostname.endsWith(".ngrok.io");
 
   // Local dev uses Vite proxy to FastAPI at http://localhost:8000
   if (isLocal) return "/ocr-api";
@@ -57,6 +64,7 @@ const API = {
 
   CHAT: `${BASE_URL}/api/chat.php`,
   CHAT_HISTORY: `${BASE_URL}/api/get_chat_history.php`,
+  CHAT_SESSIONS: `${BASE_URL}/api/get_chat_sessions.php`,
   REWARDS_LIST: `${BASE_URL}/health/rewards_list.php`,
   REWARDS_HISTORY: `${BASE_URL}/health/rewards_history.php`,
   REWARDS_REDEEM: `${BASE_URL}/health/rewards_redeem.php`,
@@ -93,6 +101,16 @@ const API = {
   FAMILY_CALL_STATUS: `${BASE_URL}/health/family_call_status.php`,
   FAMILY_CHAT: `${BASE_URL}/health/family_chat.php`,
   FAMILY_MEMBER_HEALTH: `${BASE_URL}/health/family_member_health.php`,
+
+  // Admin
+  ADMIN_GET_USERS: `${BASE_URL}/api/admin/get_users.php`,
+  ADMIN_GET_ANALYTICS: `${BASE_URL}/api/admin/get_analytics.php`,
+  ADMIN_UPDATE_ROLE: `${BASE_URL}/api/admin/update_role.php`,
+
+  // Consultants & Appointments
+  CONSULTANTS_LIST: `${BASE_URL}/api/consultants/get_consultants.php`,
+  USER_APPOINTMENTS: `${BASE_URL}/api/consultants/get_user_appointments.php`,
+  ESEWA_INITIATE: `${BASE_URL}/api/payments/initiate_esewa.php`,
 
   // Optional Python OCR microservice (FastAPI/EasyOCR)
   OCR_UPLOAD: OCR_SERVICE_BASE_URL ? `${OCR_SERVICE_BASE_URL}/upload` : null,

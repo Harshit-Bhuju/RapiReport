@@ -13,7 +13,10 @@ import {
   Pill,
   MessageSquare,
   ChevronRight,
+  ClipboardList,
+  Stethoscope,
 } from "lucide-react";
+
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/store/authStore";
 import { useHealthStore } from "@/store/healthStore";
@@ -59,9 +62,16 @@ const Dashboard = () => {
     useHealthStore();
 
   useEffect(() => {
+    if (user?.role === "admin") {
+      navigate("/admin");
+      return;
+    }
+    if (user?.role === "doctor") {
+      navigate("/doctor-dashboard");
+      return;
+    }
     fetchReports();
-    fetchAdherenceLogs();
-  }, [fetchReports, fetchAdherenceLogs]);
+  }, [fetchReports, fetchAdherenceLogs, user, navigate]);
 
   // Calculate adherence stats for the chart
   const adherenceData = useMemo(() => {
@@ -103,12 +113,12 @@ const Dashboard = () => {
     reports.length > 0
       ? reports[0]
       : {
-          id: "mock-report",
-          type: "General Blood Panel",
-          date: new Date().toISOString(),
-          lab: "MediCare Labs",
-          status: "normal",
-        };
+        id: "mock-report",
+        type: "General Blood Panel",
+        date: new Date().toISOString(),
+        lab: "MediCare Labs",
+        status: "normal",
+      };
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -317,9 +327,9 @@ const Dashboard = () => {
                   {displayReport.lab || "Unknown Lab"} •{" "}
                   {displayReport.date
                     ? new Date(displayReport.date).toLocaleDateString("en-GB", {
-                        month: "short",
-                        day: "numeric",
-                      })
+                      month: "short",
+                      day: "numeric",
+                    })
                     : "No Date"}
                 </p>
 
@@ -330,6 +340,27 @@ const Dashboard = () => {
               </CardBody>
             </Card>
           </section>
+
+          {/* Consult a Specialist */}
+          <Card className="border-none shadow-xl bg-white border border-gray-100 overflow-hidden group hover:shadow-2xl transition-all duration-500">
+            <CardBody className="p-6 sm:p-8">
+              <div className="w-12 h-12 bg-primary-50 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-500">
+                <Stethoscope className="w-6 h-6 text-primary-600" />
+              </div>
+              <h3 className="text-xl font-black mb-2 text-gray-900">
+                Consult a Specialist
+              </h3>
+              <p className="text-sm font-bold text-gray-500 leading-relaxed mb-8">
+                Connect with professional doctors for live video consultations and expert advice.
+              </p>
+              <Button
+                className="w-full bg-primary-600 text-white hover:bg-primary-700 shadow-lg shadow-primary-100 font-black rounded-2xl py-4 flex items-center justify-center gap-2"
+                onClick={() => navigate("/consultants")}>
+                Find a Doctor
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </Button>
+            </CardBody>
+          </Card>
 
           {/* Genetic Wellness / Premium Feature */}
           <Card className="border-none shadow-xl bg-gradient-to-br from-gray-900 to-gray-800 text-white overflow-hidden relative">
@@ -351,6 +382,7 @@ const Dashboard = () => {
               </Button>
             </CardBody>
           </Card>
+
         </div>
       </div>
       <ChatInterface />

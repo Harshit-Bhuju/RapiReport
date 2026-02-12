@@ -16,6 +16,8 @@ import { useAuthStore } from "@/store/authStore";
 import { cn } from "@/lib/utils";
 import toast from "react-hot-toast";
 
+import Select from "@/components/ui/Select";
+
 const SPECIALTIES = [
   "General Physician",
   "Cardiologist",
@@ -24,23 +26,32 @@ const SPECIALTIES = [
   "Psychiatrist",
   "Orthopedist",
   "Gynecologist",
-  "ENT",
-  "Other",
+  "ENT Specialist",
+  "Neurologist",
+  "Oncologist",
+  "Radiologist",
+  "Urologist",
+];
+
+const LANGUAGES = [
+  "English",
+  "Nepali",
+  "English, Nepali",
 ];
 
 const DoctorProfile = () => {
   const navigate = useNavigate();
-  const { user } = useAuthStore();
+  const { user, updateProfile } = useAuthStore();
   const [saving, setSaving] = useState(false);
 
   const [formData, setFormData] = useState({
-    displayName: user?.name ? `Dr. ${user.name}` : "",
-    specialty: "General Physician",
-    experienceYears: "5",
-    consultationRate: "500",
-    bio: "Share a short bio about your practice and approach to patient care.",
-    languages: "English, Nepali",
-    qualifications: "MBBS, MD",
+    displayName: user?.doctorProfile?.displayName || user?.name || "",
+    specialty: user?.doctorProfile?.specialty || "General Physician",
+    experienceYears: user?.doctorProfile?.experience || "5",
+    consultationRate: user?.doctorProfile?.rate || "500",
+    bio: user?.doctorProfile?.bio || "Share a short bio about your practice and approach to patient care.",
+    languages: user?.doctorProfile?.languages || "English, Nepali",
+    qualifications: user?.doctorProfile?.qualifications || "MBBS, MD",
   });
 
   const handleSave = async () => {
@@ -49,9 +60,32 @@ const DoctorProfile = () => {
       return;
     }
     setSaving(true);
-    await new Promise((r) => setTimeout(r, 800));
-    setSaving(false);
-    toast.success("Doctor profile saved successfully!");
+    try {
+      // Map frontend fields to backend expected names
+      const profileData = {
+        ...user, // Include existing user fields (age, gender, etc.)
+        name: user.name,
+        displayName: formData.displayName,
+        specialty: formData.specialty,
+        experience: formData.experienceYears,
+        rate: formData.consultationRate,
+        bio: formData.bio,
+        qualifications: formData.qualifications,
+        profile_languages: formData.languages,
+      };
+
+      const result = await updateProfile(profileData);
+      if (result.success) {
+        toast.success("Doctor profile saved successfully!");
+      } else {
+        toast.error(result.message || "Failed to save profile");
+      }
+    } catch (error) {
+      console.error("Save Profile Error:", error);
+      toast.error("An unexpected error occurred.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -146,31 +180,16 @@ const DoctorProfile = () => {
                   }
                   placeholder="Dr. Jane Smith"
                 />
-                <div>
-                  <label className="text-sm font-bold text-gray-700 mb-2 block">
-                    Specialty
-                  </label>
-                  <div className="flex flex-wrap gap-2">
-                    {SPECIALTIES.map((s) => (
-                      <button
-                        key={s}
-                        type="button"
-                        onClick={() =>
-                          setFormData({ ...formData, specialty: s })
-                        }
-                        className={cn(
-                          "px-4 py-2 rounded-xl border-2 text-sm font-bold transition-all",
-                          formData.specialty === s
-                            ? "bg-primary-50 border-primary-600 text-primary-700"
-                            : "border-gray-100 hover:border-gray-200 text-gray-500",
-                        )}
-                      >
-                        {s}
-                      </button>
-                    ))}
-                  </div>
-                </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <Select
+                    label="Specialty"
+                    options={SPECIALTIES}
+                    value={formData.specialty}
+                    onChange={(e) =>
+                      setFormData({ ...formData, specialty: e.target.value })
+                    }
+                    required
+                  />
                   <Input
                     label="Experience (years)"
                     type="number"
@@ -183,6 +202,8 @@ const DoctorProfile = () => {
                       })
                     }
                   />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Input
                     label="Consultation fee (Rs.)"
                     type="number"
@@ -195,22 +216,22 @@ const DoctorProfile = () => {
                       })
                     }
                   />
+                  <Input
+                    label="Qualifications (e.g. MBBS, MD)"
+                    value={formData.qualifications}
+                    onChange={(e) =>
+                      setFormData({ ...formData, qualifications: e.target.value })
+                    }
+                    placeholder="MBBS, MD"
+                  />
                 </div>
-                <Input
-                  label="Qualifications (e.g. MBBS, MD)"
-                  value={formData.qualifications}
-                  onChange={(e) =>
-                    setFormData({ ...formData, qualifications: e.target.value })
-                  }
-                  placeholder="MBBS, MD"
-                />
-                <Input
-                  label="Languages"
+                <Select
+                  label="Primary Practice Languages"
+                  options={LANGUAGES}
                   value={formData.languages}
                   onChange={(e) =>
                     setFormData({ ...formData, languages: e.target.value })
                   }
-                  placeholder="English, Nepali"
                 />
               </div>
             </CardBody>
@@ -251,8 +272,8 @@ const DoctorProfile = () => {
       </div>
 
       <p className="text-xs text-gray-400 text-center">
-        UI only — profile is stored locally. Connect your API to persist doctor
-        profile data.
+        Your professional profile is visible to patients during booking and
+        consultation.
       </p>
     </div>
   );

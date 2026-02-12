@@ -7,8 +7,11 @@
     "login": "लगइन",
     "signup": "दर्ता गर्नुहोस्",
     "logout": "लगआउट",
-    "language": "भाषा"
+    "language": "भाषा",
+    "consultants": "विशेषज्ञहरू",
+    "myAppointments": "मेरो अपोइन्टमेन्टहरू"
   },
+
   "sidebar": {
     "dashboard": "ड्यासबोर्ड",
     "reports": "मेरो रिपोर्टहरू",

@@ -26,18 +26,6 @@ const HeroSection = () => {
 
   return (
     <section className="relative min-h-[70vh] flex items-center pt-16 pb-12 md:pt-24 md:pb-20 overflow-hidden mesh-gradient">
-      {/* Decorative Blur Blobs */}
-      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-        <div
-          className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary-200/30 blur-[120px] rounded-full animate-float"
-          style={{ animationDuration: "10s" }}
-        />
-        <div
-          className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-200/30 blur-[120px] rounded-full animate-float"
-          style={{ animationDuration: "15s", animationDelay: "2s" }}
-        />
-      </div>
-
       <div className="container-custom relative z-10">
         <div className="flex flex-col lg:flex-row items-center gap-16 lg:gap-24">
           <div className="flex-1 text-center lg:text-left">
@@ -207,7 +195,7 @@ const HeroSection = () => {
                 }}
                 className="absolute -top-10 -right-10 p-6 rounded-[2rem] bg-white/80 backdrop-blur-2xl shadow-2xl z-30 border border-white group/float cursor-pointer">
                 <div className="flex items-center gap-5">
-                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary-600 to-indigo-700 flex items-center justify-center text-white shadow-xl group-hover/float:scale-110 transition-transform">
+                  <div className="w-14 h-14 rounded-2xl bg-primary-600 flex items-center justify-center text-white shadow-xl group-hover/float:scale-110 transition-transform">
                     <Brain className="w-8 h-8" />
                   </div>
                   <div>
@@ -231,7 +219,7 @@ const HeroSection = () => {
                 }}
                 className="absolute -bottom-10 -left-10 p-6 rounded-[2rem] bg-white/80 backdrop-blur-2xl shadow-2xl z-30 border border-white group/float cursor-pointer">
                 <div className="flex items-center gap-5">
-                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-success-500 to-emerald-700 flex items-center justify-center text-white shadow-xl group-hover/float:scale-110 transition-transform">
+                  <div className="w-14 h-14 rounded-2xl bg-success-500 flex items-center justify-center text-white shadow-xl group-hover/float:scale-110 transition-transform">
                     <Shield className="w-8 h-8" />
                   </div>
                   <div>
@@ -293,8 +281,7 @@ const StatsSection = () => {
               transition={{ delay: idx * 0.1 }}>
               <p
                 className={cn(
-                  "text-4xl md:text-5xl font-black mb-2 bg-clip-text text-transparent bg-gradient-to-r",
-                  stat.color,
+                  "text-4xl md:text-5xl font-black mb-2 text-primary-600",
                 )}>
                 {stat.value}
               </p>
@@ -339,7 +326,7 @@ const HowItWorks = () => {
   return (
     <section className="py-20 bg-white relative overflow-hidden">
       {/* Background patterns */}
-      <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
+      <div className="absolute top-0 left-0 w-full h-px bg-gray-200" />
 
       <div className="container-custom">
         <div className="flex flex-col lg:flex-row items-end justify-between gap-12 mb-16">
@@ -446,15 +433,6 @@ const Features = () => {
     <section
       id="features"
       className="py-20 bg-slate-950 relative overflow-hidden">
-      {/* Dynamic background elements for dark section */}
-      <div className="absolute inset-0 opacity-20">
-        <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-primary-600 rounded-full blur-[150px] animate-pulse" />
-        <div
-          className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-indigo-600 rounded-full blur-[150px] animate-pulse"
-          style={{ animationDelay: "2s" }}
-        />
-      </div>
-
       <div className="container-custom relative z-10">
         <div className="text-center max-w-4xl mx-auto mb-32">
           <motion.p
@@ -480,11 +458,7 @@ const Features = () => {
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: feature.delay }}>
               <div className="h-full p-12 rounded-[3.5rem] bg-white/5 border border-white/10 backdrop-blur-md hover:bg-white/10 hover:border-white/20 hover:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.4)] transition-all duration-500 group relative overflow-hidden">
-                <div
-                  className={cn(
-                    "w-20 h-20 rounded-[2rem] flex items-center justify-center text-white mb-10 transition-all group-hover:scale-110 group-hover:-rotate-6 shadow-2xl bg-gradient-to-br",
-                    feature.color,
-                  )}>
+                <div className="w-20 h-20 rounded-[2rem] flex items-center justify-center text-white mb-10 transition-all group-hover:scale-110 group-hover:-rotate-6 shadow-2xl bg-primary-600">
                   <feature.icon className="w-10 h-10" />
                 </div>
                 <h3 className="text-3xl font-black text-white mb-6 tracking-tight group-hover:text-primary-400 transition-colors">

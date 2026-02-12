@@ -33,7 +33,7 @@ export const FamilyMemberCard = ({ member, className, actions }) => {
         <div className="flex items-start justify-between mb-6">
           <div className="flex items-center gap-4">
             <div className="relative">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary-50 to-primary-100 flex items-center justify-center text-primary-600 shadow-inner">
+              <div className="w-14 h-14 rounded-2xl bg-primary-50 flex items-center justify-center text-primary-600 shadow-inner">
                 {member.avatar ? (
                   <img
                     src={member.avatar}

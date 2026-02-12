@@ -81,16 +81,7 @@ const Auth = () => {
       {/* Left Side: Immersive Visuals */}
       <div className="hidden lg:flex lg:w-[45%] relative bg-slate-950 items-center justify-center p-12 overflow-hidden">
         {/* Animated Mesh Gradient */}
-        <div className="absolute inset-0 mesh-gradient-dark opacity-80" />
-
-        {/* Decorative Elements */}
-        <div className="absolute top-0 right-0 w-full h-full">
-          <div className="absolute top-[20%] right-[-10%] w-[500px] h-[500px] bg-primary-600/20 blur-[120px] rounded-full animate-pulse" />
-          <div
-            className="absolute bottom-[20%] left-[-10%] w-[500px] h-[500px] bg-indigo-600/20 blur-[120px] rounded-full animate-pulse"
-            style={{ animationDelay: "3s" }}
-          />
-        </div>
+        <div className="absolute top-0 right-0 w-full h-full" />
 
         <div className="relative z-10 w-full">
           <motion.div
@@ -115,7 +106,7 @@ const Auth = () => {
 
             {/* AI Guardian Visual Mock */}
             <div className="relative group">
-              <div className="absolute inset-0 bg-primary-500/20 blur-3xl rounded-full scale-75 group-hover:scale-100 transition-transform duration-1000" />
+              <div className="absolute inset-0 bg-primary-500/10 blur-3xl rounded-full scale-75 group-hover:scale-100 transition-transform duration-1000" />
               <motion.div
                 animate={{ y: [0, -20, 0] }}
                 transition={{
@@ -125,7 +116,7 @@ const Auth = () => {
                 }}
                 className="relative p-8 rounded-[3.5rem] bg-white/5 border border-white/10 backdrop-blur-2xl shadow-2xl overflow-hidden">
                 <div className="flex items-center gap-6 mb-8">
-                  <div className="w-20 h-20 rounded-[2rem] bg-gradient-to-br from-primary-500 to-indigo-700 flex items-center justify-center text-white shadow-2xl">
+                  <div className="w-20 h-20 rounded-[2rem] bg-primary-600 flex items-center justify-center text-white shadow-2xl">
                     <Brain className="w-10 h-10" />
                   </div>
                   <div>
@@ -146,7 +137,7 @@ const Auth = () => {
                         repeat: Infinity,
                         ease: "linear",
                       }}
-                      className="absolute inset-y-0 w-1/3 bg-gradient-to-r from-transparent via-primary-500/50 to-transparent"
+                      className="absolute inset-y-0 w-1/3 bg-white/20"
                     />
                   </div>
                   <div className="h-2.5 bg-white/10 rounded-full w-[85%]" />

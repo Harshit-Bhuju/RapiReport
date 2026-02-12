@@ -175,7 +175,7 @@ const Dashboard = () => {
             </Card>
           </section>
 
-          <Card className="border-none shadow-xl bg-gradient-to-br from-primary-600 to-primary-700 text-white overflow-hidden">
+          <Card className="border-none shadow-xl bg-primary-600 text-white overflow-hidden">
             <CardBody className="p-6 sm:p-8">
               <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center mb-6">
                 <ShieldCheck className="w-6 h-6" />

@@ -67,7 +67,7 @@
 
 @layer utilities {
   .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary-600 to-indigo-600;
+    @apply text-primary-600;
   }
 
   .glass-morphism {
@@ -76,24 +76,10 @@
 
   .mesh-gradient {
     background-color: #ffffff;
-    background-image:
-      radial-gradient(at 0% 0%, hsla(217, 100%, 98%, 1) 0, transparent 50%),
-      radial-gradient(at 50% 0%, hsla(215, 100%, 96%, 1) 0, transparent 50%),
-      radial-gradient(at 100% 0%, hsla(230, 100%, 97%, 1) 0, transparent 50%),
-      radial-gradient(at 40% 40%, hsla(212, 100%, 97%, 1) 0, transparent 40%),
-      radial-gradient(at 90% 80%, hsla(260, 100%, 96%, 1) 0, transparent 50%),
-      radial-gradient(at 10% 90%, hsla(240, 100%, 98%, 1) 0, transparent 50%);
   }
 
   .mesh-gradient-dark {
     background-color: #020617;
-    background-image:
-      radial-gradient(at 0% 0%, hsla(217, 100%, 15%, 1) 0, transparent 50%),
-      radial-gradient(at 50% 0%, hsla(215, 100%, 10%, 1) 0, transparent 50%),
-      radial-gradient(at 100% 0%, hsla(230, 80%, 15%, 1) 0, transparent 50%),
-      radial-gradient(at 40% 40%, hsla(260, 100%, 10%, 1) 0, transparent 40%),
-      radial-gradient(at 90% 80%, hsla(211, 100%, 15%, 1) 0, transparent 50%),
-      radial-gradient(at 10% 90%, hsla(240, 100%, 10%, 1) 0, transparent 50%);
   }
 
   .text-glow {

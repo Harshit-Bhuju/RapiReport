@@ -1,12 +1,23 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
+import axios from "axios";
 import { useTranslation } from "react-i18next";
-import { Users, Plus, MessageSquare, Phone } from "lucide-react";
+import {
+  Users,
+  Plus,
+  MessageSquare,
+  Phone,
+  Trash2,
+  Mail,
+  UserPlus,
+  Loader2,
+} from "lucide-react";
 import Button from "@/components/ui/Button";
 import Modal from "@/components/ui/Modal";
 import Input from "@/components/ui/Input";
 import { FamilyMemberCard } from "@/components/ui/FamilyMemberCard";
 import ChatInterface from "@/components/features/ChatInterface";
 import { toast } from "react-hot-toast";
+import API from "@/Configs/ApiEndpoints";
 
 const Family = () => {
   const { t } = useTranslation();
@@ -14,57 +25,74 @@ const Family = () => {
   const [isChatModalOpen, setIsChatModalOpen] = useState(false);
   const [activeMember, setActiveMember] = useState(null);
   const [newMemberEmail, setNewMemberEmail] = useState("");
+  const [newMemberRelation, setNewMemberRelation] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isFetching, setIsFetching] = useState(true);
+  const [members, setMembers] = useState([]);
 
-  // Mock Data
-  const [members, setMembers] = useState([
-    {
-      id: 1,
-      name: "Sita Sharma",
-      relation: "Mother",
-      healthScore: 85,
-      completedTasks: 3,
-      totalTasks: 5,
-      alerts: [],
-      avatar: null,
-    },
-    {
-      id: 2,
-      name: "Ram Sharma",
-      relation: "Father",
-      healthScore: 65,
-      completedTasks: 1,
-      totalTasks: 4,
-      alerts: ["High Blood Pressure Alert"],
-      avatar: null,
-    },
-    {
-      id: 3,
-      name: "Hari Sharma",
-      relation: "Brother",
-      healthScore: 92,
-      completedTasks: 5,
-      totalTasks: 5,
-      alerts: [],
-      avatar: null,
-    },
-  ]);
+  const fetchMembers = useCallback(async () => {
+    setIsFetching(true);
+    try {
+      const res = await axios.get(API.FAMILY_LIST, { withCredentials: true });
+      if (res.data?.status === "success") {
+        setMembers(res.data.data || []);
+      }
+    } catch (err) {
+      console.error("Failed to fetch family members", err);
+    } finally {
+      setIsFetching(false);
+    }
+  }, []);
 
-  const handleAddMember = (e) => {
+  useEffect(() => {
+    fetchMembers();
+  }, [fetchMembers]);
+
+  const handleAddMember = async (e) => {
     e.preventDefault();
     if (!newMemberEmail) return;
 
     setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      toast.success(`Invitation sent to ${newMemberEmail}`);
+    try {
+      const res = await axios.post(
+        API.FAMILY_ADD,
+        { email: newMemberEmail, relation: newMemberRelation },
+        { withCredentials: true },
+      );
+      if (res.data?.status === "success") {
+        toast.success(`${res.data.member?.username || newMemberEmail} added!`);
+        setNewMemberEmail("");
+        setNewMemberRelation("");
+        setIsAddModalOpen(false);
+        fetchMembers();
+      } else {
+        toast.error(res.data?.message || "Failed to add member.");
+      }
+    } catch (err) {
+      const msg =
+        err.response?.data?.message || "Could not add member. Try again.";
+      toast.error(msg);
+    } finally {
       setIsLoading(false);
-      setNewMemberEmail("");
-      setIsAddModalOpen(false);
+    }
+  };
 
-      // Optional: Add a pending member for visual feedback
-      // setMembers([...members, { ...pendingMember }]);
-    }, 1500);
+  const handleRemoveMember = async (linkId) => {
+    try {
+      const res = await axios.post(
+        API.FAMILY_REMOVE,
+        { id: linkId },
+        { withCredentials: true },
+      );
+      if (res.data?.status === "success") {
+        toast.success("Member removed.");
+        setMembers((prev) => prev.filter((m) => m.link_id !== linkId));
+      } else {
+        toast.error(res.data?.message || "Remove failed.");
+      }
+    } catch (err) {
+      toast.error("Error removing member.");
+    }
   };
 
   const handleChat = (member) => {
@@ -73,9 +101,20 @@ const Family = () => {
   };
 
   const handleCall = (member) => {
-    toast.success(`Calling ${member.name}...`);
-    // Implement actual call logic here later
+    toast.success(`Calling ${member.username}...`);
   };
+
+  // Map API data to FamilyMemberCard expected format
+  const mapToCard = (m) => ({
+    id: m.member_id,
+    name: m.username || m.email,
+    relation: m.relation || "Family",
+    healthScore: 80, // placeholder until real health data is linked
+    completedTasks: 0,
+    totalTasks: 0,
+    alerts: m.status === "pending" ? ["Invitation pending"] : [],
+    avatar: m.profile_picture || null,
+  });
 
   return (
     <div className="space-y-6">
@@ -97,49 +136,61 @@ const Family = () => {
       </div>
 
       {/* Members Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {members.map((member) => (
-          <FamilyMemberCard
-            key={member.id}
-            member={member}
-            actions={
-              <>
-                <Button
-                  variant="outline"
-                  className="flex-1 bg-white border-gray-100 hover:border-primary-200 transition-colors rounded-xl"
-                  size="sm"
-                  onClick={() => handleChat(member)}>
-                  <MessageSquare className="w-4 h-4 mr-2 text-primary-600" />
-                  {t("family.chat")}
-                </Button>
-                <Button
-                  variant="outline"
-                  className="flex-1 bg-white border-gray-100 hover:border-success-200 transition-colors rounded-xl"
-                  size="sm"
-                  onClick={() => handleCall(member)}>
-                  <Phone className="w-4 h-4 mr-2 text-success-600" />
-                  {t("family.call")}
-                </Button>
-              </>
-            }
-          />
-        ))}
+      {isFetching ? (
+        <div className="flex items-center justify-center py-16">
+          <Loader2 className="w-8 h-8 animate-spin text-primary-400" />
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {members.map((member) => (
+            <FamilyMemberCard
+              key={member.link_id}
+              member={mapToCard(member)}
+              actions={
+                <>
+                  <Button
+                    variant="outline"
+                    className="flex-1 bg-white border-gray-100 hover:border-primary-200 transition-colors rounded-xl"
+                    size="sm"
+                    onClick={() => handleChat(member)}>
+                    <MessageSquare className="w-4 h-4 mr-2 text-primary-600" />
+                    {t("family.chat")}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="flex-1 bg-white border-gray-100 hover:border-success-200 transition-colors rounded-xl"
+                    size="sm"
+                    onClick={() => handleCall(member)}>
+                    <Phone className="w-4 h-4 mr-2 text-success-600" />
+                    {t("family.call")}
+                  </Button>
+                  <button
+                    onClick={() => handleRemoveMember(member.link_id)}
+                    className="p-2 text-gray-400 hover:text-error-600 transition-colors rounded-xl hover:bg-error-50"
+                    title="Remove member">
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </>
+              }
+            />
+          ))}
 
-        {/* Empty State / Add New Placeholder */}
-        <button
-          onClick={() => setIsAddModalOpen(true)}
-          className="flex flex-col items-center justify-center p-8 border-2 border-dashed border-gray-200 rounded-[2rem] text-gray-400 hover:border-primary-300 hover:bg-primary-50 transition-all group h-full min-h-[250px]">
-          <div className="w-14 h-14 rounded-full bg-gray-50 group-hover:bg-white flex items-center justify-center mb-4 transition-colors shadow-sm group-hover:shadow-md">
-            <Plus className="w-7 h-7 group-hover:text-primary-600" />
-          </div>
-          <span className="font-black text-gray-900 group-hover:text-primary-700">
-            {t("family.addMemberEmpty")}
-          </span>
-          <p className="text-xs font-bold mt-1 opacity-60">
-            {t("family.inviteViaEmail")}
-          </p>
-        </button>
-      </div>
+          {/* Add New Placeholder */}
+          <button
+            onClick={() => setIsAddModalOpen(true)}
+            className="flex flex-col items-center justify-center p-8 border-2 border-dashed border-gray-200 rounded-[2rem] text-gray-400 hover:border-primary-300 hover:bg-primary-50 transition-all group h-full min-h-[250px]">
+            <div className="w-14 h-14 rounded-full bg-gray-50 group-hover:bg-white flex items-center justify-center mb-4 transition-colors shadow-sm group-hover:shadow-md">
+              <UserPlus className="w-7 h-7 group-hover:text-primary-600" />
+            </div>
+            <span className="font-black text-gray-900 group-hover:text-primary-700">
+              {t("family.addMemberEmpty")}
+            </span>
+            <p className="text-xs font-bold mt-1 opacity-60">
+              {t("family.inviteViaEmail")}
+            </p>
+          </button>
+        </div>
+      )}
 
       {/* Add Member Modal */}
       <Modal
@@ -157,6 +208,13 @@ const Family = () => {
             required
             value={newMemberEmail}
             onChange={(e) => setNewMemberEmail(e.target.value)}
+            icon={<Mail className="w-4 h-4" />}
+          />
+          <Input
+            label="Relation"
+            placeholder="e.g. Mother, Father, Brother…"
+            value={newMemberRelation}
+            onChange={(e) => setNewMemberRelation(e.target.value)}
           />
           <div className="flex justify-end gap-3 pt-4">
             <Button
@@ -178,13 +236,13 @@ const Family = () => {
         onClose={() => setIsChatModalOpen(false)}
         title={
           activeMember
-            ? t("family.chatWith", { name: activeMember.name })
+            ? t("family.chatWith", {
+                name: activeMember.username || activeMember.email,
+              })
             : t("family.chat")
         }
         size="lg">
         <div className="h-[500px]">
-          {/* We reuse ChatInterface but ideally we would pass context. 
-              For now relying on its internal mock logic but creating a visual wrapper. */}
           <ChatInterface isFullPage />
         </div>
       </Modal>

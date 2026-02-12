@@ -74,6 +74,13 @@ const API = {
   OCR_HISTORY_LIST: `${BASE_URL}/health/ocr_history_list.php`,
   OCR_HISTORY_DELETE: `${BASE_URL}/health/ocr_history_delete.php`,
   OCR_HISTORY_SAVE: `${BASE_URL}/health/ocr_history_save.php`,
+  GEMINI_OCR: `${BASE_URL}/api/gemini_ocr.php`,
+
+  // Family Planner
+  FAMILY_LIST: `${BASE_URL}/health/family_list.php`,
+  FAMILY_ADD: `${BASE_URL}/health/family_add.php`,
+  FAMILY_REMOVE: `${BASE_URL}/health/family_remove.php`,
+  FAMILY_SEARCH: `${BASE_URL}/health/family_search.php`,
 
   // Optional Python OCR microservice (FastAPI/EasyOCR)
   OCR_UPLOAD: OCR_SERVICE_BASE_URL ? `${OCR_SERVICE_BASE_URL}/upload` : null,

@@ -145,11 +145,19 @@ const PrescriptionScan = () => {
       toast.error("No extracted text to save.");
       return;
     }
-    addPrescription({
-      note: note.trim(),
-      rawText,
-      meds: detectedMeds,
-    });
+
+    // Create FormData to send image + data
+    const formData = new FormData();
+    formData.append('note', note.trim());
+    formData.append('rawText', rawText);
+    formData.append('meds', JSON.stringify(detectedMeds));
+
+    // Add image if available
+    if (imageFile) {
+      formData.append('image', imageFile);
+    }
+
+    addPrescription(formData);
     toast.success("Prescription saved.");
     setNote("");
   };

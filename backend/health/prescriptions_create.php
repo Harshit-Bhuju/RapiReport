@@ -15,13 +15,63 @@ if (!$user_id) {
     exit;
 }
 
-$input = json_decode(file_get_contents('php://input'), true) ?: [];
-$note = trim($input['note'] ?? '');
-$raw_text = trim($input['rawText'] ?? $input['raw_text'] ?? '');
-$meds = $input['meds'] ?? [];
+// Handle both JSON and FormData
+$note = '';
+$raw_text = '';
+$meds = [];
+$image_path = null;
 
-$stmt = $conn->prepare("INSERT INTO prescriptions (user_id, note, raw_text) VALUES (?, ?, ?)");
-$stmt->bind_param('iss', $user_id, $note, $raw_text);
+// Check if this is multipart/form-data (with image upload)
+if (isset($_POST['note']) || isset($_POST['rawText'])) {
+    // FormData submission
+    $note = trim($_POST['note'] ?? '');
+    $raw_text = trim($_POST['rawText'] ?? $_POST['raw_text'] ?? '');
+    $meds = isset($_POST['meds']) ? json_decode($_POST['meds'], true) : [];
+
+    // Handle image upload
+    if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
+        $upload_dir = __DIR__ . '/../uploads/prescriptions/';
+
+        // Create directory if it doesn't exist
+        if (!is_dir($upload_dir)) {
+            mkdir($upload_dir, 0755, true);
+        }
+
+        // Validate file type
+        $allowed_types = ['image/jpeg', 'image/jpg', 'image/png'];
+        $file_type = $_FILES['image']['type'];
+
+        if (!in_array($file_type, $allowed_types)) {
+            echo json_encode(['status' => 'error', 'message' => 'Invalid file type. Only JPG and PNG allowed.']);
+            exit;
+        }
+
+        // Validate file size (5MB max)
+        if ($_FILES['image']['size'] > 5 * 1024 * 1024) {
+            echo json_encode(['status' => 'error', 'message' => 'File too large. Max 5MB.']);
+            exit;
+        }
+
+        // Generate unique filename
+        $extension = pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION);
+        $filename = uniqid('rx_', true) . '.' . $extension;
+        $full_path = $upload_dir . $filename;
+
+        // Move uploaded file
+        if (move_uploaded_file($_FILES['image']['tmp_name'], $full_path)) {
+            $image_path = 'backend/uploads/prescriptions/' . $filename;
+        }
+    }
+} else {
+    // JSON submission (fallback)
+    $input = json_decode(file_get_contents('php://input'), true) ?: [];
+    $note = trim($input['note'] ?? '');
+    $raw_text = trim($input['rawText'] ?? $input['raw_text'] ?? '');
+    $meds = $input['meds'] ?? [];
+}
+
+$stmt = $conn->prepare("INSERT INTO prescriptions (user_id, note, raw_text, image_path) VALUES (?, ?, ?, ?)");
+$stmt->bind_param('isss', $user_id, $note, $raw_text, $image_path);
 if (!$stmt->execute()) {
     $stmt->close();
     $conn->close();
@@ -44,4 +94,4 @@ foreach ($meds as $m) {
 }
 
 $conn->close();
-echo json_encode(['status' => 'success', 'id' => $prescription_id]);
+echo json_encode(['status' => 'success', 'id' => $prescription_id, 'image_path' => $image_path]);

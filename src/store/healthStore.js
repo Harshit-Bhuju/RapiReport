@@ -77,11 +77,24 @@ export const useHealthStore = create(
 
       // ---------- Prescriptions ----------
       addPrescription: async (rx) => {
-        const res = await apiPost(API.PRESCRIPTIONS_CREATE, {
-          note: rx.note ?? "",
-          rawText: rx.rawText ?? rx.raw_text ?? "",
-          meds: rx.meds ?? [],
-        });
+        let res;
+
+        // Check if rx is FormData (contains image)
+        if (rx instanceof FormData) {
+          res = await fetch(API.PRESCRIPTIONS_CREATE, {
+            method: "POST",
+            credentials: "include",
+            body: rx, // Don't set Content-Type, browser will set it with boundary
+          });
+        } else {
+          // JSON fallback (no image)
+          res = await apiPost(API.PRESCRIPTIONS_CREATE, {
+            note: rx.note ?? "",
+            rawText: rx.rawText ?? rx.raw_text ?? "",
+            meds: rx.meds ?? [],
+          });
+        }
+
         if (res?.ok) await get().fetchPrescriptions();
         else
           set((state) => ({

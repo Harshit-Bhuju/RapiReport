@@ -1,12 +1,15 @@
 import React, { useState, useMemo, useEffect } from "react";
+import axios from "axios";
 import { Card, CardBody } from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import { useHealthStore } from "@/store/healthStore";
-import { Utensils, Plus } from "lucide-react";
+import { useAuthStore } from "@/store/authStore";
+import { Utensils, Plus, Wand2, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import toast from "react-hot-toast";
 import { format, subDays } from "date-fns";
+import API from "@/Configs/ApiEndpoints";
 
 const MEAL_TYPES = [
   { key: "breakfast", label: "Breakfast" },
@@ -16,11 +19,14 @@ const MEAL_TYPES = [
 ];
 
 const Diet = () => {
-  const { dietLogs, addDietLog, removeDietLog, fetchDietLogs } = useHealthStore();
+  const { user } = useAuthStore();
+  const { dietLogs, addDietLog, removeDietLog, fetchDietLogs, prescriptions } = useHealthStore();
   useEffect(() => { fetchDietLogs(); }, [fetchDietLogs]);
   const [mealType, setMealType] = useState("breakfast");
   const [items, setItems] = useState("");
   const [note, setNote] = useState("");
+  const [aiSuggestion, setAiSuggestion] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
 
   const handleAdd = () => {
     if (!items.trim()) {
@@ -35,6 +41,29 @@ const Diet = () => {
     setItems("");
     setNote("");
     toast.success("Meal logged.");
+  };
+
+  const handleAiSuggestion = async () => {
+    setAiLoading(true);
+    setAiSuggestion("");
+    try {
+      const currentMeds = prescriptions.flatMap((p) => (p.meds || []).map((m) => m.name)).filter(Boolean);
+      const conditions = typeof user?.conditions === "string" ? [user.conditions] : (user?.conditions || []);
+      const r = await axios.post(API.AI_DIET_SUGGESTION, {
+        mealType,
+        currentMeds,
+        conditions,
+      }, { withCredentials: true });
+      if (r.data?.status === "success") {
+        setAiSuggestion(r.data.suggestion || "");
+      } else {
+        toast.error("AI suggestion failed.");
+      }
+    } catch (e) {
+      toast.error("AI suggestion failed.");
+    } finally {
+      setAiLoading(false);
+    }
   };
 
   const last7 = useMemo(() => {
@@ -100,9 +129,27 @@ const Diet = () => {
               <Button onClick={handleAdd} className="w-full gap-2">
                 <Plus className="w-4 h-4" /> Add meal
               </Button>
+              <Button variant="secondary" onClick={handleAiSuggestion} loading={aiLoading} className="w-full gap-2">
+                {aiLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
+                Get AI suggestion
+              </Button>
             </div>
           </CardBody>
         </Card>
+        {aiSuggestion && (
+          <Card className="border-none shadow-xl shadow-gray-100/50 border-l-4 border-primary-500">
+            <CardBody className="p-6">
+              <h3 className="font-black text-gray-900 mb-2 flex items-center gap-2">
+                <Wand2 className="w-5 h-5 text-primary-600" />
+                AI suggestion for {mealType}
+              </h3>
+              <p className="text-sm text-gray-700 whitespace-pre-wrap">{aiSuggestion}</p>
+              <Button variant="secondary" size="sm" className="mt-3" onClick={() => setAiSuggestion("")}>
+                Close
+              </Button>
+            </CardBody>
+          </Card>
+        )}
 
         <div className="lg:col-span-2">
           <Card className="border-none shadow-xl shadow-gray-100/50">

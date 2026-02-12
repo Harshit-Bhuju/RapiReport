@@ -49,6 +49,10 @@ const API = {
   ASYNC_CONSULT_SUBMIT: `${BASE_URL}/health/async_consult_submit.php`,
   ASYNC_CONSULT_LIST: `${BASE_URL}/health/async_consult_list.php`,
   AI_PARSE_PRESCRIPTION: `${BASE_URL}/api/ai_parse_prescription.php`,
+  DOCTOR_PATIENTS: `${BASE_URL}/health/doctor_patients.php`,
+  DOCTOR_PATIENT_TIMELINE: `${BASE_URL}/health/doctor_patient_timeline.php`,
+  PRESCRIPTION_STATS: `${BASE_URL}/health/prescription_stats.php`,
+  AI_DIET_SUGGESTION: `${BASE_URL}/api/ai_diet_suggestion.php`,
 };
 
 export default API;

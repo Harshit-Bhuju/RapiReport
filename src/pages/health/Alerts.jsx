@@ -118,3 +118,4 @@ const Alerts = () => {
     </div>
   );
 };
+export default Alerts;

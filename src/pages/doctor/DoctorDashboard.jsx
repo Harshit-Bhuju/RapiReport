@@ -83,9 +83,12 @@ function severityBadge(sev) {
 }
 
 const DoctorDashboard = () => {
-  const [patients] = useState(MOCK_PATIENTS);
-  const [selectedId, setSelectedId] = useState(MOCK_PATIENTS[0]?.id);
+  const [patients, setPatients] = useState([]);
+  const [selectedId, setSelectedId] = useState(null);
   const [search, setSearch] = useState("");
+  const [timeline, setTimeline] = useState([]);
+  const [missedDoses, setMissedDoses] = useState(0);
+  const [prescriptionStats, setPrescriptionStats] = useState(null);
 
   const [isAiOpen, setIsAiOpen] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
@@ -95,17 +98,46 @@ const DoctorDashboard = () => {
 
   const [asyncRequests, setAsyncRequests] = useState([]);
 
-  const { prescriptions } = useHealthStore();
-
   useEffect(() => {
-    const fetchAsync = async () => {
+    const fetchData = async () => {
       try {
-        const r = await axios.get(API.ASYNC_CONSULT_LIST, { withCredentials: true });
-        if (r.data?.status === "success" && Array.isArray(r.data.data)) setAsyncRequests(r.data.data);
+        const [pRes, asyncRes, statsRes] = await Promise.all([
+          axios.get(API.DOCTOR_PATIENTS, { withCredentials: true }),
+          axios.get(API.ASYNC_CONSULT_LIST, { withCredentials: true }),
+          axios.get(API.PRESCRIPTION_STATS, { withCredentials: true }),
+        ]);
+        if (pRes.data?.status === "success") {
+          const pList = pRes.data.data || [];
+          setPatients(pList);
+          if (pList.length && !selectedId) setSelectedId(pList[0]?.id);
+        }
+        if (asyncRes.data?.status === "success" && Array.isArray(asyncRes.data.data)) {
+          setAsyncRequests(asyncRes.data.data);
+        }
+        if (statsRes.data?.status === "success") {
+          setPrescriptionStats(statsRes.data.data);
+        }
       } catch (_) {}
     };
-    fetchAsync();
+    fetchData();
   }, []);
+
+  useEffect(() => {
+    if (!selectedId) return;
+    const fetchTimeline = async () => {
+      try {
+        const r = await axios.get(API.DOCTOR_PATIENT_TIMELINE, {
+          params: { patient_id: selectedId },
+          withCredentials: true,
+        });
+        if (r.data?.status === "success") {
+          setTimeline(r.data.timeline || []);
+          setMissedDoses(r.data.missedDosesLast7Days || 0);
+        }
+      } catch (_) {}
+    };
+    fetchTimeline();
+  }, [selectedId]);
 
   const filteredPatients = useMemo(() => {
     return patients.filter((p) =>
@@ -117,28 +149,6 @@ const DoctorDashboard = () => {
     () => patients.find((p) => p.id === selectedId) || patients[0],
     [patients, selectedId],
   );
-
-  const symptoms = MOCK_SYMPTOMS[patient?.id] || [];
-
-  const timeline = useMemo(() => {
-    // MVP: show last 3 prescriptions from local store + symptoms
-    const rxItems = prescriptions.slice(0, 3).map((p) => ({
-      type: "rx",
-      at: p.createdAt,
-      title: `${p.meds?.length || 0} medicines`,
-      detail: p.note || "Prescription saved",
-    }));
-    const sxItems = symptoms.map((s) => ({
-      type: "symptom",
-      at: s.at,
-      title: s.text,
-      severity: s.severity,
-    }));
-
-    return [...sxItems, ...rxItems].sort(
-      (a, b) => new Date(b.at).getTime() - new Date(a.at).getTime(),
-    );
-  }, [prescriptions, symptoms]);
 
   const handleGenerateDraft = async () => {
     if (!patient) return;
@@ -166,7 +176,7 @@ Patient:
 - Gender: ${patient.gender}
 - Allergies: ${patient.allergies?.length ? patient.allergies.join(", ") : "None known"}
 - Chronic conditions: ${patient.chronic?.length ? patient.chronic.join(", ") : "None"}
-- Recent symptoms: ${symptoms.map((s) => `${s.at}: ${s.text}`).join(" | ") || "None"}
+- Recent symptoms: ${timeline.filter((t) => t.type === "symptom").map((s) => `${s.at}: ${s.title}`).join(" | ") || "None"}
 
 Chief complaint: ${chiefComplaint}
 Provisional diagnosis: ${provisionalDx}
@@ -202,6 +212,70 @@ Important: Always include a disclaimer that AI suggestions must be verified by t
         </Button>
       </div>
 
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {prescriptionStats && (
+          <Card className="border-none shadow-xl shadow-gray-100/50">
+            <CardBody className="p-5">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-xl bg-primary-50 flex items-center justify-center text-primary-600">
+                  <FileText className="w-6 h-6" />
+                </div>
+                <div>
+                  <p className="text-2xl font-black text-gray-900">{prescriptionStats.totalPrescriptions || 0}</p>
+                  <p className="text-xs font-bold text-gray-500">Total prescriptions</p>
+                </div>
+              </div>
+            </CardBody>
+          </Card>
+        )}
+        {prescriptionStats && (
+          <Card className="border-none shadow-xl shadow-gray-100/50">
+            <CardBody className="p-5">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-xl bg-success-50 flex items-center justify-center text-success-600">
+                  <Activity className="w-6 h-6" />
+                </div>
+                <div>
+                  <p className="text-2xl font-black text-gray-900">{prescriptionStats.prescriptionsLast30Days || 0}</p>
+                  <p className="text-xs font-bold text-gray-500">Last 30 days</p>
+                </div>
+              </div>
+            </CardBody>
+          </Card>
+        )}
+        {patient && missedDoses > 0 && (
+          <Card className="border-none shadow-xl shadow-gray-100/50 border-l-4 border-error-500">
+            <CardBody className="p-5">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-xl bg-error-50 flex items-center justify-center text-error-600">
+                  <AlertTriangle className="w-6 h-6" />
+                </div>
+                <div>
+                  <p className="text-2xl font-black text-gray-900">{missedDoses}</p>
+                  <p className="text-xs font-bold text-gray-500">Missed doses (7d)</p>
+                </div>
+              </div>
+            </CardBody>
+          </Card>
+        )}
+      </div>
+
+      {prescriptionStats?.commonMedicines?.length > 0 && (
+        <Card className="border-none shadow-xl shadow-gray-100/50">
+          <CardBody className="p-6">
+            <h2 className="text-lg font-black text-gray-900 mb-3">Most prescribed medicines</h2>
+            <div className="space-y-2">
+              {prescriptionStats.commonMedicines.map((m, i) => (
+                <div key={i} className="flex items-center justify-between p-3 rounded-xl border border-gray-100 bg-white">
+                  <span className="font-bold text-gray-900">{m.name}</span>
+                  <span className="text-sm text-gray-500">{m.count}x</span>
+                </div>
+              ))}
+            </div>
+          </CardBody>
+        </Card>
+      )}
+
       {asyncRequests.length > 0 && (
         <Card className="border-none shadow-xl shadow-gray-100/50 border-l-4 border-primary-500">
           <CardBody className="p-6">
@@ -233,7 +307,7 @@ Important: Always include a disclaimer that AI suggestions must be verified by t
                 <div>
                   <p className="text-sm font-black text-gray-900">Patients</p>
                   <p className="text-xs text-gray-400 font-medium">
-                    Mock list for now
+                    {patients.length} patient{patients.length !== 1 ? "s" : ""}
                   </p>
                 </div>
               </div>
@@ -311,7 +385,7 @@ Important: Always include a disclaimer that AI suggestions must be verified by t
                     Recent Symptoms
                   </p>
                   <p className="text-sm font-black text-gray-900 mt-1">
-                    {symptoms.length}
+                    {timeline.filter((t) => t.type === "symptom").length}
                   </p>
                 </div>
                 <div className="p-4 rounded-2xl border border-gray-100 bg-white">

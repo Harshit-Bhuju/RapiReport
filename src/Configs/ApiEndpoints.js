@@ -1,27 +1,54 @@
 const getBaseUrl = () => {
-    const hostname = window.location.hostname;
+  const hostname = window.location.hostname;
 
-    // Local development
-    if (hostname === "localhost" || hostname === "127.0.0.1") {
-        // Return relative path when local to benefit from Vite proxy
-        return "/api";
-    }
+  // Detect if we are in local development (localhost, 127.0.0.1, or LAN IP)
+  const isLocal =
+    hostname === "localhost" ||
+    hostname === "127.0.0.1" ||
+    hostname.startsWith("192.168.") ||
+    hostname.startsWith("10.") ||
+    hostname.endsWith(".local");
 
-    // Production
-    return "https://api.harmanbhuju.com.np/rapireport/backend";
+  if (isLocal) {
+    // Return relative path to benefit from Vite proxy
+    return "/api";
+  }
+
+  // Production
+  return "https://api.harmanbhuju.com.np/rapireport/backend";
 };
 
 export const BASE_URL = getBaseUrl();
 
 const API = {
-    // Authentication
-    GOOGLE_LOGIN: `${BASE_URL}/auth/google_login.php`,
-    UPDATE_PROFILE: `${BASE_URL}/auth/update_profile.php`,
-    LOGOUT: `${BASE_URL}/auth/logout.php`,
+  // Authentication
+  GOOGLE_LOGIN: `${BASE_URL}/auth/google_login.php`,
+  GET_CURRENT_USER: `${BASE_URL}/auth/get_current_user.php`,
+  UPDATE_PROFILE: `${BASE_URL}/auth/update_profile.php`,
+  LOGOUT: `${BASE_URL}/auth/logout.php`,
 
-    // Territory/Game APIs
-    GET_LEADERBOARD: `${BASE_URL}/api/get_leaderboard.php`,
-    UPDATE_LOCATION: `${BASE_URL}/api/update_location.php`,
+  // Territory/Game APIs
+  GET_LEADERBOARD: `${BASE_URL}/api/get_leaderboard.php`,
+  UPDATE_LOCATION: `${BASE_URL}/api/update_location.php`,
+
+  // Smart Health Detective (backend-persisted)
+  PRESCRIPTIONS_LIST: `${BASE_URL}/health/prescriptions_list.php`,
+  PRESCRIPTIONS_CREATE: `${BASE_URL}/health/prescriptions_create.php`,
+  PRESCRIPTIONS_DELETE: `${BASE_URL}/health/prescriptions_delete.php`,
+  ADHERENCE_LOGS: `${BASE_URL}/health/adherence_logs.php`,
+  ADHERENCE_REMINDERS: `${BASE_URL}/health/adherence_reminders.php`,
+  SYMPTOMS_LIST: `${BASE_URL}/health/symptoms_list.php`,
+  DIET_LIST: `${BASE_URL}/health/diet_list.php`,
+  ACTIVITY_LIST: `${BASE_URL}/health/activity_list.php`,
+  CHAT: `${BASE_URL}/api/chat.php`,
+  CHAT_HISTORY: `${BASE_URL}/api/get_chat_history.php`,
+  REWARDS_LIST: `${BASE_URL}/health/rewards_list.php`,
+  REWARDS_REDEEM: `${BASE_URL}/health/rewards_redeem.php`,
+  CAMPAIGNS_LIST: `${BASE_URL}/health/campaigns_list.php`,
+  CAMPAIGNS_COMPLETE: `${BASE_URL}/health/campaigns_complete.php`,
+  ASYNC_CONSULT_SUBMIT: `${BASE_URL}/health/async_consult_submit.php`,
+  ASYNC_CONSULT_LIST: `${BASE_URL}/health/async_consult_list.php`,
+  AI_PARSE_PRESCRIPTION: `${BASE_URL}/api/ai_parse_prescription.php`,
 };
 
 export default API;

@@ -99,35 +99,30 @@ const Family = () => {
       {/* Members Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {members.map((member) => (
-          <div
+          <FamilyMemberCard
             key={member.id}
-            className="flex flex-col h-full bg-white rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-md transition-all overflow-hidden group">
-            <div className="flex-grow">
-              <FamilyMemberCard
-                member={member}
-                className="shadow-none border-none h-full"
-              />
-            </div>
-
-            <div className="p-5 pt-0 flex gap-2">
-              <Button
-                variant="outline"
-                className="flex-1 bg-white border-gray-100 hover:border-primary-200 transition-colors"
-                size="sm"
-                onClick={() => handleChat(member)}>
-                <MessageSquare className="w-4 h-4 mr-2 text-primary-600" />
-                {t("family.chat")}
-              </Button>
-              <Button
-                variant="outline"
-                className="flex-1 bg-white border-gray-100 hover:border-success-200 transition-colors"
-                size="sm"
-                onClick={() => handleCall(member)}>
-                <Phone className="w-4 h-4 mr-2 text-success-600" />
-                {t("family.call")}
-              </Button>
-            </div>
-          </div>
+            member={member}
+            actions={
+              <>
+                <Button
+                  variant="outline"
+                  className="flex-1 bg-white border-gray-100 hover:border-primary-200 transition-colors rounded-xl"
+                  size="sm"
+                  onClick={() => handleChat(member)}>
+                  <MessageSquare className="w-4 h-4 mr-2 text-primary-600" />
+                  {t("family.chat")}
+                </Button>
+                <Button
+                  variant="outline"
+                  className="flex-1 bg-white border-gray-100 hover:border-success-200 transition-colors rounded-xl"
+                  size="sm"
+                  onClick={() => handleCall(member)}>
+                  <Phone className="w-4 h-4 mr-2 text-success-600" />
+                  {t("family.call")}
+                </Button>
+              </>
+            }
+          />
         ))}
 
         {/* Empty State / Add New Placeholder */}

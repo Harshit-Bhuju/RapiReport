@@ -10,12 +10,22 @@ import {
   LogOut,
   X,
   Stethoscope,
+  ScanLine,
   Map,
   Users,
   ChevronDown,
   UserCog,
   Shield,
   ClipboardList,
+  Pill,
+  Activity,
+  Footprints,
+  Utensils,
+  Gift,
+  Megaphone,
+  History,
+  BellRing,
+  BarChart3,
 } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { cn } from "@/lib/utils";
@@ -30,6 +40,11 @@ const Sidebar = ({ isOpen, onClose }) => {
   const baseNavItems = [
     { name: t("sidebar.dashboard"), path: "/dashboard", icon: LayoutDashboard },
     { name: t("sidebar.reports"), path: "/reports", icon: FileText },
+    { name: "Prescriptions", path: "/prescriptions", icon: ScanLine },
+    { name: "Adherence", path: "/adherence", icon: Pill },
+    { name: "Symptoms", path: "/symptoms", icon: Activity },
+    { name: "Activity", path: "/activity", icon: Footprints },
+    { name: "Diet", path: "/diet", icon: Utensils },
     {
       name: t("sidebar.consultation"),
       path: "/consultation",
@@ -38,6 +53,11 @@ const Sidebar = ({ isOpen, onClose }) => {
     { name: "Family Health", path: "/family", icon: Users },
     { name: t("sidebar.doctors"), path: "/doctors", icon: Stethoscope },
     { name: "Quest Game", path: "/quest-game", icon: Map },
+    { name: "Marketplace", path: "/marketplace", icon: Gift },
+    { name: "Campaigns", path: "/campaigns", icon: Megaphone },
+    { name: "Medical history", path: "/medical-history", icon: History },
+    { name: "Alerts", path: "/alerts", icon: BellRing },
+    { name: "Community", path: "/community", icon: BarChart3 },
     { name: t("sidebar.risk"), path: "/prevention", icon: ShieldAlert },
     { name: t("sidebar.planner"), path: "/planner", icon: CalendarCheck },
   ];
@@ -100,8 +120,8 @@ const Sidebar = ({ isOpen, onClose }) => {
           </div>
 
           {/* Navigation Links */}
-          <nav className="flex-grow px-4 space-y-1.5 py-6 overflow-visible">
-            <div className="mb-4 px-4 text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">
+          <nav className="flex-grow px-4 space-y-1 overflow-y-auto scrollbar-hide">
+            <div className="mb-4 px-4 text-[10px] font-extrabold text-gray-400 uppercase tracking-[0.2em] opacity-80">
               Menu
             </div>
             {navItems.map((item) => (
@@ -111,15 +131,14 @@ const Sidebar = ({ isOpen, onClose }) => {
                 onClick={() => window.innerWidth < 1024 && onClose()}
                 className={({ isActive }) =>
                   cn(
-                    "relative flex items-center gap-3.5 px-4 py-3 rounded-xl font-semibold transition-all duration-300 group overflow-hidden",
+                    "relative flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 group overflow-hidden mb-0.5",
                     isActive
-                      ? "bg-primary-50 text-primary-600"
+                      ? "bg-primary-50 text-primary-600 shadow-sm"
                       : "text-gray-500 hover:bg-gray-50 hover:text-gray-900",
                   )
                 }>
                 {({ isActive }) => (
                   <>
-                    {/* Active Accent Bar */}
                     <div
                       className={cn(
                         "absolute left-0 top-0 bottom-0 w-1 bg-primary-600 transition-transform duration-300",
@@ -129,16 +148,13 @@ const Sidebar = ({ isOpen, onClose }) => {
 
                     <item.icon
                       className={cn(
-                        "w-5 h-5 transition-all duration-300",
+                        "w-5 h-5 min-w-[20px] transition-all duration-300",
                         isActive
                           ? "text-primary-600"
                           : "group-hover:text-primary-600 group-hover:scale-110",
                       )}
                     />
-                    <span className="truncate tracking-wide">{item.name}</span>
-
-                    {/* Hover Glow Effect */}
-                    <div className="absolute inset-0 bg-primary-600/0 group-hover:bg-primary-600/[0.02] transition-colors pointer-events-none" />
+                    <span className="truncate tracking-tight">{item.name}</span>
                   </>
                 )}
               </NavLink>
@@ -146,7 +162,7 @@ const Sidebar = ({ isOpen, onClose }) => {
           </nav>
 
           {/* User Profile / Logout */}
-          <div className="p-4 border-t border-gray-100/60 mt-auto bg-gray-50/30 backdrop-blur-sm">
+          <div className="p-4 border-t border-gray-100 mt-auto bg-gray-50/30 backdrop-blur-sm">
             <div className="relative">
               <button
                 onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
@@ -176,7 +192,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                   <p className="text-sm font-bold text-gray-900 truncate">
                     {user?.name}
                   </p>
-                  <p className="text-[10px] font-medium text-gray-400 truncate">
+                  <p className="text-[10px] font-medium text-gray-400 truncate  tracking-tighter">
                     {user?.email}
                   </p>
                 </div>
@@ -190,7 +206,7 @@ const Sidebar = ({ isOpen, onClose }) => {
 
               {/* Floating Menu on the Right */}
               {isUserMenuOpen && (
-                <div className="absolute left-full bottom-0 ml-4 w-56 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden animate-in fade-in slide-in-from-left-2 duration-200 z-[60]">
+                <div className="absolute left-full bottom-0 ml-4 w-52 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-[60] transition-all">
                   <div className="p-2 space-y-1">
                     <button
                       onClick={() => {

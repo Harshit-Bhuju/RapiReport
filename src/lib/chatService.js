@@ -1,18 +1,11 @@
+import axios from "axios";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import API from "@/Configs/ApiEndpoints";
 
 /**
  * RapiReport AI Chat Service
- * Handles health-related consultations using Google Gemini AI.
+ * Tries backend first (chat.php); on CORS/network error falls back to client-side Gemini.
  */
-
-const rawApiKey = import.meta.env.VITE_GEMINI_API_KEY;
-const apiKey = rawApiKey ? rawApiKey.trim() : null;
-
-if (!apiKey) {
-  console.error("VITE_GEMINI_API_KEY is missing in environment variables.");
-}
-
-const genAI = new GoogleGenerativeAI(apiKey || "");
 
 const SYSTEM_PROMPT = `
 You are RapiReport AI, a specialized Health Intelligence Assistant for Nepal. 
@@ -33,35 +26,58 @@ Your goal is to help users understand their medical reports and provide general 
 
 const chatService = {
   /**
-   * Send a message to the Gemini AI and get a response.
-   * @param {string} message - The user's message.
-   * @param {string} language - The current language ('en' or 'ne').
-   * @returns {Promise<Object>} The AI response.
+   * Send message: try backend first; on failure use client-side Gemini.
    */
   sendMessage: async (message, language = "en") => {
     try {
-      // Use a current model: gemini-2.5-flash (stable) or set VITE_GEMINI_MODEL in .env to override
-      const modelId = import.meta.env.VITE_GEMINI_MODEL || "gemini-2.5-flash";
-      const model = genAI.getGenerativeModel({
-        model: modelId,
-        systemInstruction: SYSTEM_PROMPT,
-      });
-
-      const result = await model.generateContent(message);
-      const response = await result.response;
-      const text = response.text();
-
-      if (!text) throw new Error("Received empty response from AI.");
-
-      return {
-        text: {
-          en: text,
-          ne: text,
+      const response = await axios.post(
+        API.CHAT,
+        { message, language },
+        {
+          withCredentials: true,
+          headers: { "Content-Type": "application/json" },
+          timeout: 25000,
         },
-      };
+      );
+      if (response.data?.error) throw new Error(response.data.error);
+      return response.data;
+    } catch (backendError) {
+      const apiKey = import.meta.env.VITE_GEMINI_API_KEY?.trim();
+      if (apiKey) {
+        try {
+          const genAI = new GoogleGenerativeAI(apiKey);
+          const modelId = import.meta.env.VITE_GEMINI_MODEL || "gemini-2.5-flash";
+          const model = genAI.getGenerativeModel({
+            model: modelId,
+            systemInstruction: SYSTEM_PROMPT,
+          });
+          const result = await model.generateContent(message);
+          const text = result?.response?.text?.() || "";
+          if (!text) throw new Error("Empty response");
+          return { text: { en: text, ne: text } };
+        } catch (e) {
+          console.error("Chat fallback (Gemini) error:", e);
+        }
+      }
+      throw backendError;
+    }
+  },
+
+  /**
+   * Fetch chat history from backend. Returns [] on failure (e.g. CORS, 404).
+   */
+  getChatHistory: async () => {
+    try {
+      const response = await axios.get(API.CHAT_HISTORY, {
+        withCredentials: true,
+        timeout: 10000,
+      });
+      const data = response.data;
+      if (Array.isArray(data)) return data;
+      return [];
     } catch (error) {
-      console.error("Gemini AI Chat Error:", error);
-      throw error;
+      console.warn("Chat history unavailable (using local):", error?.message || error);
+      return [];
     }
   },
 };

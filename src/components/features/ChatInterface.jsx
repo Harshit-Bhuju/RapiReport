@@ -14,6 +14,8 @@ import Button from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import chatService from "@/lib/chatService";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 const ChatInterface = ({ isFullPage = false }) => {
   const { t, i18n } = useTranslation();
@@ -36,6 +38,21 @@ const ChatInterface = ({ isFullPage = false }) => {
   });
   const [inputValue, setInputValue] = useState("");
   const scrollRef = useRef(null);
+
+  // Fetch chat history from backend on mount
+  useEffect(() => {
+    const fetchHistory = async () => {
+      try {
+        const history = await chatService.getChatHistory();
+        if (history && history.length > 0) {
+          setMessages(history);
+        }
+      } catch (error) {
+        console.error("Error fetching history:", error);
+      }
+    };
+    fetchHistory();
+  }, []);
 
   useEffect(() => {
     localStorage.setItem("chat_history", JSON.stringify(messages));
@@ -193,12 +210,22 @@ const ChatInterface = ({ isFullPage = false }) => {
             </div>
             <div
               className={cn(
-                "max-w-[85%] p-4 rounded-2xl text-sm font-semibold leading-relaxed shadow-sm",
+                "max-w-[85%] p-4 rounded-2xl text-sm font-semibold leading-relaxed shadow-sm markdown-content",
                 msg.role === "user"
                   ? "bg-primary-600 text-white rounded-br-none"
                   : "bg-white text-gray-800 border border-gray-100 rounded-bl-none",
               )}>
-              {i18n.language === "ne" ? msg.text.ne : msg.text.en}
+              {msg.role === "user" ? (
+                i18n.language === "ne" ? (
+                  msg.text.ne
+                ) : (
+                  msg.text.en
+                )
+              ) : (
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {i18n.language === "ne" ? msg.text.ne : msg.text.en}
+                </ReactMarkdown>
+              )}
             </div>
           </motion.div>
         ))}

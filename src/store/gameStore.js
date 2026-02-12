@@ -287,6 +287,8 @@ export const useGameStore = create((set, get) => ({
     { id: 2, title: "Lab Test Voucher", pointsRequired: 300, icon: "ticket" },
     { id: 3, title: "Premium Access (1 Week)", pointsRequired: 200, icon: "activity" },
     { id: 4, title: "Health Kit Bundle", pointsRequired: 1000, icon: "gift" },
+    { id: 5, title: "Fitness Band Discount", pointsRequired: 800, icon: "activity" },
+    { id: 6, title: "Doctor Consult Credit", pointsRequired: 600, icon: "stethoscope" },
   ],
 
   setQuestProfile: (profile) => {

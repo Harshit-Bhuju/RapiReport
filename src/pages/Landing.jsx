@@ -25,7 +25,7 @@ const HeroSection = () => {
   const navigate = useNavigate();
 
   return (
-    <section className="relative min-h-[90vh] flex items-center pt-20 pb-16 md:pt-32 md:pb-32 overflow-hidden mesh-gradient">
+    <section className="relative min-h-[70vh] flex items-center pt-16 pb-12 md:pt-24 md:pb-20 overflow-hidden mesh-gradient">
       {/* Decorative Blur Blobs */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
         <div
@@ -49,12 +49,12 @@ const HeroSection = () => {
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.2 }}
-                className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-white/60 backdrop-blur-xl text-primary-700 text-xs font-black mb-10 border border-white shadow-xl shadow-primary-100/20 uppercase tracking-[0.2em]">
+                className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-white/60 backdrop-blur-xl text-primary-700 text-xs font-black mb-6 border border-white shadow-xl shadow-primary-100/20 uppercase tracking-[0.2em]">
                 <Sparkles className="w-4 h-4 animate-pulse" />
                 {t("hero.badge")}
               </motion.div>
 
-              <h1 className="text-5xl sm:text-6xl md:text-7xl font-black text-gray-900 leading-[1.05] mb-10 tracking-tight text-glow">
+              <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-gray-900 leading-[1.05] mb-6 tracking-tight text-glow">
                 {t("hero.title")
                   .split(" ")
                   .map((word, i) => (
@@ -66,7 +66,7 @@ const HeroSection = () => {
                   ))}
               </h1>
 
-              <p className="text-xl md:text-2xl text-gray-600 mb-14 max-w-2xl mx-auto lg:mx-0 leading-relaxed font-semibold opacity-80">
+              <p className="text-lg md:text-xl text-gray-600 mb-8 max-w-2xl mx-auto lg:mx-0 leading-relaxed font-semibold opacity-80">
                 {t("hero.subtitle")}
               </p>
 
@@ -277,7 +277,7 @@ const StatsSection = () => {
   ];
 
   return (
-    <section className="relative py-20 bg-gray-950 overflow-hidden">
+    <section className="relative py-12 bg-gray-950 overflow-hidden">
       <div className="absolute inset-0 opacity-10">
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary-500 rounded-full blur-[100px]" />
         <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-indigo-500 rounded-full blur-[100px]" />
@@ -293,7 +293,7 @@ const StatsSection = () => {
               transition={{ delay: idx * 0.1 }}>
               <p
                 className={cn(
-                  "text-5xl md:text-7xl font-black mb-3 bg-clip-text text-transparent bg-gradient-to-r",
+                  "text-4xl md:text-5xl font-black mb-2 bg-clip-text text-transparent bg-gradient-to-r",
                   stat.color,
                 )}>
                 {stat.value}
@@ -337,12 +337,12 @@ const HowItWorks = () => {
   ];
 
   return (
-    <section className="py-40 bg-white relative overflow-hidden">
+    <section className="py-20 bg-white relative overflow-hidden">
       {/* Background patterns */}
       <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
 
       <div className="container-custom">
-        <div className="flex flex-col lg:flex-row items-end justify-between gap-12 mb-32">
+        <div className="flex flex-col lg:flex-row items-end justify-between gap-12 mb-16">
           <div className="max-w-3xl">
             <motion.p
               initial={{ opacity: 0, x: -20 }}
@@ -445,7 +445,7 @@ const Features = () => {
   return (
     <section
       id="features"
-      className="py-40 bg-slate-950 relative overflow-hidden">
+      className="py-20 bg-slate-950 relative overflow-hidden">
       {/* Dynamic background elements for dark section */}
       <div className="absolute inset-0 opacity-20">
         <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-primary-600 rounded-full blur-[150px] animate-pulse" />
@@ -520,7 +520,7 @@ const Landing = () => {
       <Features />
 
       {/* Trust Section */}
-      <section className="py-24 bg-white border-y border-gray-100">
+      <section className="py-16 bg-white border-y border-gray-100">
         <div className="container-custom">
           <div className="flex flex-col md:flex-row items-center justify-between gap-12">
             <div className="flex-1 text-center md:text-left">
@@ -548,7 +548,7 @@ const Landing = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-40 bg-slate-950 relative overflow-hidden">
+      <section className="py-24 bg-slate-950 relative overflow-hidden">
         {/* Immersive Background */}
         <div className="absolute inset-0 mesh-gradient-dark opacity-80" />
         <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary-500/10 blur-[150px] rounded-full -translate-y-1/2 translate-x-1/3 animate-pulse" />

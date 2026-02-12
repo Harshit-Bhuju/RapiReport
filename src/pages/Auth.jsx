@@ -79,7 +79,7 @@ const Auth = () => {
   return (
     <div className="min-h-screen bg-white flex overflow-hidden">
       {/* Left Side: Immersive Visuals */}
-      <div className="hidden lg:flex lg:w-[45%] relative bg-slate-950 items-center justify-center p-20 overflow-hidden">
+      <div className="hidden lg:flex lg:w-[45%] relative bg-slate-950 items-center justify-center p-12 overflow-hidden">
         {/* Animated Mesh Gradient */}
         <div className="absolute inset-0 mesh-gradient-dark opacity-80" />
 
@@ -97,7 +97,7 @@ const Auth = () => {
             initial={{ opacity: 0, x: -30 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8 }}>
-            <div className="inline-flex items-center gap-3 px-5 py-2.5 rounded-full bg-white/5 border border-white/10 backdrop-blur-xl mb-12">
+            <div className="inline-flex items-center gap-3 px-5 py-2.5 rounded-full bg-white/5 border border-white/10 backdrop-blur-xl mb-8">
               <Sparkles className="w-5 h-5 text-primary-400 animate-pulse" />
               <span className="text-xs font-black text-white tracking-[0.3em] uppercase">
                 {t("auth.badge")}
@@ -109,7 +109,7 @@ const Auth = () => {
               <span className="text-primary-500">personal health.</span>
             </h1>
 
-            <p className="text-primary-100/60 text-lg mb-16 leading-relaxed font-semibold max-w-md">
+            <p className="text-primary-100/60 text-lg mb-10 leading-relaxed font-semibold max-w-md">
               {t("auth.heroSubtitle")}
             </p>
 
@@ -123,8 +123,8 @@ const Auth = () => {
                   repeat: Infinity,
                   ease: "easeInOut",
                 }}
-                className="relative p-12 rounded-[3.5rem] bg-white/5 border border-white/10 backdrop-blur-2xl shadow-2xl overflow-hidden">
-                <div className="flex items-center gap-6 mb-10">
+                className="relative p-8 rounded-[3.5rem] bg-white/5 border border-white/10 backdrop-blur-2xl shadow-2xl overflow-hidden">
+                <div className="flex items-center gap-6 mb-8">
                   <div className="w-20 h-20 rounded-[2rem] bg-gradient-to-br from-primary-500 to-indigo-700 flex items-center justify-center text-white shadow-2xl">
                     <Brain className="w-10 h-10" />
                   </div>
@@ -159,12 +159,12 @@ const Auth = () => {
       </div>
 
       {/* Right Side: Elegant Auth Form */}
-      <div className="w-full lg:w-[55%] flex items-center justify-center p-8 sm:p-20 bg-white relative">
+      <div className="w-full lg:w-[55%] flex items-center justify-center p-6 sm:p-14 bg-white relative">
         <div className="w-full max-w-[480px]">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-center lg:text-left mb-16">
+            className="text-center lg:text-left mb-10">
             <h2 className="text-4xl sm:text-5xl font-black text-slate-900 mb-5 tracking-tight">
               {t("auth.createTitle")}
             </h2>
@@ -177,7 +177,7 @@ const Auth = () => {
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.2 }}>
-            <div className="space-y-12">
+            <div className="space-y-8">
               <div className="space-y-4">
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] ml-2">
                   Social Authentication
@@ -185,7 +185,7 @@ const Auth = () => {
                 <Button
                   variant="outline"
                   type="button"
-                  className="w-full py-8 rounded-[2rem] border-2 border-slate-100 flex items-center justify-center gap-6 hover:bg-slate-50 bg-white text-slate-900 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-xl shadow-slate-200/50 font-black text-xl"
+                  className="w-full py-6 rounded-[2rem] border-2 border-slate-100 flex items-center justify-center gap-6 hover:bg-slate-50 bg-white text-slate-900 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-xl shadow-slate-200/50 font-black text-xl"
                   onClick={handleGoogleLogin}
                   loading={isLoading}>
                   {!isLoading && (
@@ -229,7 +229,7 @@ const Auth = () => {
             </div>
           </motion.div>
 
-          <footer className="mt-20 text-center lg:text-left opacity-60">
+          <footer className="mt-12 text-center lg:text-left opacity-60">
             <p className="text-xs text-slate-400 font-bold leading-relaxed max-w-sm">
               {t("auth.termsAgree")} <br />
               <button className="text-primary-600 hover:text-primary-700 transition-colors">

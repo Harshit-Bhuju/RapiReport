@@ -308,7 +308,7 @@ const PrescriptionScan = () => {
                   ) : (
                     <Wand2 className="w-4 h-4" />
                   )}
-                  Parse with AI & check history
+                  Check history only
                 </Button>
               </div>
             </CardBody>

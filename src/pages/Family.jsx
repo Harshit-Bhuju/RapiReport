@@ -23,6 +23,7 @@ import Input from "@/components/ui/Input";
 import { FamilyMemberCard } from "@/components/ui/FamilyMemberCard";
 import { toast } from "react-hot-toast";
 import API from "@/Configs/ApiEndpoints";
+import { cn } from "@/lib/utils";
 
 const Family = () => {
   const { t } = useTranslation();
@@ -57,6 +58,8 @@ const Family = () => {
   const chatPollIntervalRef = useRef(null);
   const incomingAudioRef = useRef(null);
   const outgoingAudioRef = useRef(null);
+  const iceCandidateBufferRef = useRef([]); // Buffer ICE candidates until remote desc is set
+  const isCallConnectedRef = useRef(false); // Track if connection was ever established
 
   // Setup simple ringtone audio (you need to place the mp3 files in /public/sounds)
   useEffect(() => {
@@ -79,10 +82,8 @@ const Family = () => {
   }, []);
 
   const startIncomingRingtone = () => {
-    try {
-      incomingAudioRef.current && incomingAudioRef.current.play();
-    } catch {
-      // ignore autoplay errors
+    if (incomingAudioRef.current) {
+      incomingAudioRef.current.play().catch(() => {});
     }
   };
 
@@ -94,10 +95,8 @@ const Family = () => {
   };
 
   const startOutgoingRingtone = () => {
-    try {
-      outgoingAudioRef.current && outgoingAudioRef.current.play();
-    } catch {
-      // ignore autoplay errors
+    if (outgoingAudioRef.current) {
+      outgoingAudioRef.current.play().catch(() => {});
     }
   };
 
@@ -109,7 +108,7 @@ const Family = () => {
     if (remoteVideoRef.current && remoteStreamRef.current) {
       remoteVideoRef.current.srcObject = remoteStreamRef.current;
     }
-  }, [isCallModalOpen, isCallMinimized]);
+  }, [isCallModalOpen, isCallMinimized, isInCall, isCameraOn]);
 
   const stopOutgoingRingtone = () => {
     if (outgoingAudioRef.current) {
@@ -147,6 +146,19 @@ const Family = () => {
         });
         if (res.data?.status !== "success") return;
         const calls = res.data.calls || [];
+
+        // Check if the current ringing call was cancelled by the caller
+        if (callInfo && !isInCall && !callInfo.isCaller) {
+          const currentCallStillActive = calls.find(
+            (c) => c.id === callInfo.callId,
+          );
+          if (!currentCallStillActive) {
+            toast(t("family.callMissed") || "Call ended");
+            endCall(false);
+            return;
+          }
+        }
+
         if (!calls.length || callInfo) return;
 
         const call = calls[0];
@@ -196,9 +208,12 @@ const Family = () => {
     if (pcRef.current) {
       pcRef.current.onicecandidate = null;
       pcRef.current.ontrack = null;
+      pcRef.current.onconnectionstatechange = null;
       pcRef.current.close();
       pcRef.current = null;
     }
+    iceCandidateBufferRef.current = [];
+    isCallConnectedRef.current = false;
 
     if (localStreamRef.current) {
       localStreamRef.current.getTracks().forEach((t) => t.stop());
@@ -260,11 +275,14 @@ const Family = () => {
   };
 
   const createPeerConnection = async (member, roomId, isCaller) => {
+    // Reset ICE buffer and connected flag
+    iceCandidateBufferRef.current = [];
+    isCallConnectedRef.current = false;
+
     const pc = new RTCPeerConnection({
       iceServers: [
-        {
-          urls: "stun:stun.l.google.com:19302",
-        },
+        { urls: "stun:stun.l.google.com:19302" },
+        { urls: "stun:stun1.l.google.com:19302" },
       ],
     });
 
@@ -287,16 +305,34 @@ const Family = () => {
       }
     };
 
+    // Detect peer disconnect — only AFTER connection was once established
+    pc.onconnectionstatechange = () => {
+      console.log("PC state:", pc.connectionState);
+      if (pc.connectionState === "connected") {
+        isCallConnectedRef.current = true;
+      }
+      if (
+        isCallConnectedRef.current &&
+        (pc.connectionState === "disconnected" ||
+          pc.connectionState === "failed" ||
+          pc.connectionState === "closed")
+      ) {
+        toast(t("family.callEnded") || "Call ended");
+        endCall(false);
+      }
+    };
+
     pc.ontrack = (event) => {
       if (!remoteStreamRef.current) {
         remoteStreamRef.current = new MediaStream();
-        if (remoteVideoRef.current) {
-          remoteVideoRef.current.srcObject = remoteStreamRef.current;
-        }
       }
       event.streams[0].getTracks().forEach((track) => {
         remoteStreamRef.current.addTrack(track);
       });
+      // Always re-attach to video element
+      if (remoteVideoRef.current) {
+        remoteVideoRef.current.srcObject = remoteStreamRef.current;
+      }
     };
 
     try {
@@ -306,9 +342,9 @@ const Family = () => {
       });
       localStreamRef.current = stream;
 
-      // Set initial states: video OFF, mic ON
-      stream.getVideoTracks().forEach(track => track.enabled = false);
-      stream.getAudioTracks().forEach(track => track.enabled = true);
+      // Set initial states: video ON, mic ON
+      stream.getVideoTracks().forEach((track) => (track.enabled = true));
+      stream.getAudioTracks().forEach((track) => (track.enabled = true));
 
       if (localVideoRef.current) {
         localVideoRef.current.srcObject = stream;
@@ -317,13 +353,29 @@ const Family = () => {
         pc.addTrack(track, stream);
       });
     } catch (err) {
-      toast.error(t("family.callPermissionError"));
+      toast.error(
+        t("family.callPermissionError") || "Camera/Mic permission denied",
+      );
       console.error("Failed to get user media", err);
       throw err;
     }
 
     pcRef.current = pc;
     return pc;
+  };
+
+  // Flush any buffered ICE candidates after remote description is set
+  const flushIceCandidates = async () => {
+    if (!pcRef.current || !pcRef.current.remoteDescription) return;
+    const buffered = [...iceCandidateBufferRef.current];
+    iceCandidateBufferRef.current = [];
+    for (const c of buffered) {
+      try {
+        await pcRef.current.addIceCandidate(new RTCIceCandidate(c));
+      } catch (err) {
+        console.error("Error adding buffered ICE candidate", err);
+      }
+    }
   };
 
   const startSignalPolling = (roomId, member, isCaller) => {
@@ -348,11 +400,22 @@ const Family = () => {
             lastSignalIdRef.current,
             s.id || 0,
           );
+
+          // Always handle "end" signal, even if pcRef is already null
+          if (s.type === "end") {
+            toast(t("family.callEnded") || "Call ended");
+            await endCall(false);
+            return;
+          }
+
           if (!pcRef.current) continue;
 
           if (s.type === "offer" && !isCaller) {
+            // Callee: set remote description, create & send answer
             const desc = new RTCSessionDescription(s.payload);
             await pcRef.current.setRemoteDescription(desc);
+            // Flush any ICE candidates that arrived before the offer
+            await flushIceCandidates();
             const answer = await pcRef.current.createAnswer();
             await pcRef.current.setLocalDescription(answer);
             await axios.post(
@@ -365,21 +428,31 @@ const Family = () => {
               },
               { withCredentials: true },
             );
+            // Callee is now in the call
+            setIsInCall(true);
           } else if (s.type === "answer" && isCaller) {
+            // Caller: set remote description from callee's answer
             if (!pcRef.current.remoteDescription) {
               const desc = new RTCSessionDescription(s.payload);
               await pcRef.current.setRemoteDescription(desc);
+              await flushIceCandidates();
             }
+            // Caller transitions to "in call" when answer received
+            stopOutgoingRingtone();
+            setIsInCall(true);
           } else if (s.type === "candidate") {
-            try {
-              const candidate = new RTCIceCandidate(s.payload);
-              await pcRef.current.addIceCandidate(candidate);
-            } catch (err) {
-              console.error("Error adding ICE candidate", err);
+            // Buffer candidates if remote description not set yet
+            if (!pcRef.current.remoteDescription) {
+              iceCandidateBufferRef.current.push(s.payload);
+            } else {
+              try {
+                await pcRef.current.addIceCandidate(
+                  new RTCIceCandidate(s.payload),
+                );
+              } catch (err) {
+                console.error("Error adding ICE candidate", err);
+              }
             }
-          } else if (s.type === "end") {
-            toast(t("family.callEnded"));
-            await endCall(false);
           }
         }
       } catch (err) {
@@ -420,7 +493,8 @@ const Family = () => {
   const handleRemoveMember = async (linkId) => {
     if (
       !window.confirm(
-        t("family.confirmRemove") || "Are you sure you want to remove this family member?",
+        t("family.confirmRemove") ||
+          "Are you sure you want to remove this family member?",
       )
     ) {
       return;
@@ -450,27 +524,24 @@ const Family = () => {
     setChatCurrentUserId(null);
   };
 
-  const fetchChatMessages = useCallback(
-    async (linkId) => {
-      if (!linkId) return;
-      try {
-        setChatLoading(true);
-        const res = await axios.get(API.FAMILY_CHAT, {
-          params: { link_id: linkId },
-          withCredentials: true,
-        });
-        if (res.data?.status === "success") {
-          setChatMessages(res.data.messages || []);
-          setChatCurrentUserId(res.data.current_user_id || null);
-        }
-      } catch (err) {
-        console.error("Failed to load family chat", err);
-      } finally {
-        setChatLoading(false);
+  const fetchChatMessages = useCallback(async (linkId) => {
+    if (!linkId) return;
+    try {
+      setChatLoading(true);
+      const res = await axios.get(API.FAMILY_CHAT, {
+        params: { link_id: linkId },
+        withCredentials: true,
+      });
+      if (res.data?.status === "success") {
+        setChatMessages(res.data.messages || []);
+        setChatCurrentUserId(res.data.current_user_id || null);
       }
-    },
-    [],
-  );
+    } catch (err) {
+      console.error("Failed to load family chat", err);
+    } finally {
+      setChatLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     if (!isChatModalOpen || !activeMember?.link_id) {
@@ -512,9 +583,15 @@ const Family = () => {
   };
 
   const handleCall = async (member) => {
+    // Prevent duplicate calls
+    if (callInfo || isInCall) {
+      toast.error("Already in a call");
+      return;
+    }
+
     try {
       // Reset toggle states for new call
-      setIsCameraOn(false);
+      setIsCameraOn(true);
       setIsMicOn(true);
 
       const res = await axios.post(
@@ -525,7 +602,8 @@ const Family = () => {
 
       if (res.data?.status !== "success" || !res.data.call) {
         toast.error(
-          res.data?.message || t("family.callFailed", { name: member.username }),
+          res.data?.message ||
+            t("family.callFailed", { name: member.username }),
         );
         return;
       }
@@ -560,7 +638,8 @@ const Family = () => {
 
       startSignalPolling(roomId, member, true);
       startOutgoingRingtone();
-      setIsInCall(true);
+      // NOTE: Do NOT setIsInCall(true) here.
+      // Caller stays in "Calling..." state until answer signal is received.
       toast.success(
         t("family.calling", { name: member.username || member.email }),
       );
@@ -578,7 +657,7 @@ const Family = () => {
     const { callId, member, roomId } = callInfo;
     try {
       // Reset toggle states for incoming call
-      setIsCameraOn(false);
+      setIsCameraOn(true);
       setIsMicOn(true);
 
       await axios.post(
@@ -589,15 +668,11 @@ const Family = () => {
 
       lastSignalIdRef.current = 0;
       await createPeerConnection(member, roomId, false);
+      // Start polling — the offer signal will trigger setIsInCall(true)
       startSignalPolling(roomId, member, false);
-      setIsInCall(true);
+      // Do NOT set isInCall here — wait until we receive and process the offer
       setIsCallMinimized(false);
       stopIncomingRingtone();
-      toast.success(
-        t("family.callConnected", {
-          name: member.username || member.email,
-        }),
-      );
     } catch (err) {
       console.error("Error accepting call", err);
       toast.error(t("family.callFailed", { name: callInfo.member?.username }));
@@ -628,20 +703,20 @@ const Family = () => {
   const toggleCamera = () => {
     if (localStreamRef.current) {
       const videoTracks = localStreamRef.current.getVideoTracks();
-      videoTracks.forEach(track => {
+      videoTracks.forEach((track) => {
         track.enabled = !track.enabled;
       });
-      setIsCameraOn(prev => !prev);
+      setIsCameraOn((prev) => !prev);
     }
   };
 
   const toggleMic = () => {
     if (localStreamRef.current) {
       const audioTracks = localStreamRef.current.getAudioTracks();
-      audioTracks.forEach(track => {
+      audioTracks.forEach((track) => {
         track.enabled = !track.enabled;
       });
-      setIsMicOn(prev => !prev);
+      setIsMicOn((prev) => !prev);
     }
   };
 
@@ -752,14 +827,17 @@ const Family = () => {
             icon={<Mail className="w-4 h-4" />}
           />
           <div className="space-y-1.5">
-            <label className="text-sm font-bold text-gray-700 ml-1">Relation</label>
+            <label className="text-sm font-bold text-gray-700 ml-1">
+              Relation
+            </label>
             <select
               className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all font-medium"
               value={newMemberRelation}
               required
-              onChange={(e) => setNewMemberRelation(e.target.value)}
-            >
-              <option value="" disabled>Select relation...</option>
+              onChange={(e) => setNewMemberRelation(e.target.value)}>
+              <option value="" disabled>
+                Select relation...
+              </option>
               <option value="Father">Father</option>
               <option value="Mother">Mother</option>
               <option value="Brother">Brother</option>
@@ -792,8 +870,8 @@ const Family = () => {
         title={
           activeMember
             ? t("family.chatWith", {
-              name: activeMember.username || activeMember.email,
-            })
+                name: activeMember.username || activeMember.email,
+              })
             : t("family.chat")
         }
         size="full">
@@ -806,16 +884,18 @@ const Family = () => {
             ) : chatMessages.length ? (
               chatMessages.map((m) => {
                 const isMe =
-                  chatCurrentUserId != null && m.from_user_id === chatCurrentUserId;
+                  chatCurrentUserId != null &&
+                  m.from_user_id === chatCurrentUserId;
                 return (
                   <div
                     key={m.id}
                     className={`flex mb-1 ${isMe ? "justify-end" : "justify-start"}`}>
                     <span
-                      className={`px-2 py-1 rounded-xl max-w-[75%] break-words overflow-wrap-anywhere ${isMe
-                        ? "bg-primary-100 text-primary-900"
-                        : "bg-white border border-gray-100 text-gray-800"
-                        }`}>
+                      className={`px-2 py-1 rounded-xl max-w-[75%] break-words overflow-wrap-anywhere ${
+                        isMe
+                          ? "bg-primary-100 text-primary-900"
+                          : "bg-white border border-gray-100 text-gray-800"
+                      }`}>
                       {m.message}
                     </span>
                   </div>
@@ -847,133 +927,176 @@ const Family = () => {
         </div>
       </Modal>
 
-      {/* Call Modal - Instagram Style */}
+      {/* Call Modal - Premium UI */}
       <Modal
         isOpen={isCallModalOpen}
         onClose={() => endCall()}
-        title={
-          callInfo
-            ? callInfo.isCaller
-              ? t("family.calling", {
-                name: callInfo.member.username || callInfo.member.email,
-              })
-              : t("family.incomingCallTitle", {
-                name: callInfo.member.username || callInfo.member.email,
-              })
-            : t("family.call")
-        }
+        title=""
+        hideHeader={true}
         size="full">
-        <div className="relative w-full h-screen bg-gray-900 overflow-hidden">
-          {/* Remote video full-screen background - Always rendered */}
-          <div className="absolute inset-0">
+        <div
+          className="relative w-full bg-gray-900 overflow-hidden flex flex-col justify-center"
+          style={{ minHeight: "80vh", height: "100%" }}>
+          {/* Remote video full-screen background */}
+          <div className="absolute inset-0 z-0">
             <video
               ref={remoteVideoRef}
               autoPlay
               playsInline
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover opacity-90"
             />
+            {/* Dark overlay for better text contrast if video is somewhat bright, or just to blend */}
+            <div className="absolute inset-0 bg-black/20" />
           </div>
 
-          {/* Profile picture overlay - Only show when not in call (ringing state) */}
+          {/* Profile/Status content (Only when NOT in call - e.g. Ringing) */}
           {!isInCall && callInfo?.member && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-gray-800 to-gray-900 z-10">
-              <div className="w-32 h-32 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center mb-4 shadow-2xl">
-                {callInfo.member.profile_picture ? (
-                  <img
-                    src={callInfo.member.profile_picture}
-                    alt={callInfo.member.username}
-                    className="w-full h-full rounded-full object-cover"
-                  />
-                ) : (
-                  <span className="text-5xl font-bold text-white">
-                    {(callInfo.member.username || callInfo.member.email || "U").charAt(0).toUpperCase()}
-                  </span>
-                )}
+            <div className="relative z-10 flex flex-col items-center justify-center h-full space-y-8 animate-in fade-in zoom-in duration-500">
+              <div className="relative">
+                <div className="absolute inset-0 bg-primary-500 rounded-full animate-ping opacity-20 filter blur-xl scale-150" />
+                <div className="w-40 h-40 rounded-full p-1 bg-gradient-to-br from-primary-400 to-purple-600 shadow-2xl relative z-10">
+                  <div className="w-full h-full rounded-full overflow-hidden border-4 border-gray-900 bg-gray-800 flex items-center justify-center">
+                    {callInfo.member.profile_picture ? (
+                      <img
+                        src={callInfo.member.profile_picture}
+                        alt={callInfo.member.username}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <Users className="w-16 h-16 text-gray-500" />
+                    )}
+                  </div>
+                </div>
               </div>
-              <h3 className="text-2xl font-bold text-white mb-1">
-                {callInfo.member.username || callInfo.member.email}
-              </h3>
-              <p className="text-gray-300 text-sm">
-                {callInfo.isCaller ? "Calling..." : "Incoming call"}
-              </p>
-            </div>
-          )}
 
-          {/* Local video preview - Always show during calls */}
-          {isInCall && (
-            <div className="absolute top-4 right-4 w-32 h-40 rounded-2xl overflow-hidden shadow-2xl border-2 border-white/20 z-10">
-              {isCameraOn ? (
-                <video
-                  ref={localVideoRef}
-                  autoPlay
-                  playsInline
-                  muted
-                  className="w-full h-full object-cover bg-black"
-                  style={{ transform: "scaleX(-1)" }}
-                />
-              ) : (
-                <div className="w-full h-full bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center">
-                  <VideoOff className="w-10 h-10 text-white/80" />
+              <div className="text-center space-y-2">
+                <h3 className="text-4xl font-black text-white tracking-tight drop-shadow-lg">
+                  {callInfo.member.username || callInfo.member.email}
+                </h3>
+                <p className="text-xl font-medium text-primary-200 animate-pulse">
+                  {callInfo.isCaller
+                    ? t("family.callingStatus") || "Calling..."
+                    : t("family.incomingCallStatus") ||
+                      "Incoming Video Call..."}
+                </p>
+              </div>
+
+              {/* Incoming Call Actions */}
+              {!callInfo.isCaller && (
+                <div className="flex items-center gap-12 mt-12">
+                  <button
+                    onClick={handleDeclineIncoming}
+                    className="flex flex-col items-center gap-2 group">
+                    <div className="w-20 h-20 rounded-full bg-red-500/90 backdrop-blur-sm text-white flex items-center justify-center shadow-lg shadow-red-500/30 group-hover:scale-110 group-hover:bg-red-500 transition-all duration-300">
+                      <Phone className="w-8 h-8 rotate-[135deg]" />
+                    </div>
+                    <span className="text-sm font-bold text-gray-300 group-hover:text-white transition-colors">
+                      Decline
+                    </span>
+                  </button>
+
+                  <button
+                    onClick={handleAcceptIncoming}
+                    className="flex flex-col items-center gap-2 group">
+                    <div className="w-20 h-20 rounded-full bg-emerald-500/90 backdrop-blur-sm text-white flex items-center justify-center shadow-lg shadow-emerald-500/30 group-hover:scale-110 group-hover:bg-emerald-500 transition-all duration-300 animate-bounce">
+                      <Phone className="w-8 h-8" />
+                    </div>
+                    <span className="text-sm font-bold text-gray-300 group-hover:text-white transition-colors">
+                      Accept
+                    </span>
+                  </button>
+                </div>
+              )}
+
+              {/* Caller Actions (Cancel) */}
+              {callInfo.isCaller && (
+                <div className="mt-12">
+                  <button
+                    onClick={() => endCall()}
+                    className="w-16 h-16 rounded-full bg-red-500/20 backdrop-blur-md border border-red-500/50 text-red-100 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all duration-300">
+                    <Phone className="w-8 h-8 rotate-[135deg]" />
+                  </button>
                 </div>
               )}
             </div>
           )}
 
-          {/* Floating controls at bottom - Instagram style */}
+          {/* Local Video Preview - always mounted so ref stays attached */}
           {isInCall && (
-            <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex items-center gap-4 z-20">
-              {/* Mic toggle */}
-              <button
-                onClick={toggleMic}
-                className={`w-14 h-14 rounded-full flex items-center justify-center transition-all shadow-lg ${isMicOn
-                  ? "bg-white/20 hover:bg-white/30 text-white"
-                  : "bg-red-500 hover:bg-red-600 text-white"
-                  }`}>
-                {isMicOn ? <Mic className="w-6 h-6" /> : <MicOff className="w-6 h-6" />}
-              </button>
-
-              {/* Camera toggle */}
-              <button
-                onClick={toggleCamera}
-                className={`w-14 h-14 rounded-full flex items-center justify-center transition-all shadow-lg ${isCameraOn
-                  ? "bg-white/20 hover:bg-white/30 text-white"
-                  : "bg-red-500 hover:bg-red-600 text-white"
-                  }`}>
-                {isCameraOn ? <Video className="w-6 h-6" /> : <VideoOff className="w-6 h-6" />}
-              </button>
-
-              {/* End call button */}
-              <button
-                onClick={() => endCall()}
-                className="w-14 h-14 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center transition-all shadow-lg">
-                <Phone className="w-6 h-6 rotate-135" />
-              </button>
-
-              {/* Minimize button */}
-              <button
-                onClick={() => {
-                  setIsCallModalOpen(false);
-                  setIsCallMinimized(true);
+            <div className="absolute top-4 right-4 sm:top-6 sm:right-6 w-24 sm:w-32 md:w-48 aspect-[3/4] rounded-2xl overflow-hidden shadow-2xl border-2 border-white/20 z-20 bg-black transition-all hover:scale-105 hover:border-primary-500/50">
+              <video
+                ref={localVideoRef}
+                autoPlay
+                playsInline
+                muted
+                className="w-full h-full object-cover"
+                style={{
+                  transform: "scaleX(-1)",
+                  display: isCameraOn ? "block" : "none",
                 }}
-                className="w-14 h-14 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition-all shadow-lg">
-                <Minimize2 className="w-5 h-5" />
-              </button>
+              />
+              {!isCameraOn && (
+                <div className="w-full h-full flex items-center justify-center bg-gray-800">
+                  <VideoOff className="w-8 h-8 text-gray-500" />
+                </div>
+              )}
             </div>
           )}
 
-          {/* Incoming call controls */}
-          {!isInCall && !callInfo?.isCaller && (
-            <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex items-center gap-4 z-20">
-              <button
-                onClick={handleDeclineIncoming}
-                className="w-16 h-16 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center transition-all shadow-lg">
-                <Phone className="w-7 h-7 rotate-135" />
-              </button>
-              <button
-                onClick={handleAcceptIncoming}
-                className="w-16 h-16 rounded-full bg-green-500 hover:bg-green-600 text-white flex items-center justify-center transition-all shadow-lg">
-                <Phone className="w-7 h-7" />
-              </button>
+          {/* In-Call Controls Bar */}
+          {isInCall && (
+            <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-20">
+              <div className="flex items-center gap-6 px-8 py-4 bg-gray-900/60 backdrop-blur-xl border border-white/10 rounded-full shadow-2xl">
+                {/* Mic */}
+                <button
+                  onClick={toggleMic}
+                  className={cn(
+                    "w-14 h-14 rounded-full flex items-center justify-center transition-all duration-200",
+                    isMicOn
+                      ? "bg-white/10 hover:bg-white/20 text-white"
+                      : "bg-red-500 hover:bg-red-600 text-white shadow-lg shadow-red-500/30",
+                  )}>
+                  {isMicOn ? (
+                    <Mic className="w-6 h-6" />
+                  ) : (
+                    <MicOff className="w-6 h-6" />
+                  )}
+                </button>
+
+                {/* Camera */}
+                <button
+                  onClick={toggleCamera}
+                  className={cn(
+                    "w-14 h-14 rounded-full flex items-center justify-center transition-all duration-200",
+                    isCameraOn
+                      ? "bg-white/10 hover:bg-white/20 text-white"
+                      : "bg-red-500 hover:bg-red-600 text-white shadow-lg shadow-red-500/30",
+                  )}>
+                  {isCameraOn ? (
+                    <Video className="w-6 h-6" />
+                  ) : (
+                    <VideoOff className="w-6 h-6" />
+                  )}
+                </button>
+
+                {/* End Call */}
+                <button
+                  onClick={() => endCall()}
+                  className="w-16 h-16 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center shadow-lg shadow-red-500/40 hover:scale-110 transition-all duration-200 ml-4">
+                  <Phone className="w-8 h-8 rotate-[135deg]" />
+                </button>
+
+                {/* Minimize */}
+                <button
+                  onClick={() => {
+                    setIsCallModalOpen(false);
+                    setIsCallMinimized(true);
+                  }}
+                  className="w-12 h-12 rounded-full bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white flex items-center justify-center transition-all duration-200 ml-2"
+                  title="Minimize Call">
+                  <Minimize2 className="w-5 h-5" />
+                </button>
+              </div>
             </div>
           )}
         </div>

@@ -29,9 +29,13 @@ if (empty($imageBase64)) {
     exit;
 }
 
-$apiKey = getenv("GEMINI_API_KEY") ?: "";
+$apiKey = getenv("GEMINI_API_KEY") ?: getenv("VITE_GEMINI_API_KEY") ?: "";
 if (empty($apiKey)) {
-    echo json_encode(['status' => 'error', 'message' => 'Gemini API key not configured']);
+    // Debug: list all environment variables starting with GEMINI or VITE
+    $allEnv = getenv();
+    $found = [];
+    foreach($_ENV as $k => $v) if(strpos($k, 'GEMINI') !== false || strpos($k, 'VITE') !== false) $found[] = $k;
+    echo json_encode(['status' => 'error', 'message' => 'Gemini API key not configured. Found: ' . implode(', ', $found)]);
     exit;
 }
 

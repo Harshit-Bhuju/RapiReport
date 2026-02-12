@@ -1,0 +1,45 @@
+{
+    "packages": [
+        {
+            "name": "xentixar/esewa-sdk",
+            "version": "v1.0.03",
+            "version_normalized": "1.0.03.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/xentixar/esewa-sdk.git",
+                "reference": "26e80bc100a827280b86e5c619ea47ffb5b56a3b"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/xentixar/esewa-sdk/zipball/26e80bc100a827280b86e5c619ea47ffb5b56a3b",
+                "reference": "26e80bc100a827280b86e5c619ea47ffb5b56a3b",
+                "shasum": ""
+            },
+            "time": "2024-09-15T03:54:46+00:00",
+            "type": "library",
+            "installation-source": "source",
+            "autoload": {
+                "psr-4": {
+                    "Xentixar\\EsewaSdk\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "xentixar",
+                    "email": "xentixar@gmail.com"
+                }
+            ],
+            "support": {
+                "issues": "https://github.com/xentixar/esewa-sdk/issues",
+                "source": "https://github.com/xentixar/esewa-sdk/tree/v1.0.03"
+            },
+            "install-path": "../xentixar/esewa-sdk"
+        }
+    ],
+    "dev": true,
+    "dev-package-names": []
+}

@@ -98,6 +98,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
+    // Fetch user with potential doctor profile details for full consistency
+    $query = "SELECT u.*, dp.specialty, dp.experience_years, dp.consultation_rate, dp.bio, dp.languages as profile_languages, dp.qualifications, dp.display_name
+              FROM users u 
+              LEFT JOIN doctor_profiles dp ON u.id = dp.user_id 
+              WHERE u.id = ?";
+    $stmt_full = $conn->prepare($query);
+    $stmt_full->bind_param("i", $user['id']);
+    $stmt_full->execute();
+    $user = $stmt_full->get_result()->fetch_assoc();
+    $stmt_full->close();
+
+    // Calculate doctorProfileComplete
+    $doctorProfileComplete = false;
+    if ($user['role'] === 'doctor') {
+        $doctorProfileComplete = !empty($user['specialty']) && !empty($user['experience_years']) && !empty($user['display_name']);
+    }
+
     // Set session
     $_SESSION['user_id'] = $user['id'];
     $_SESSION['user_email'] = $user['email'];
@@ -119,7 +136,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             "customParentalHistory" => $user['custom_parental_history'],
             "language" => $user['preferred_language'],
             "profileComplete" => (bool)$user['profile_complete'],
-            "parent_id" => $user['parent_id']
+            "doctorProfileComplete" => $doctorProfileComplete,
+            "parent_id" => $user['parent_id'],
+            "doctorProfile" => ($user['role'] === 'doctor') ? [
+                "displayName" => $user['display_name'],
+                "specialty" => $user['specialty'],
+                "experience" => $user['experience_years'],
+                "rate" => $user['consultation_rate'],
+                "bio" => $user['bio'],
+                "languages" => $user['profile_languages'],
+                "qualifications" => $user['qualifications']
+            ] : null
         ]
     ]);
 } else {

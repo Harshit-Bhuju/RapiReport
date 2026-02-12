@@ -12,7 +12,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         exit;
     }
 
-    $stmt = $conn->prepare("SELECT * FROM users WHERE id = ?");
+    // Fetch user with potential doctor profile details
+    $query = "SELECT u.*, dp.specialty, dp.experience_years, dp.consultation_rate, dp.bio, dp.languages as profile_languages, dp.qualifications, dp.display_name
+              FROM users u 
+              LEFT JOIN doctor_profiles dp ON u.id = dp.user_id 
+              WHERE u.id = ?";
+
+    $stmt = $conn->prepare($query);
     if (!$stmt) {
         echo json_encode(["status" => "error", "message" => "Database error."]);
         exit;
@@ -30,6 +36,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         exit;
     }
 
+    $profileComplete = (bool)$user['profile_complete'];
+    $doctorProfileComplete = false;
+    if ($user['role'] === 'doctor') {
+        $doctorProfileComplete = !empty($user['specialty']) && !empty($user['experience_years']) && !empty($user['display_name']);
+    }
+
     echo json_encode([
         "status" => "success",
         "user" => [
@@ -45,8 +57,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             "parentalHistory" => json_decode($user['parental_history'] ?? '[]', true),
             "customParentalHistory" => $user['custom_parental_history'],
             "language" => $user['preferred_language'],
-            "profileComplete" => (bool)$user['profile_complete'],
-            "parent_id" => $user['parent_id']
+            "profileComplete" => $profileComplete,
+            "doctorProfileComplete" => $doctorProfileComplete,
+            "parent_id" => $user['parent_id'],
+            // Doctor profile fields
+            "doctorProfile" => ($user['role'] === 'doctor') ? [
+                "displayName" => $user['display_name'],
+                "specialty" => $user['specialty'],
+                "experience" => $user['experience_years'],
+                "rate" => $user['consultation_rate'],
+                "bio" => $user['bio'],
+                "languages" => $user['profile_languages'],
+                "qualifications" => $user['qualifications']
+            ] : null
         ]
     ]);
 } else {

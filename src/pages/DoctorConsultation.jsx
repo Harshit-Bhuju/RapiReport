@@ -121,11 +121,10 @@ const DoctorConsultation = () => {
                     className="w-20 h-20 rounded-2xl object-cover shadow-md"
                   />
                   <span
-                    className={`absolute -bottom-2 -right-2 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border-2 border-white ${
-                      doctor.status === "Online"
+                    className={`absolute -bottom-2 -right-2 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border-2 border-white ${doctor.status === "Online"
                         ? "bg-success-100 text-success-700"
                         : "bg-warning-100 text-warning-700"
-                    }`}>
+                      }`}>
                     {doctor.status}
                   </span>
                 </div>

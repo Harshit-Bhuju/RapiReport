@@ -18,9 +18,10 @@ import { cn } from "@/lib/utils";
 const ProfileSetup = () => {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
-  const { updateProfile } = useAuthStore();
+  const { updateProfile, user } = useAuthStore();
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
+
   const [formData, setFormData] = useState({
     name: "",
     age: "",
@@ -30,11 +31,18 @@ const ProfileSetup = () => {
     parentalHistory: [],
     customParentalHistory: "",
     language: i18n.language || "en",
+    // Keep doctor fields in formData to ensure persistence if they were somehow set
+    displayName: "",
+    specialty: "",
+    experience: "",
+    rate: "",
+    bio: "",
+    qualifications: "",
+    profile_languages: ""
   });
 
   useEffect(() => {
-    if (useAuthStore.getState().user) {
-      const user = useAuthStore.getState().user;
+    if (user) {
       setFormData(prev => ({
         ...prev,
         name: user.name || prev.name,
@@ -44,10 +52,19 @@ const ProfileSetup = () => {
         customConditions: user.customConditions || prev.customConditions,
         parentalHistory: Array.isArray(user.parentalHistory) ? user.parentalHistory : prev.parentalHistory,
         customParentalHistory: user.customParentalHistory || prev.customParentalHistory,
-        language: user.language || i18n.language
+        language: user.language || i18n.language,
+        ...(user.doctorProfile ? {
+          displayName: user.doctorProfile.displayName || user.name || "",
+          specialty: user.doctorProfile.specialty || "",
+          experience: user.doctorProfile.experience || "",
+          rate: user.doctorProfile.rate || "",
+          bio: user.doctorProfile.bio || "",
+          qualifications: user.doctorProfile.qualifications || "",
+          profile_languages: user.doctorProfile.languages || ""
+        } : {})
       }));
     }
-  }, [i18n.language]);
+  }, [user, i18n.language]);
 
   const conditions = [
     { key: "diabetes", label: t("conditions.diabetes") },
@@ -75,7 +92,10 @@ const ProfileSetup = () => {
         i18n.changeLanguage(formData.language);
       }
       toast.success(t("profile.setup.success") || "Profile setup complete!");
-      navigate("/dashboard");
+
+      if (user?.role === "admin") navigate("/admin");
+      else if (user?.role === "doctor") navigate("/doctor-dashboard");
+      else navigate("/dashboard");
     } else {
       toast.error(result.message || "Failed to update profile");
     }
@@ -325,7 +345,7 @@ const ProfileSetup = () => {
                   {t("common.next")} <ChevronRight className="ml-2 w-5 h-5" />
                 </Button>
               ) : (
-                <Button onClick={handleFinish} className="flex-1">
+                <Button onClick={handleFinish} className="flex-1" loading={isLoading}>
                   {t("profile.setup.finish")}
                 </Button>
               )}

@@ -30,16 +30,46 @@ const Navbar = () => {
     setIsOpen(false);
   };
 
-  const navLinks = [
-    { name: t("nav.home"), path: "/" },
-    { name: t("nav.dashboard"), path: "/dashboard", auth: true },
-  ];
+  const getNavLinks = () => {
+    if (!isAuthenticated) {
+      return [{ name: t("nav.home"), path: "/" }];
+    }
+
+    if (user?.role === "admin") {
+      return [
+        { name: "Admin Panel", path: "/admin" }
+      ];
+    }
+
+    if (user?.role === "doctor") {
+      return [
+        { name: t("nav.dashboard"), path: "/doctor-dashboard" },
+      ];
+    }
+
+    // Role: user
+    return [
+      { name: t("nav.home"), path: "/" },
+      { name: t("nav.dashboard"), path: "/dashboard" },
+      { name: t("nav.consultants"), path: "/consultants" },
+    ];
+  };
+
+  const navLinks = getNavLinks();
+
+  const getHomePath = () => {
+    if (!isAuthenticated) return "/";
+    if (user?.role === "admin") return "/admin";
+    if (user?.role === "doctor") return "/doctor-dashboard";
+    return "/dashboard";
+  };
+
 
   return (
     <nav className="sticky top-0 z-40 w-full bg-white/80 backdrop-blur-md border-b border-gray-100">
       <div className="container-custom h-20 flex items-center justify-between">
         {/* Logo */}
-        <Link to="/" className="flex items-center  group">
+        <Link to={getHomePath()} className="flex items-center  group">
           <div className="relative">
             <img
               src={logoIcon}
@@ -58,18 +88,15 @@ const Navbar = () => {
           </div>
         </Link>
 
-        {/* Desktop Nav */}
         <div className="hidden md:flex items-center gap-8">
-          {navLinks
-            .filter((link) => !link.auth || isAuthenticated)
-            .map((link) => (
-              <Link
-                key={link.name}
-                to={link.path}
-                className="text-lg font-bold text-gray-700 hover:text-blue-600 transition-colors font-outfit">
-                {link.name}
-              </Link>
-            ))}
+          {navLinks.map((link) => (
+            <Link
+              key={link.name}
+              to={link.path}
+              className="text-lg font-bold text-gray-700 hover:text-blue-600 transition-colors font-outfit">
+              {link.name}
+            </Link>
+          ))}
         </div>
 
         {/* Actions */}
@@ -138,17 +165,15 @@ const Navbar = () => {
         leaveTo="opacity-0 -translate-y-4">
         <div className="md:hidden bg-white border-b border-gray-100 absolute w-full left-0 overflow-hidden">
           <div className="container-custom py-6 flex flex-col gap-4">
-            {navLinks
-              .filter((link) => !link.auth || isAuthenticated)
-              .map((link) => (
-                <Link
-                  key={link.name}
-                  to={link.path}
-                  onClick={() => setIsOpen(false)}
-                  className="text-lg font-medium text-gray-900 border-b border-gray-50 pb-2">
-                  {link.name}
-                </Link>
-              ))}
+            {navLinks.map((link) => (
+              <Link
+                key={link.name}
+                to={link.path}
+                onClick={() => setIsOpen(false)}
+                className="text-lg font-medium text-gray-900 border-b border-gray-50 pb-2">
+                {link.name}
+              </Link>
+            ))}
             <div className="flex flex-col gap-4 pt-2">
               <button
                 onClick={toggleLanguage}

@@ -27,14 +27,22 @@ import Auth from "@/pages/Auth";
 import Results from "@/pages/Results";
 import Reports from "@/pages/Reports";
 import Consultation from "@/pages/Consultation";
+import Consultants from "@/pages/Consultants";
+import Booking from "@/pages/Booking";
+import BookingSuccess from "@/pages/BookingSuccess";
+import BookingFailed from "@/pages/BookingFailed";
+import MyAppointments from "@/pages/MyAppointments";
 import RiskAnalysis from "@/pages/RiskAnalysis";
+
+
+
 import HealthPlanner from "@/pages/HealthPlanner";
 import NotFound from "@/pages/NotFound";
 import DoctorConsultation from "@/pages/DoctorConsultation";
 import QuestGame from "@/pages/QuestGame";
 import Family from "@/pages/Family";
 import Profile from "@/pages/Profile";
-import { AdminPanel, AdminLayout } from "@/pages/admin";
+import { AdminPanel, AdminLayout, ConsultantsManagement } from "@/pages/admin";
 import { DoctorDashboard, DoctorProfile, DoctorLayout } from "@/pages/doctor";
 import ProfileSetup from "@/components/features/ProfileSetup";
 import DashboardLayout from "@/components/layout/DashboardLayout";
@@ -138,6 +146,56 @@ function App() {
                       <Consultation />
                     </DashboardLayout>
                   </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/consultants"
+                element={
+                  <ProtectedRoute>
+                    <DashboardLayout>
+                      <Consultants />
+                    </DashboardLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/booking"
+                element={
+                  <ProtectedRoute>
+                    <DashboardLayout>
+                      <Booking />
+                    </DashboardLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/booking-success"
+                element={
+                  <ProtectedRoute>
+                    <DashboardLayout>
+                      <BookingSuccess />
+                    </DashboardLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/booking-failed"
+                element={
+                  <ProtectedRoute>
+                    <DashboardLayout>
+                      <BookingFailed />
+                    </DashboardLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/appointments"
+                element={
+                  <RoleRoute allowedRoles={["doctor"]}>
+                    <DashboardLayout>
+                      <MyAppointments />
+                    </DashboardLayout>
+                  </RoleRoute>
                 }
               />
               <Route
@@ -298,6 +356,18 @@ function App() {
                     <RoleRoute allowedRoles={["admin"]}>
                       <AdminLayout>
                         <AdminPanel />
+                      </AdminLayout>
+                    </RoleRoute>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/consultants"
+                element={
+                  <ProtectedRoute>
+                    <RoleRoute allowedRoles={["admin"]}>
+                      <AdminLayout>
+                        <ConsultantsManagement />
                       </AdminLayout>
                     </RoleRoute>
                   </ProtectedRoute>

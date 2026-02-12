@@ -21,8 +21,8 @@ const AdminSidebar = ({ isOpen, onClose }) => {
 
   const adminNavItems = [
     { name: "Overview", path: "/admin", icon: LayoutDashboard },
-    { name: "Manage Users", path: "/admin", icon: Users },
   ];
+
 
   return (
     <>
@@ -99,17 +99,6 @@ const AdminSidebar = ({ isOpen, onClose }) => {
               </NavLink>
             ))}
 
-            <div className="pt-4 mt-4 border-t border-gray-100">
-              <button
-                onClick={() => {
-                  navigate("/dashboard");
-                  if (window.innerWidth < 1024) onClose();
-                }}
-                className="w-full flex items-center gap-3.5 px-4 py-3 rounded-xl font-semibold text-gray-500 hover:bg-gray-50 hover:text-gray-900 transition-all">
-                <ArrowLeft className="w-5 h-5" />
-                Back to App
-              </button>
-            </div>
           </nav>
 
           <div className="p-4 border-t border-gray-100 bg-gray-50/30">

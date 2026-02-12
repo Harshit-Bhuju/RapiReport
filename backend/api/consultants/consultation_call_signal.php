@@ -1,25 +1,23 @@
 <?php
-require_once __DIR__ . '/../../config/cors.php';
-require_once __DIR__ . '/../../config/session_config.php';
-require_once __DIR__ . '/../../config/dbconnect.php';
+require_once __DIR__ . '/../../config/header.php';
 
 // Define helper directly here instead of requiring a separate bootstrap file for now
 if (!function_exists('rr_ensure_consultation_call_signals_table')) {
     function rr_ensure_consultation_call_signals_table(mysqli $conn): void
     {
         $conn->query("
-            CREATE TABLE IF NOT EXISTS consultation_call_signals (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                room_id VARCHAR(64) NOT NULL,
-                from_user_id INT NOT NULL,
-                to_user_id INT NOT NULL,
-                type VARCHAR(32) NOT NULL,
-                payload_json LONGTEXT NOT NULL,
-                created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                KEY idx_room_to (room_id, to_user_id, id),
-                KEY idx_from (from_user_id)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-        ");
+CREATE TABLE IF NOT EXISTS consultation_call_signals (
+id INT AUTO_INCREMENT PRIMARY KEY,
+room_id VARCHAR(64) NOT NULL,
+from_user_id INT NOT NULL,
+to_user_id INT NOT NULL,
+type VARCHAR(32) NOT NULL,
+payload_json LONGTEXT NOT NULL,
+created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+KEY idx_room_to (room_id, to_user_id, id),
+KEY idx_from (from_user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+");
     }
 }
 
@@ -55,8 +53,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $payload_json = json_encode($payload);
 
     $stmt = $conn->prepare("
-        INSERT INTO consultation_call_signals (room_id, from_user_id, to_user_id, type, payload_json)
-        VALUES (?, ?, ?, ?, ?)
+    INSERT INTO consultation_call_signals (room_id, from_user_id, to_user_id, type, payload_json)
+    VALUES (?, ?, ?, ?, ?)
     ");
     $stmt->bind_param('siiss', $room_id, $user_id, $to_user_id, $type, $payload_json);
 
@@ -86,12 +84,12 @@ if ($room_id === '') {
 $stmt = $conn->prepare("
     SELECT id, from_user_id, type, payload_json, created_at
     FROM consultation_call_signals
-    WHERE room_id = ? 
-      AND to_user_id = ?
-      AND id > ?
+    WHERE room_id = ?
+    AND to_user_id = ?
+    AND id > ?
     ORDER BY id ASC
     LIMIT 50
-");
+    ");
 $stmt->bind_param('sii', $room_id, $user_id, $since_id);
 $stmt->execute();
 $res = $stmt->get_result();

@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import axios from "axios";
 import { Card, CardBody } from "@/components/ui/Card";
 import { useAuthStore } from "@/store/authStore";
 import { useHealthStore } from "@/store/healthStore";
@@ -11,14 +12,21 @@ import {
   ShieldAlert,
   Sparkles,
   BrainCircuit,
-  Loader2,
   Brain,
+  Plus,
+  Trash2,
+  Loader2,
+  Users,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import Button from "@/components/ui/Button";
+import Input from "@/components/ui/Input";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import API from "@/Configs/ApiEndpoints";
 
 const MedicalHistory = () => {
   const { user } = useAuthStore();
@@ -28,12 +36,51 @@ const MedicalHistory = () => {
     symptoms,
     historyAnalysis,
     fetchHistoryAnalysis,
+    fetchSymptoms,
   } = useHealthStore();
+  const { updateProfile } = useAuthStore();
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [newCondition, setNewCondition] = useState("");
+  const [newParental, setNewParental] = useState("");
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [familyMembers, setFamilyMembers] = useState([]);
+  const [familyHealthData, setFamilyHealthData] = useState({});
+  const [isFetchingFamily, setIsFetchingFamily] = useState(false);
+  const [expandedMember, setExpandedMember] = useState(null);
 
   useEffect(() => {
     fetchPrescriptions();
-  }, [fetchPrescriptions]);
+    fetchSymptoms();
+    fetchFamilyHealth();
+  }, [fetchPrescriptions, fetchSymptoms]);
+
+  const fetchFamilyHealth = async () => {
+    setIsFetchingFamily(true);
+    try {
+      const listRes = await axios.get(API.FAMILY_LIST, { withCredentials: true });
+      if (listRes.data?.status === "success") {
+        const accepted = (listRes.data.members || []).filter(m => m.status === "accepted");
+        setFamilyMembers(accepted);
+        const healthObj = {};
+        for (const m of accepted) {
+          try {
+            const hRes = await axios.get(API.FAMILY_MEMBER_HEALTH, {
+              params: { member_id: m.member_id },
+              withCredentials: true,
+            });
+            if (hRes.data?.status === "success") {
+              healthObj[m.member_id] = hRes.data.data;
+            }
+          } catch { /* skip */ }
+        }
+        setFamilyHealthData(healthObj);
+      }
+    } catch (err) {
+      console.error("Failed to fetch family health", err);
+    } finally {
+      setIsFetchingFamily(false);
+    }
+  };
 
   const handleAnalyzeHistory = async () => {
     setIsAnalyzing(true);
@@ -61,7 +108,7 @@ const MedicalHistory = () => {
   }, [user?.conditions]);
 
   const parentalHistory = useMemo(() => {
-    const p = user?.parental_history;
+    const p = user?.parentalHistory || user?.parental_history;
     if (!p) return [];
     if (typeof p === "string") {
       try {
@@ -72,7 +119,75 @@ const MedicalHistory = () => {
       }
     }
     return Array.isArray(p) ? p : [];
-  }, [user?.parental_history]);
+  }, [user?.parentalHistory, user?.parental_history]);
+
+  const handleUpdateField = async (field, value) => {
+    setIsUpdating(true);
+    try {
+      const data = {
+        name: user.name || user.username,
+        age: user.age,
+        gender: user.gender,
+        conditions: user.conditions,
+        customConditions: user.customConditions,
+        parentalHistory: user.parentalHistory || user.parental_history,
+        customParentalHistory: user.customParentalHistory,
+        language: user.language || "en",
+        ...field, // Override the specific field
+      };
+
+      // Ensure conditions and parentalHistory are arrays before sending if they were overridden
+      if (field.conditions && typeof field.conditions === "string") {
+        try {
+          data.conditions = JSON.parse(field.conditions);
+        } catch {
+          data.conditions = [field.conditions];
+        }
+      }
+      if (field.parentalHistory && typeof field.parentalHistory === "string") {
+        try {
+          data.parentalHistory = JSON.parse(field.parentalHistory);
+        } catch {
+          data.parentalHistory = [field.parentalHistory];
+        }
+      }
+
+      const res = await updateProfile(data);
+      if (res.success) {
+        // toast.success("Updated successfully");
+      } else {
+        console.error("Update failed", res.message);
+      }
+    } catch (err) {
+      console.error("Update error", err);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const addCondition = () => {
+    if (!newCondition.trim()) return;
+    const updated = [...conditions, newCondition.trim()];
+    handleUpdateField({ conditions: updated });
+    setNewCondition("");
+  };
+
+  const removeCondition = (index) => {
+    const updated = conditions.filter((_, i) => i !== index);
+    handleUpdateField({ conditions: updated });
+  };
+
+  const addParental = () => {
+    if (!newParental.trim()) return;
+    const updated = [...parentalHistory, newParental.trim()];
+    handleUpdateField({ parentalHistory: updated });
+    setNewParental("");
+  };
+
+  const removeParental = (index) => {
+    const updated = parentalHistory.filter((_, i) => i !== index);
+    handleUpdateField({ parentalHistory: updated });
+  };
 
   const recentSymptoms = useMemo(
     () =>
@@ -164,24 +279,48 @@ const MedicalHistory = () => {
               <Heart className="w-5 h-5 text-primary-600" />
               <h2 className="text-lg font-black text-gray-900">Conditions</h2>
             </div>
-            {conditions.length ? (
-              <ul className="space-y-1">
-                {conditions.map((item, i) => (
-                  <li
-                    key={i}
-                    className="text-sm text-gray-700 flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-primary-500" />
-                    {typeof item === "string"
-                      ? item
-                      : (item?.label ?? JSON.stringify(item))}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-sm text-gray-500">
-                None recorded. Update in Profile.
-              </p>
-            )}
+            <div className="space-y-4">
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Add condition..."
+                  value={newCondition}
+                  onChange={(e) => setNewCondition(e.target.value)}
+                  className="h-9 text-sm"
+                  onKeyPress={(e) => e.key === "Enter" && addCondition()}
+                />
+                <Button
+                  onClick={addCondition}
+                  size="sm"
+                  className="shrink-0 h-9"
+                  disabled={isUpdating}>
+                  <Plus className="w-4 h-4" />
+                </Button>
+              </div>
+
+              {conditions.length ? (
+                <ul className="space-y-2">
+                  {conditions.map((item, i) => (
+                    <li
+                      key={i}
+                      className="text-sm text-gray-700 flex items-center justify-between group bg-gray-50/50 p-2 rounded-lg hover:bg-gray-50 transition-colors">
+                      <div className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-primary-500" />
+                        {typeof item === "string"
+                          ? item
+                          : (item?.label ?? JSON.stringify(item))}
+                      </div>
+                      <button
+                        onClick={() => removeCondition(i)}
+                        className="text-gray-400 hover:text-error-600 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-gray-500 italic">No conditions recorded.</p>
+              )}
+            </div>
           </CardBody>
         </Card>
 
@@ -193,24 +332,48 @@ const MedicalHistory = () => {
                 Family history
               </h2>
             </div>
-            {parentalHistory.length ? (
-              <ul className="space-y-1">
-                {parentalHistory.map((item, i) => (
-                  <li
-                    key={i}
-                    className="text-sm text-gray-700 flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-primary-500" />
-                    {typeof item === "string"
-                      ? item
-                      : (item?.label ?? JSON.stringify(item))}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-sm text-gray-500">
-                None recorded. Update in Profile.
-              </p>
-            )}
+            <div className="space-y-4">
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Add family history..."
+                  value={newParental}
+                  onChange={(e) => setNewParental(e.target.value)}
+                  className="h-9 text-sm"
+                  onKeyPress={(e) => e.key === "Enter" && addParental()}
+                />
+                <Button
+                  onClick={addParental}
+                  size="sm"
+                  className="shrink-0 h-9"
+                  disabled={isUpdating}>
+                  <Plus className="w-4 h-4" />
+                </Button>
+              </div>
+
+              {parentalHistory.length ? (
+                <ul className="space-y-2">
+                  {parentalHistory.map((item, i) => (
+                    <li
+                      key={i}
+                      className="text-sm text-gray-700 flex items-center justify-between group bg-gray-50/50 p-2 rounded-lg hover:bg-gray-50 transition-colors">
+                      <div className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-primary-500" />
+                        {typeof item === "string"
+                          ? item
+                          : (item?.label ?? JSON.stringify(item))}
+                      </div>
+                      <button
+                        onClick={() => removeParental(i)}
+                        className="text-gray-400 hover:text-error-600 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-gray-500 italic">No family history recorded.</p>
+              )}
+            </div>
           </CardBody>
         </Card>
       </div>
@@ -272,7 +435,7 @@ const MedicalHistory = () => {
                       "px-2 py-0.5 rounded-full text-xs font-bold capitalize",
                       s.severity === "severe" && "bg-error-50 text-error-700",
                       s.severity === "moderate" &&
-                        "bg-warning-50 text-warning-700",
+                      "bg-warning-50 text-warning-700",
                       s.severity === "mild" && "bg-success-50 text-success-700",
                     )}>
                     {s.severity || "mild"}
@@ -299,6 +462,130 @@ const MedicalHistory = () => {
               interactions, or contraindications appear before you save.
             </p>
           </div>
+        </CardBody>
+      </Card>
+
+      {/* Family Members' Health Section */}
+      <Card className="border-none shadow-xl shadow-gray-100/50">
+        <CardBody className="p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Users className="w-5 h-5 text-primary-600" />
+            <h2 className="text-lg font-black text-gray-900">
+              Family members' health
+            </h2>
+            {isFetchingFamily && (
+              <Loader2 className="w-4 h-4 text-primary-500 animate-spin ml-2" />
+            )}
+          </div>
+
+          {familyMembers.length > 0 ? (
+            <div className="space-y-3">
+              {familyMembers.map((m) => {
+                const health = familyHealthData[m.member_id];
+                const isExpanded = expandedMember === m.member_id;
+                return (
+                  <div
+                    key={m.member_id}
+                    className="border border-gray-100 rounded-xl overflow-hidden bg-white shadow-sm">
+                    <button
+                      onClick={() => setExpandedMember(isExpanded ? null : m.member_id)}
+                      className="w-full flex items-center justify-between p-4 hover:bg-gray-50/50 transition-colors text-left">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-xl bg-primary-50 flex items-center justify-center text-primary-600 font-bold text-sm shrink-0">
+                          {(m.member_name || m.member_email)?.[0]?.toUpperCase() || "?"}
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-gray-900">
+                            {m.member_name || m.member_email}
+                          </p>
+                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                            {m.relation || "Family"}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {health?.profile?.conditions && (
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-warning-50 text-warning-700 border border-warning-100 hidden sm:inline">
+                            Has conditions
+                          </span>
+                        )}
+                        {isExpanded ? (
+                          <ChevronUp className="w-4 h-4 text-gray-400" />
+                        ) : (
+                          <ChevronDown className="w-4 h-4 text-gray-400" />
+                        )}
+                      </div>
+                    </button>
+
+                    {isExpanded && health && (
+                      <div className="px-4 pb-4 pt-0 space-y-3 border-t border-gray-50">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+                          <div className="bg-gray-50/70 p-3 rounded-lg">
+                            <p className="text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1">
+                              Conditions
+                            </p>
+                            <p className="text-sm text-gray-700">
+                              {health.profile?.conditions || "None listed"}
+                            </p>
+                          </div>
+                          <div className="bg-gray-50/70 p-3 rounded-lg">
+                            <p className="text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1">
+                              Allergies
+                            </p>
+                            <p className="text-sm text-gray-700">
+                              {health.profile?.allergies || "None listed"}
+                            </p>
+                          </div>
+                        </div>
+
+                        {health.symptoms && health.symptoms.length > 0 && (
+                          <div>
+                            <p className="text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1.5">
+                              Recent symptoms
+                            </p>
+                            <div className="flex flex-wrap gap-1.5">
+                              {health.symptoms.slice(0, 5).map((s) => (
+                                <span
+                                  key={s.id}
+                                  className={cn(
+                                    "text-[10px] font-bold px-2 py-0.5 rounded-md",
+                                    s.severity === "severe"
+                                      ? "bg-error-50 text-error-700"
+                                      : s.severity === "moderate"
+                                        ? "bg-warning-50 text-warning-700"
+                                        : "bg-success-50 text-success-700",
+                                  )}>
+                                  {s.text}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {health.prescriptions && health.prescriptions.length > 0 && (
+                          <p className="text-xs text-gray-500">
+                            <span className="font-bold text-gray-700">{health.prescriptions.length}</span> recent prescriptions on record
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    {isExpanded && !health && (
+                      <div className="px-4 pb-4 pt-2 border-t border-gray-50">
+                        <p className="text-xs text-gray-400 italic">No health data available.</p>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="text-sm text-gray-500">
+              {isFetchingFamily
+                ? "Loading family members..."
+                : "No accepted family members. Add family members from the Family page."}
+            </p>
+          )}
         </CardBody>
       </Card>
     </div>

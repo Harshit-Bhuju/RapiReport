@@ -1,6 +1,4 @@
 <?php
-require_once __DIR__ . '/../../config/session_config.php';
-require_once __DIR__ . "/../../config/dbconnect.php";
 require_once __DIR__ . "/../../config/header.php";
 
 $user_id = $_SESSION['user_id'] ?? null;

@@ -31,15 +31,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             a.appointment_date, 
             a.appointment_time_slot, 
             a.status,
+            a.doctor_user_id,
             a.patient_user_id,
             u.username as patient_name,
             u.profile_pic as patient_profile_pic,
             u.email as patient_email,
             cc.room_id,
-            cc.status as call_status
+            cc.call_status,
+            pt.amount,
+            pt.payment_status
         FROM appointments a
-        JOIN users u ON a.patient_user_id = u.id
-        LEFT JOIN consultation_calls cc ON a.id = cc.appointment_id
+        LEFT JOIN users u ON a.patient_user_id = u.id
+        LEFT JOIN (
+            SELECT appointment_id, room_id, status as call_status
+            FROM consultation_calls
+            WHERE id IN (SELECT MAX(id) FROM consultation_calls GROUP BY appointment_id)
+        ) cc ON a.id = cc.appointment_id
+        LEFT JOIN (
+            SELECT appointment_id, payment_status, amount
+            FROM payment_transactions
+            WHERE id IN (SELECT MAX(id) FROM payment_transactions GROUP BY appointment_id)
+        ) pt ON a.id = pt.appointment_id
         WHERE a.doctor_user_id = ?
         ORDER BY a.appointment_date DESC, a.appointment_time_slot ASC
     ";

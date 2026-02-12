@@ -57,6 +57,7 @@ import Campaigns from "@/pages/health/Campaigns";
 import MedicalHistory from "@/pages/health/MedicalHistory";
 import Alerts from "@/pages/health/Alerts";
 import CommunityInsights from "@/pages/health/CommunityInsights";
+import ConsultationCallManager from "@/components/features/ConsultationCallManager";
 
 function App() {
   const { checkAuth, isAuthenticated } = useAuthStore();
@@ -83,6 +84,7 @@ function App() {
             },
           }}
         />
+        <ConsultationCallManager />
 
         <Suspense fallback={<Loading fullScreen />}>
           <div className="flex-grow">

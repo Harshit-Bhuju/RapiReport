@@ -23,7 +23,12 @@ import {
   Calendar,
   Droplets,
   X,
+  Brain,
+  BrainCircuit,
+  Sparkles,
 } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import Button from "@/components/ui/Button";
 import Modal from "@/components/ui/Modal";
 import Input from "@/components/ui/Input";
@@ -55,6 +60,8 @@ const Family = () => {
   const [chatCurrentUserId, setChatCurrentUserId] = useState(null);
   const [isCameraOn, setIsCameraOn] = useState(false);
   const [isMicOn, setIsMicOn] = useState(true);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [historyAnalysis, setHistoryAnalysis] = useState(null);
 
   // WebRTC refs
   const localVideoRef = useRef(null);
@@ -93,7 +100,7 @@ const Family = () => {
 
   const startIncomingRingtone = () => {
     if (incomingAudioRef.current) {
-      incomingAudioRef.current.play().catch(() => {});
+      incomingAudioRef.current.play().catch(() => { });
     }
   };
 
@@ -106,7 +113,7 @@ const Family = () => {
 
   const startOutgoingRingtone = () => {
     if (outgoingAudioRef.current) {
-      outgoingAudioRef.current.play().catch(() => {});
+      outgoingAudioRef.current.play().catch(() => { });
     }
   };
 
@@ -512,7 +519,7 @@ const Family = () => {
     if (
       !window.confirm(
         t("family.confirmRemove") ||
-          "Are you sure you want to remove this family member?",
+        "Are you sure you want to remove this family member?",
       )
     ) {
       return;
@@ -621,7 +628,7 @@ const Family = () => {
       if (res.data?.status !== "success" || !res.data.call) {
         toast.error(
           res.data?.message ||
-            t("family.callFailed", { name: member.username }),
+          t("family.callFailed", { name: member.username }),
         );
         return;
       }
@@ -718,6 +725,50 @@ const Family = () => {
     }
   };
 
+  const handleAcceptInvite = async (linkId) => {
+    try {
+      setIsLoading(true);
+      const res = await axios.post(
+        API.FAMILY_ACTION,
+        { link_id: linkId, action: "accept" },
+        { withCredentials: true },
+      );
+      if (res.data?.status === "success") {
+        toast.success("Invitation accepted!");
+        fetchMembers();
+      } else {
+        toast.error(res.data?.message || "Failed to accept invitation");
+      }
+    } catch (err) {
+      toast.error("Error accepting invitation");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRejectInvite = async (linkId) => {
+    if (!window.confirm("Are you sure you want to decline this invitation?"))
+      return;
+    try {
+      setIsLoading(true);
+      const res = await axios.post(
+        API.FAMILY_ACTION,
+        { link_id: linkId, action: "reject" },
+        { withCredentials: true },
+      );
+      if (res.data?.status === "success") {
+        toast.success("Invitation declined");
+        fetchMembers();
+      } else {
+        toast.error(res.data?.message || "Failed to decline invitation");
+      }
+    } catch (err) {
+      toast.error("Error declining invitation");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const toggleCamera = () => {
     if (localStreamRef.current) {
       const videoTracks = localStreamRef.current.getVideoTracks();
@@ -738,7 +789,6 @@ const Family = () => {
     }
   };
 
-  // Fetch health data for each member
   useEffect(() => {
     const fetchHealth = async () => {
       const acceptedMembers = members.filter((m) => m.status === "accepted");
@@ -754,9 +804,19 @@ const Family = () => {
               ...prev,
               [m.member_id]: res.data.data,
             }));
+          } else {
+            // Set error state to stop spinner
+            setMemberHealthData((prev) => ({
+              ...prev,
+              [m.member_id]: { profile: null, symptoms: [], reports: [], prescriptions: [], error: true },
+            }));
           }
         } catch (err) {
           console.error("Failed to fetch health for member", m.member_id, err);
+          setMemberHealthData((prev) => ({
+            ...prev,
+            [m.member_id]: { profile: null, symptoms: [], reports: [], prescriptions: [], error: true },
+          }));
         }
       }
     };
@@ -772,7 +832,30 @@ const Family = () => {
       health: memberHealthData[cardMember.id] || null,
       raw: fullMember,
     });
+    setHistoryAnalysis(null);
     setIsHealthModalOpen(true);
+  };
+
+  const handleAnalyzeHistory = async (memberId) => {
+    setIsAnalyzing(true);
+    setHistoryAnalysis(null);
+    try {
+      const res = await axios.post(
+        API.AI_ANALYZE_HISTORY,
+        { member_id: memberId },
+        { withCredentials: true }
+      );
+      if (res.data?.status === "success") {
+        setHistoryAnalysis(res.data.analysis);
+      } else {
+        toast.error(res.data?.message || "Analysis failed");
+      }
+    } catch (err) {
+      console.error("Analysis failed", err);
+      toast.error("Failed to connect to AI service");
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   // Map API data to FamilyMemberCard expected format
@@ -780,9 +863,15 @@ const Family = () => {
     id: m.member_id,
     name: m.username || m.email,
     relation: m.relation || "Family",
-    alerts: m.status === "pending" ? ["Invitation pending"] : [],
+    alerts:
+      m.status === "pending"
+        ? [m.is_recipient ? "Invited you" : "Invitation pending"]
+        : [],
     avatar: m.profile_picture || null,
     health: memberHealthData[m.member_id] || null,
+    status: m.status,
+    isRecipient: !!m.is_recipient,
+    link_id: m.link_id,
   });
 
   return (
@@ -819,30 +908,50 @@ const Family = () => {
                 member.status === "accepted" ? handleViewHealth : undefined
               }
               actions={
-                <>
-                  <Button
-                    variant="outline"
-                    className="flex-1 bg-white border-gray-100 hover:border-primary-200 transition-colors rounded-xl"
-                    size="sm"
-                    onClick={() => handleChat(member)}>
-                    <MessageSquare className="w-4 h-4 mr-2 text-primary-600" />
-                    {t("family.chat")}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="flex-1 bg-white border-gray-100 hover:border-success-200 transition-colors rounded-xl"
-                    size="sm"
-                    onClick={() => handleCall(member)}>
-                    <Phone className="w-4 h-4 mr-2 text-success-600" />
-                    {t("family.call")}
-                  </Button>
-                  <button
-                    onClick={() => handleRemoveMember(member.link_id)}
-                    className="p-2 text-gray-400 hover:text-error-600 transition-colors rounded-xl hover:bg-error-50"
-                    title="Remove member">
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </>
+                member.status === "pending" && member.is_recipient ? (
+                  <div className="flex gap-2 w-full">
+                    <Button
+                      size="sm"
+                      className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white"
+                      onClick={() => handleAcceptInvite(member.link_id)}>
+                      Accept
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="flex-1 border-red-100 text-red-600 hover:bg-red-50"
+                      onClick={() => handleRejectInvite(member.link_id)}>
+                      Decline
+                    </Button>
+                  </div>
+                ) : (
+                  <>
+                    <Button
+                      variant="outline"
+                      className="flex-1 bg-white border-gray-100 hover:border-primary-200 transition-colors rounded-xl"
+                      size="sm"
+                      disabled={member.status !== "accepted"}
+                      onClick={() => handleChat(member)}>
+                      <MessageSquare className="w-4 h-4 mr-2 text-primary-600" />
+                      {t("family.chat")}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="flex-1 bg-white border-gray-100 hover:border-success-200 transition-colors rounded-xl"
+                      size="sm"
+                      disabled={member.status !== "accepted"}
+                      onClick={() => handleCall(member)}>
+                      <Phone className="w-4 h-4 mr-2 text-success-600" />
+                      {t("family.call")}
+                    </Button>
+                    <button
+                      onClick={() => handleRemoveMember(member.link_id)}
+                      className="p-2 text-gray-400 hover:text-error-600 transition-colors rounded-xl hover:bg-error-50"
+                      title="Remove member">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </>
+                )
               }
             />
           ))}
@@ -926,8 +1035,8 @@ const Family = () => {
         title={
           activeMember
             ? t("family.chatWith", {
-                name: activeMember.username || activeMember.email,
-              })
+              name: activeMember.username || activeMember.email,
+            })
             : t("family.chat")
         }
         size="full">
@@ -947,11 +1056,10 @@ const Family = () => {
                     key={m.id}
                     className={`flex mb-1 ${isMe ? "justify-end" : "justify-start"}`}>
                     <span
-                      className={`px-2 py-1 rounded-xl max-w-[75%] break-words overflow-wrap-anywhere ${
-                        isMe
-                          ? "bg-primary-100 text-primary-900"
-                          : "bg-white border border-gray-100 text-gray-800"
-                      }`}>
+                      className={`px-2 py-1 rounded-xl max-w-[75%] break-words overflow-wrap-anywhere ${isMe
+                        ? "bg-primary-100 text-primary-900"
+                        : "bg-white border border-gray-100 text-gray-800"
+                        }`}>
                       {m.message}
                     </span>
                   </div>
@@ -1033,7 +1141,7 @@ const Family = () => {
                   {callInfo.isCaller
                     ? t("family.callingStatus") || "Calling..."
                     : t("family.incomingCallStatus") ||
-                      "Incoming Video Call..."}
+                    "Incoming Video Call..."}
                 </p>
               </div>
 
@@ -1212,8 +1320,8 @@ const Family = () => {
         title={
           healthModalMember
             ? t("family.healthDetails", {
-                name: healthModalMember.name,
-              }) || `${healthModalMember.name}'s Health`
+              name: healthModalMember.name,
+            }) || `${healthModalMember.name}'s Health`
             : t("family.viewHealthDetails")
         }
         size="lg">
@@ -1259,6 +1367,52 @@ const Family = () => {
                   )}
                 </div>
               </div>
+            </div>
+
+            {/* AI Analysis Section */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-gray-900 font-black">
+                  <Brain className="w-4 h-4 text-indigo-500" />
+                  Health Intelligence
+                </div>
+                {!historyAnalysis && !isAnalyzing && (
+                  <Button
+                    size="sm"
+                    onClick={() => handleAnalyzeHistory(healthModalMember.id)}
+                    className="h-8 text-[10px] gap-1.5 bg-gradient-to-r from-indigo-600 to-primary-600 shadow-md">
+                    <Sparkles className="w-3 h-3" />
+                    AI Analyze History
+                  </Button>
+                )}
+              </div>
+
+              {(historyAnalysis || isAnalyzing) && (
+                <div className="border border-indigo-50 bg-indigo-50/30 rounded-2xl overflow-hidden ring-1 ring-indigo-50">
+                  <div className="bg-gradient-to-r from-indigo-600/10 to-primary-600/10 p-3 flex items-center gap-2 border-b border-indigo-50">
+                    <BrainCircuit className="w-4 h-4 text-indigo-600" />
+                    <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700">
+                      Gemini Clinical Insight
+                    </span>
+                  </div>
+                  <div className="p-4">
+                    {isAnalyzing ? (
+                      <div className="py-8 flex flex-col items-center justify-center text-center">
+                        <Loader2 className="w-8 h-8 text-indigo-600 animate-spin mb-3" />
+                        <p className="text-xs font-bold text-gray-900">
+                          Scanning family health history...
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="prose prose-xs prose-indigo max-w-none text-gray-700 leading-relaxed">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                          {historyAnalysis}
+                        </ReactMarkdown>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Medical Profile Section */}
@@ -1340,7 +1494,7 @@ const Family = () => {
               </div>
 
               {healthModalMember.health.symptoms &&
-              healthModalMember.health.symptoms.length > 0 ? (
+                healthModalMember.health.symptoms.length > 0 ? (
                 <div className="space-y-3">
                   {healthModalMember.health.symptoms.map((s) => (
                     <div
@@ -1399,7 +1553,7 @@ const Family = () => {
               </div>
 
               {healthModalMember.health.reports &&
-              healthModalMember.health.reports.length > 0 ? (
+                healthModalMember.health.reports.length > 0 ? (
                 <div className="space-y-3">
                   {healthModalMember.health.reports.map((r) => (
                     <div
@@ -1452,6 +1606,58 @@ const Family = () => {
                   <FileText className="w-6 h-6 text-gray-300 mx-auto mb-2" />
                   <p className="text-xs text-gray-400 font-medium">
                     {t("family.noReports")}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Past Prescriptions */}
+            <div>
+              <div className="flex items-center justify-between mb-3 px-1">
+                <div className="flex items-center gap-2 text-gray-900 font-black">
+                  <ShieldAlert className="w-4 h-4 text-indigo-500" />
+                  {t("family.prescriptions") || "Past Prescriptions"}
+                </div>
+                <span className="text-xs font-bold text-gray-400">
+                  Last {healthModalMember.health.prescriptions?.length || 0} entries
+                </span>
+              </div>
+
+              {healthModalMember.health.prescriptions &&
+                healthModalMember.health.prescriptions.length > 0 ? (
+                <div className="space-y-3">
+                  {healthModalMember.health.prescriptions.map((rx) => (
+                    <div
+                      key={rx.id}
+                      className="bg-white border border-gray-100 p-3 rounded-xl shadow-sm">
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="flex-1">
+                          <h4 className="text-sm font-bold text-gray-800 line-clamp-1">
+                            {rx.meds?.map((m) => m.name).join(", ") || "No meds listed"}
+                          </h4>
+                          <p className="text-xs text-gray-500 font-medium mt-0.5 line-clamp-2">
+                            {rx.note || rx.rawText || "No additional notes"}
+                          </p>
+                        </div>
+                        <span className="text-[10px] font-medium text-gray-400 bg-gray-50 px-2 py-1 rounded-lg whitespace-nowrap ml-2">
+                          {new Date(rx.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {rx.meds?.map((m, idx) => (
+                          <span key={idx} className="text-[10px] font-bold px-2 py-0.5 rounded bg-indigo-50 text-indigo-600 border border-indigo-100">
+                            {m.name} {m.dose && `(${m.dose})`}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-6 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+                  <ShieldAlert className="w-6 h-6 text-gray-300 mx-auto mb-2" />
+                  <p className="text-xs text-gray-400 font-medium">
+                    {t("family.noPrescriptions") || "No prescriptions found"}
                   </p>
                 </div>
               )}

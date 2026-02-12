@@ -23,11 +23,12 @@ $query = "
     SELECT 
         cc.room_id, cc.status as call_status, cc.start_time,
         a.id as appointment_id, a.appointment_date, a.appointment_time_slot,
-        doc.id as doctor_id, doc.username as doctor_name, doc.profile_pic as doctor_avatar,
+        doc.id as doctor_id, COALESCE(dp.display_name, doc.username) as doctor_name, doc.profile_pic as doctor_avatar,
         pat.id as patient_id, pat.username as patient_name, pat.profile_pic as patient_avatar
     FROM consultation_calls cc
     JOIN appointments a ON cc.appointment_id = a.id
     JOIN users doc ON a.doctor_user_id = doc.id
+    LEFT JOIN doctor_profiles dp ON doc.id = dp.user_id
     JOIN users pat ON a.patient_user_id = pat.id
     WHERE cc.room_id = ?
 ";

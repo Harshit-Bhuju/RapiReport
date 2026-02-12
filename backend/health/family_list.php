@@ -27,7 +27,8 @@ $sql = "
         CASE 
             WHEN u.last_login >= (NOW() - INTERVAL 5 MINUTE) THEN 1 
             ELSE 0 
-        END AS is_online
+        END AS is_online,
+        0 as is_recipient
     FROM family_members fm
     JOIN users u ON u.id = fm.member_user_id
     WHERE fm.user_id = ?
@@ -36,7 +37,7 @@ $sql = "
 
     SELECT 
         fm.id AS link_id, 
-        fm.relation AS relation, 
+        fm.inverse_relation AS relation, 
         fm.status, 
         fm.created_at,
         u.id AS member_id, 
@@ -46,10 +47,11 @@ $sql = "
         CASE 
             WHEN u.last_login >= (NOW() - INTERVAL 5 MINUTE) THEN 1 
             ELSE 0 
-        END AS is_online
+        END AS is_online,
+        1 as is_recipient
     FROM family_members fm
     JOIN users u ON u.id = fm.user_id
-    WHERE fm.member_user_id = ? AND fm.status = 'accepted'
+    WHERE fm.member_user_id = ? AND (fm.status = 'accepted' OR fm.status = 'pending')
 
     ORDER BY created_at DESC
 ";

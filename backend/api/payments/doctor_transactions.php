@@ -50,11 +50,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $result = $stmt->get_result();
 
     $transactions = [];
+    $total_earnings = 0;
+    $last_30_days_earnings = 0;
+    $one_month_ago = date('Y-m-d H:i:s', strtotime('-30 days'));
+
     while ($row = $result->fetch_assoc()) {
         $transactions[] = $row;
+        if ($row['payment_status'] === 'completed') {
+            $total_earnings += floatval($row['amount']);
+            if ($row['transaction_date'] >= $one_month_ago) {
+                $last_30_days_earnings += floatval($row['amount']);
+            }
+        }
     }
 
-    echo json_encode(["status" => "success", "transactions" => $transactions]);
+    echo json_encode([
+        "status" => "success",
+        "transactions" => $transactions,
+        "stats" => [
+            "total_earnings" => $total_earnings,
+            "last_30_days_earnings" => $last_30_days_earnings
+        ]
+    ]);
 } else {
     echo json_encode(["status" => "error", "message" => "Invalid request method."]);
 }

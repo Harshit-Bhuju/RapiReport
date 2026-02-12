@@ -61,11 +61,11 @@ const Auth = () => {
           }
           toast.success(`Welcome back, ${response.data.user.name}!`);
 
-          if (response.data.user.profileComplete) {
+          if (response.data.user.role === "doctor") {
+            navigate("/doctor-dashboard");
+          } else if (response.data.user.profileComplete) {
             if (response.data.user.role === "admin") {
               navigate("/admin");
-            } else if (response.data.user.role === "doctor") {
-              navigate("/doctor-dashboard");
             } else {
               navigate("/dashboard");
             }
@@ -160,10 +160,10 @@ const Auth = () => {
                   className="flex items-start gap-4 p-4 rounded-2xl bg-white/50 backdrop-blur-sm border border-slate-200/50 hover:bg-white/80 transition-all">
                   <div
                     className={`w-12 h-12 rounded-xl flex items-center justify-center ${feature.color === "blue"
-                        ? "bg-blue-100 text-blue-600"
-                        : feature.color === "green"
-                          ? "bg-green-100 text-green-600"
-                          : "bg-purple-100 text-purple-600"
+                      ? "bg-blue-100 text-blue-600"
+                      : feature.color === "green"
+                        ? "bg-green-100 text-green-600"
+                        : "bg-purple-100 text-purple-600"
                       }`}>
                     <feature.icon className="w-6 h-6" />
                   </div>
@@ -320,10 +320,10 @@ const Auth = () => {
                     className="flex items-center gap-3 p-4 rounded-2xl bg-white/50 backdrop-blur-sm border border-slate-200/50">
                     <div
                       className={`w-10 h-10 rounded-lg flex items-center justify-center ${feature.color === "blue"
-                          ? "bg-blue-100 text-blue-600"
-                          : feature.color === "green"
-                            ? "bg-green-100 text-green-600"
-                            : "bg-purple-100 text-purple-600"
+                        ? "bg-blue-100 text-blue-600"
+                        : feature.color === "green"
+                          ? "bg-green-100 text-green-600"
+                          : "bg-purple-100 text-purple-600"
                         }`}>
                       <feature.icon className="w-5 h-5" />
                     </div>

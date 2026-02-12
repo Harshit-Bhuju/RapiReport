@@ -9,6 +9,7 @@ import Badge from "@/components/ui/Badge";
 import chatService from "@/lib/chatService";
 import { useHealthStore } from "@/store/healthStore";
 import API from "@/Configs/ApiEndpoints";
+import { useConsultationStore } from "@/store/consultationStore";
 import {
   Users,
   Activity,
@@ -22,7 +23,16 @@ import {
   Droplets,
   Thermometer,
   Zap,
+  Video,
+  MessageSquare,
+  Calendar,
+  User,
+  Plus,
+  RefreshCw,
+  DollarSign,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import DirectChat from "@/components/features/DirectChat";
 import { cn } from "@/lib/utils";
 import DoctorProfessionalPrompt from "@/components/features/DoctorProfessionalPrompt";
 
@@ -132,6 +142,7 @@ const DoctorDashboard = () => {
   const [search, setSearch] = useState("");
   const [timeline, setTimeline] = useState([]);
   const [missedDoses, setMissedDoses] = useState(0);
+  const [transactionStats, setTransactionStats] = useState(null);
   const [prescriptionStats, setPrescriptionStats] = useState(null);
 
   const [isAiOpen, setIsAiOpen] = useState(false);
@@ -144,30 +155,50 @@ const DoctorDashboard = () => {
 
   const { prescriptions } = useHealthStore();
   const [asyncRequests, setAsyncRequests] = useState([]);
+  const [appointments, setAppointments] = useState([]);
+  const [appointmentsLoading, setAppointmentsLoading] = useState(true);
+  const { setActiveCall } = useConsultationStore();
+  const navigate = useNavigate();
+
+  // Chat state
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [selectedChatUser, setSelectedChatUser] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [pRes, asyncRes, statsRes] = await Promise.all([
+        const [pRes, asyncRes, statsRes, aptRes, txRes] = await Promise.allSettled([
           axios.get(API.DOCTOR_PATIENTS, { withCredentials: true }),
           axios.get(API.ASYNC_CONSULT_LIST, { withCredentials: true }),
           axios.get(API.PRESCRIPTION_STATS, { withCredentials: true }),
+          axios.get(API.DOCTOR_APPOINTMENTS, { withCredentials: true }),
+          axios.get(API.DOCTOR_TRANSACTIONS, { withCredentials: true }),
         ]);
-        if (pRes.data?.status === "success") {
-          const pList = pRes.data.data || [];
+
+        if (pRes.status === "fulfilled" && pRes.value.data?.status === "success") {
+          const pList = pRes.value.data.data || [];
           setPatients(pList);
           if (pList.length && !selectedId) setSelectedId(pList[0]?.id);
         }
-        if (
-          asyncRes.data?.status === "success" &&
-          Array.isArray(asyncRes.data.data)
-        ) {
-          setAsyncRequests(asyncRes.data.data);
+        if (asyncRes.status === "fulfilled" && asyncRes.value.data?.status === "success" && Array.isArray(asyncRes.value.data.data)) {
+          setAsyncRequests(asyncRes.value.data.data);
         }
-        if (statsRes.data?.status === "success") {
-          setPrescriptionStats(statsRes.data.data);
+        if (statsRes.status === "fulfilled" && statsRes.value.data?.status === "success") {
+          setPrescriptionStats(statsRes.value.data.data);
         }
-      } catch (_) { }
+        if (aptRes.status === "fulfilled" && aptRes.value.data?.status === "success") {
+          setAppointments(aptRes.value.data.appointments || []);
+        } else {
+          console.error("Appointments fetch failed:", aptRes.status === "rejected" ? aptRes.reason : aptRes.value?.data);
+        }
+        if (txRes.status === "fulfilled" && txRes.value.data?.status === "success") {
+          setTransactionStats(txRes.value.data.stats);
+        }
+      } catch (err) {
+        console.error("Dashboard fetch error:", err);
+      } finally {
+        setAppointmentsLoading(false);
+      }
     };
     fetchData();
   }, []);
@@ -248,6 +279,19 @@ const DoctorDashboard = () => {
     }
   };
 
+  const handleStartCall = (appointment) => {
+    setActiveCall({ appointment, status: 'initiate' });
+  };
+
+  const handleMessage = (appointment) => {
+    setSelectedChatUser({
+      id: appointment.patient_user_id,
+      name: appointment.patient_name,
+      avatar: appointment.patient_profile_pic,
+    });
+    setIsChatOpen(true);
+  };
+
   const patient = useMemo(
     () => patients.find((p) => p.id === selectedId) || patients[0],
     [patients, selectedId],
@@ -310,7 +354,26 @@ Clinical Info:
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        {transactionStats && (
+          <Card className="border-none shadow-xl shadow-gray-100/50">
+            <CardBody className="p-5">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center text-green-600">
+                  <DollarSign className="w-6 h-6" />
+                </div>
+                <div>
+                  <p className="text-2xl font-black text-gray-900">
+                    Rs. {transactionStats.total_earnings || 0}
+                  </p>
+                  <p className="text-xs font-bold text-gray-500">
+                    Total Earnings
+                  </p>
+                </div>
+              </div>
+            </CardBody>
+          </Card>
+        )}
         {prescriptionStats && (
           <Card className="border-none shadow-xl shadow-gray-100/50">
             <CardBody className="p-5">
@@ -370,37 +433,138 @@ Clinical Info:
         )}
       </div>
 
-      {/* Quick Actions */}
+      {/* Quick Actions & Appointments */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-3 border-none shadow-xl shadow-gray-100/50 bg-gray-900 text-white">
+        <div className="lg:col-span-2 space-y-6">
+          <Card className="border-none shadow-xl shadow-gray-100/50 overflow-hidden">
+            <CardBody className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-primary-50 flex items-center justify-center text-primary-600">
+                    <Calendar className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-black text-gray-900">Upcoming Appointments</h2>
+                    <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Next 48 Hours</p>
+                  </div>
+                </div>
+                <Button variant="ghost" size="sm" onClick={() => navigate("/doctor-appointments")} className="text-primary-600 font-bold">
+                  View All
+                </Button>
+              </div>
+
+              {appointmentsLoading ? (
+                <div className="py-12 flex flex-col items-center justify-center text-gray-400">
+                  <RefreshCw className="w-8 h-8 animate-spin mb-4" />
+                  <p className="font-bold">Syncing schedules...</p>
+                </div>
+              ) : appointments.length === 0 ? (
+                <div className="py-12 flex flex-col items-center justify-center text-gray-400 bg-gray-50/50 rounded-2xl border-2 border-dashed border-gray-100">
+                  <Calendar className="w-12 h-12 mb-4 opacity-30" />
+                  <p className="font-bold">No upcoming appointments found.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {appointments.slice(0, 3).map((apt) => (
+                    <div key={apt.id} className="group p-4 rounded-2xl border border-gray-100 bg-white hover:border-primary-200 hover:shadow-lg hover:shadow-primary-100/20 transition-all duration-300">
+                      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 rounded-xl bg-gray-50 overflow-hidden border border-gray-100 group-hover:border-primary-100 transition-colors">
+                            {apt.patient_profile_pic ? (
+                              <img src={apt.patient_profile_pic} alt={apt.patient_name} className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-gray-400">
+                                <User className="w-6 h-6" />
+                              </div>
+                            )}
+                          </div>
+                          <div>
+                            <h3 className="font-black text-gray-900 leading-tight group-hover:text-primary-600 transition-colors">{apt.patient_name}</h3>
+                            <div className="flex items-center gap-3 mt-1">
+                              <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-500">
+                                <Calendar className="w-3 h-3" />
+                                {new Date(apt.appointment_date).toLocaleDateString()}
+                              </div>
+                              <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-500">
+                                <Clock className="w-3 h-3" />
+                                {apt.appointment_time_slot}
+                              </div>
+                              {apt.amount && (
+                                <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-900 bg-gray-50 px-2 py-0.5 rounded-full border border-gray-100">
+                                  <DollarSign className="w-3 h-3 text-green-600" />
+                                  Rs. {apt.amount}
+                                  <span className={cn(
+                                    "ml-1 px-1.5 rounded-full text-[8px] uppercase tracking-tighter",
+                                    apt.payment_status === 'completed' ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
+                                  )}>
+                                    {apt.payment_status}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 w-full sm:w-auto">
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            className="flex-1 sm:flex-none h-9 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest gap-2"
+                            onClick={() => handleMessage(apt)}
+                          >
+                            <MessageSquare className="w-3.5 h-3.5" />
+                            Message
+                          </Button>
+                          <Button
+                            size="sm"
+                            className={cn(
+                              "flex-1 sm:flex-none h-9 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest gap-2 shadow-sm",
+                              apt.status !== 'confirmed' && "opacity-50 grayscale cursor-not-allowed"
+                            )}
+                            disabled={apt.status !== 'confirmed'}
+                            onClick={() => handleStartCall(apt)}
+                          >
+                            <Video className="w-3.5 h-3.5" />
+                            Start Call
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardBody>
+          </Card>
+        </div>
+
+        <Card className="lg:col-span-1 border-none shadow-xl shadow-gray-100/50 bg-gray-900 text-white">
           <CardBody className="p-6">
-            <h2 className="text-xl font-black mb-6 flex items-center gap-2">
-              <Zap className="w-5 h-5 text-warning-400" />
+            <h2 className="text-xl font-black mb-6 flex items-center gap-2 text-warning-400">
+              <Zap className="w-5 h-5" />
               Quick Templates
             </h2>
             <div className="space-y-4">
-              <button className="w-full p-4 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/10 text-left transition-all group">
-                <p className="font-bold text-sm mb-1 group-hover:text-warning-400">
+              <button className="w-full p-4 rounded-3xl bg-white/5 hover:bg-white/10 border border-white/10 text-left transition-all group">
+                <p className="font-black text-sm mb-1 group-hover:text-warning-400 tracking-tight">
                   Common Cold/URTI
                 </p>
-                <p className="text-[10px] text-gray-400">
-                  Saline drops, Antipyretic, Rest...
+                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
+                  Saline, Antipyretic, Rest
                 </p>
               </button>
-              <button className="w-full p-4 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/10 text-left transition-all group">
-                <p className="font-bold text-sm mb-1 group-hover:text-warning-400">
-                  Hypertension Follow-up
+              <button className="w-full p-4 rounded-3xl bg-white/5 hover:bg-white/10 border border-white/10 text-left transition-all group">
+                <p className="font-black text-sm mb-1 group-hover:text-warning-400 tracking-tight">
+                  Hypertension F/U
                 </p>
-                <p className="text-[10px] text-gray-400">
-                  Amlodipine 5mg, Low salt diet...
+                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
+                  Amlodipine, Low Salt
                 </p>
               </button>
-              <button className="w-full p-4 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/10 text-left transition-all group">
-                <p className="font-bold text-sm mb-1 group-hover:text-warning-400">
+              <button className="w-full p-4 rounded-3xl bg-white/5 hover:bg-white/10 border border-white/10 text-left transition-all group">
+                <p className="font-black text-sm mb-1 group-hover:text-warning-400 tracking-tight">
                   Diabetes Check
                 </p>
-                <p className="text-[10px] text-gray-400">
-                  Metformin 500mg, HbA1c test...
+                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
+                  Metformin, HbA1c Test
                 </p>
               </button>
             </div>
@@ -760,6 +924,16 @@ Clinical Info:
           </p>
         </div>
       </Modal>
+
+      {isChatOpen && selectedChatUser && (
+        <DirectChat
+          recipientId={selectedChatUser.id}
+          recipientName={selectedChatUser.name}
+          recipientAvatar={selectedChatUser.avatar}
+          isOpen={isChatOpen}
+          onClose={() => setIsChatOpen(false)}
+        />
+      )}
     </div>
   );
 };

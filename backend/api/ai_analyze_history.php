@@ -13,11 +13,43 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
-$user_id = $_SESSION['user_id'];
+$user_id = (int)$_SESSION['user_id'];
+
+// Check if we are analyzing a family member or ourselves
+$target_user_id = $user_id;
+$is_family_analysis = false;
+
+$input = json_decode(file_get_contents('php://input'), true);
+if (isset($input['member_id']) && (int)$input['member_id'] > 0) {
+    $target_member_id = (int)$input['member_id'];
+
+    // Verify family relationship (accepted, either direction)
+    $check = $conn->prepare("
+        SELECT 1 FROM family_members
+        WHERE status = 'accepted'
+          AND (
+              (user_id = ? AND member_user_id = ?)
+              OR
+              (user_id = ? AND member_user_id = ?)
+          )
+        LIMIT 1
+    ");
+    $check->bind_param('iiii', $user_id, $target_member_id, $target_member_id, $user_id);
+    $check->execute();
+    $checkRes = $check->get_result();
+
+    if ($checkRes->num_rows === 0) {
+        echo json_encode(['status' => 'error', 'message' => 'Not an accepted family member']);
+        exit;
+    }
+    $target_user_id = $target_member_id;
+    $is_family_analysis = true;
+    $check->close();
+}
 
 // 1. Fetch User Profile (Conditions, Allergies, etc.)
 $stmt = $conn->prepare("SELECT username, dob, gender, blood_group, conditions, allergies, parental_history FROM users WHERE id = ?");
-$stmt->bind_param("i", $user_id);
+$stmt->bind_param("i", $target_user_id);
 $stmt->execute();
 $userProfile = $stmt->get_result()->fetch_assoc();
 $stmt->close();
@@ -25,21 +57,21 @@ $stmt->close();
 // 2. Fetch Past Prescriptions (OCR and Saved)
 // OCR History
 $stmt = $conn->prepare("SELECT raw_text, created_at FROM ocr_history WHERE user_id = ? ORDER BY created_at DESC LIMIT 20");
-$stmt->bind_param("i", $user_id);
+$stmt->bind_param("i", $target_user_id);
 $stmt->execute();
 $ocrHistory = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 $stmt->close();
 
 // Saved Prescriptions
 $stmt = $conn->prepare("SELECT note, meds, created_at FROM prescriptions WHERE user_id = ? ORDER BY created_at DESC LIMIT 20");
-$stmt->bind_param("i", $user_id);
+$stmt->bind_param("i", $target_user_id);
 $stmt->execute();
 $savedPrescriptions = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 $stmt->close();
 
 // 3. Fetch Recent Symptoms
 $stmt = $conn->prepare("SELECT text, severity, date FROM symptoms WHERE user_id = ? ORDER BY date DESC LIMIT 30");
-$stmt->bind_param("i", $user_id);
+$stmt->bind_param("i", $target_user_id);
 $stmt->execute();
 $symptoms = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 $stmt->close();

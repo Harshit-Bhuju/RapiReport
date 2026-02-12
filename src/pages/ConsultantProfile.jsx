@@ -31,17 +31,22 @@ const ConsultantProfile = () => {
 
     const fetchDoctorProfile = async () => {
         try {
-            // New endpoint
-            const res = await axios.get(`${API.GET_CONSULTANT_PROFILE}?id=${id}`, { withCredentials: true });
+            console.log("Fetching profile for ID:", id, "URL:", `${API.GET_CONSULTANT_PROFILE}?id=${id}`);
+            const res = await axios.get(`${API.GET_CONSULTANT_PROFILE}?id=${id}`, {
+                withCredentials: true,
+                headers: { 'Accept': 'application/json' }
+            });
             if (res.data.status === "success") {
                 setDoctor(res.data.doctor);
             } else {
+                console.warn("Profile fetch returned error status:", res.data);
                 toast.error(res.data.message || "Doctor not found");
                 navigate("/consultants");
             }
         } catch (error) {
             console.error("Error fetching profile:", error);
-            toast.error("Failed to load profile");
+            const msg = error.response?.data?.message || error.message || "Failed to load profile";
+            toast.error(`Failed: ${msg}`);
         } finally {
             setLoading(false);
         }

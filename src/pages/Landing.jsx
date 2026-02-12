@@ -147,9 +147,9 @@ const HeroSection = () => {
                           "w-10 h-10 rounded-lg flex items-center justify-center mb-3",
                           item.color === "blue" && "bg-blue-100 text-blue-600",
                           item.color === "green" &&
-                            "bg-green-100 text-green-600",
+                          "bg-green-100 text-green-600",
                           item.color === "purple" &&
-                            "bg-purple-100 text-purple-600",
+                          "bg-purple-100 text-purple-600",
                         )}>
                         <item.icon className="w-5 h-5" />
                       </div>
@@ -482,11 +482,11 @@ const HowItWorks = () => {
                     className={cn(
                       "w-16 h-16 rounded-2xl flex items-center justify-center mb-6 mx-auto",
                       step.color === "blue" &&
-                        "bg-gradient-to-br from-blue-500 to-blue-600",
+                      "bg-gradient-to-br from-blue-500 to-blue-600",
                       step.color === "indigo" &&
-                        "bg-gradient-to-br from-indigo-500 to-indigo-600",
+                      "bg-gradient-to-br from-indigo-500 to-indigo-600",
                       step.color === "purple" &&
-                        "bg-gradient-to-br from-purple-500 to-purple-600",
+                      "bg-gradient-to-br from-purple-500 to-purple-600",
                     )}>
                     <step.icon className="w-8 h-8 text-white" />
                   </div>
@@ -629,11 +629,11 @@ const TrustSection = () => {
                       className={cn(
                         "w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg transition-transform group-hover/seal:-translate-y-1",
                         item.color === "blue" &&
-                          "bg-blue-100 text-blue-600 shadow-blue-100",
+                        "bg-blue-100 text-blue-600 shadow-blue-100",
                         item.color === "green" &&
-                          "bg-green-100 text-green-600 shadow-green-100",
+                        "bg-green-100 text-green-600 shadow-green-100",
                         item.color === "purple" &&
-                          "bg-purple-100 text-purple-600 shadow-purple-100",
+                        "bg-purple-100 text-purple-600 shadow-purple-100",
                       )}>
                       <item.icon className="w-8 h-8" />
                     </div>
@@ -705,7 +705,26 @@ const CTASection = () => {
   );
 };
 
+import { useAuthStore } from "@/store/authStore";
+
 const Landing = () => {
+  const { isAuthenticated, user, isProfileComplete } = useAuthStore();
+  const navigate = useNavigate();
+
+  React.useEffect(() => {
+    if (isAuthenticated) {
+      if (!isProfileComplete) {
+        navigate("/profile-setup");
+      } else if (user?.role === "admin") {
+        navigate("/admin");
+      } else if (user?.role === "doctor") {
+        navigate("/doctor-dashboard");
+      } else {
+        navigate("/dashboard");
+      }
+    }
+  }, [isAuthenticated, user, isProfileComplete, navigate]);
+
   return (
     <div className="bg-white">
       <HeroSection />

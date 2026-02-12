@@ -101,6 +101,7 @@ const API = {
   FAMILY_CALL_STATUS: `${BASE_URL}/health/family_call_status.php`,
   FAMILY_CHAT: `${BASE_URL}/health/family_chat.php`,
   FAMILY_MEMBER_HEALTH: `${BASE_URL}/health/family_member_health.php`,
+  FAMILY_ACTION: `${BASE_URL}/health/family_action.php`,
 
   // Admin
   ADMIN_GET_USERS: `${BASE_URL}/api/admin/get_users.php`,
@@ -115,11 +116,14 @@ const API = {
   DOCTOR_SLOTS: `${BASE_URL}/api/consultants/get_doctor_slots.php`,
   ESEWA_INITIATE: `${BASE_URL}/api/payments/initiate_esewa.php`,
   DOCTOR_TRANSACTIONS: `${BASE_URL}/api/payments/doctor_transactions.php`,
+  DOCTOR_APPOINTMENTS: `${BASE_URL}/api/consultants/get_doctor_appointments.php`,
 
   // Consultation WebRTC
+  CONSULTATION_CALL_START: `${BASE_URL}/api/consultants/consultation_call_start.php`,
   CONSULTATION_SIGNAL: `${BASE_URL}/api/consultants/consultation_call_signal.php`,
   CONSULTATION_STATUS: `${BASE_URL}/api/consultants/consultation_call_status.php`,
   GET_CONSULTATION_DETAILS: `${BASE_URL}/api/consultants/get_consultation_details.php`,
+  CONSULTATION_CALL_INCOMING: `${BASE_URL}/api/consultants/get_incoming_consultation_call.php`,
 
   // Prescriptions
   SAVE_PRESCRIPTION: `${BASE_URL}/health/prescriptions_create.php`,

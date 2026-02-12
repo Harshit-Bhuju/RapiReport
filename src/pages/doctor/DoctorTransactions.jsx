@@ -17,7 +17,7 @@ const DoctorTransactions = () => {
 
     const fetchTransactions = async () => {
         try {
-            const res = await axios.get(`${API.BASE_URL}/api/payments/doctor_transactions.php`, { withCredentials: true });
+            const res = await axios.get(API.DOCTOR_TRANSACTIONS, { withCredentials: true });
             if (res.data.status === "success") {
                 setTransactions(res.data.transactions);
             }

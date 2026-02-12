@@ -50,6 +50,7 @@ const ChatInterface = ({ isFullPage = false, initialPrescription = null }) => {
       1. Common brand alternatives for each (available in Nepal).
       2. Estimated market prices in NPR for these brands.
       3. A brief explanation of how each medicine works (mechanism of action).
+      4. Known side effects for each medicine.
       
       Raw prescription context: ${initialPrescription.rawText}`;
       } else if (initialPrescription.rawText) {
@@ -60,7 +61,8 @@ const ChatInterface = ({ isFullPage = false, initialPrescription = null }) => {
             Please analyze this text and provide:
             1. Any identified medicines and their uses.
             2. Common brand alternatives in Nepal if applicable.
-            3. General health advice based on this prescription text.`;
+            3. Potential side effects for identified medicines.
+            4. General health advice based on this prescription text.`;
       }
 
       if (autoPrompt) {

@@ -1,7 +1,5 @@
 <?php
-require_once __DIR__ . '/../../config/cors.php';
-require_once __DIR__ . '/../../config/session_config.php';
-require_once __DIR__ . '/../../config/dbconnect.php';
+require_once __DIR__ . '/../../config/header.php';
 
 header('Content-Type: application/json');
 
@@ -27,23 +25,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // For now, allowing open chat if they know the ID, or we can enforce appointment check
     // Enforcing appointment check:
     $stmt = $conn->prepare("
-        SELECT id FROM appointments 
-        WHERE (doctor_user_id = ? AND patient_user_id = ?) 
-           OR (doctor_user_id = ? AND patient_user_id = ?)
-        LIMIT 1
+    SELECT id FROM appointments
+    WHERE (doctor_user_id = ? AND patient_user_id = ?)
+    OR (doctor_user_id = ? AND patient_user_id = ?)
+    LIMIT 1
     ");
     $stmt->bind_param('iiii', $user_id, $recipient_id, $recipient_id, $user_id);
     $stmt->execute();
     if ($stmt->get_result()->num_rows === 0) {
         // Strict: only allow if appointment exists
         // echo json_encode(['status' => 'error', 'message' => 'No appointment found between users']);
-        // exit; 
+        // exit;
         // Relaxed: allow
     }
 
     $stmt = $conn->prepare("
-        INSERT INTO consultation_messages (sender_id, receiver_id, message)
-        VALUES (?, ?, ?)
+    INSERT INTO consultation_messages (sender_id, receiver_id, message)
+    VALUES (?, ?, ?)
     ");
     $stmt->bind_param('iis', $user_id, $recipient_id, $message);
 
@@ -63,10 +61,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt = $conn->prepare("
         SELECT id, sender_id, receiver_id, message, created_at, is_read
         FROM consultation_messages
-        WHERE (sender_id = ? AND receiver_id = ?) 
-           OR (sender_id = ? AND receiver_id = ?)
+        WHERE (sender_id = ? AND receiver_id = ?)
+        OR (sender_id = ? AND receiver_id = ?)
         ORDER BY created_at ASC
-    ");
+        ");
     $stmt->bind_param('iiii', $user_id, $other_user_id, $other_user_id, $user_id);
     $stmt->execute();
     $result = $stmt->get_result();

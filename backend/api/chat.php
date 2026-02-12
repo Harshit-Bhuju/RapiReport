@@ -34,7 +34,8 @@ Your goal is to help users understand their medical reports and provide general 
 1. **Scope**: Only answer health, wellness, and medical report related questions. 
 2. **Medical Disclaimer**: Always include a disclaimer at the end of every response. 
 3. **Tone**: Helpful, empathetic, and professional.
-4. **Bilingual**: Support both English and Nepali. Respond in the language used by the user (" . ($language === 'ne' ? 'Nepali' : 'English') . ").
+4. **Side Effects**: When suggesting or explaining medicines, always include potential side effects.
+5. **Bilingual**: Support both English and Nepali. Respond in the language used by the user (" . ($language === 'ne' ? 'Nepali' : 'English') . ").
 ";
 
 $postData = [

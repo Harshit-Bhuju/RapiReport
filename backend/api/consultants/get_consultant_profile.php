@@ -22,7 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                      dp.display_name, dp.specialty, dp.experience_years, dp.consultation_rate, dp.bio, dp.is_available, dp.availability_json,
                      dp.education, dp.clinic_address
               FROM users u
-              JOIN doctor_profiles dp ON u.id = dp.user_id
+              LEFT JOIN doctor_profiles dp ON u.id = dp.user_id
               WHERE u.id = ? AND u.role = 'doctor'";
 
     $stmt = $conn->prepare($query);

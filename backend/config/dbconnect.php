@@ -13,11 +13,15 @@ if (file_exists($envFile)) {
         if (empty($line) || strpos($line, '#') === 0) continue;
         if (strpos($line, '=') !== false) {
             list($name, $value) = explode('=', $line, 2);
-            putenv(trim($name) . "=" . trim($value));
-            $_ENV[trim($name)] = trim($value);
+            $name = trim($name);
+            $value = trim($value);
+            putenv("$name=$value");
+            $_ENV[$name] = $value;
+            $_SERVER[$name] = $value;
         }
     }
 }
+define('ENV_LOADED', file_exists($envFile));
 
 
 $conn = new mysqli($servername, $username, $password, $dbname);

@@ -113,12 +113,20 @@ const Dashboard = () => {
     reports.length > 0
       ? reports[0]
       : {
-        id: "mock-report",
-        type: "General Blood Panel",
-        date: new Date().toISOString(),
-        lab: "MediCare Labs",
-        status: "normal",
-      };
+          id: "mock-report",
+          type: "General Blood Panel",
+          date: new Date().toISOString(),
+          lab: "MediCare Labs",
+          status: "normal",
+        };
+
+  const currentHour = new Date().getHours();
+  let greetingKey = "dashboardPage.greetingMorning";
+  if (currentHour >= 12 && currentHour < 17) {
+    greetingKey = "dashboardPage.greetingAfternoon";
+  } else if (currentHour >= 17 || currentHour < 5) {
+    greetingKey = "dashboardPage.greetingEvening";
+  }
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -126,7 +134,7 @@ const Dashboard = () => {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
           <h1 className="text-3xl md:text-4xl font-black text-gray-900 tracking-tight">
-            {t("dashboardPage.greeting", {
+            {t(greetingKey, {
               name: user?.name?.split(" ")[0] || "User",
             })}
             <span className="text-primary-600">.</span>
@@ -296,7 +304,7 @@ const Dashboard = () => {
               <button
                 onClick={() => navigate("/reports")}
                 className="text-xs font-bold text-primary-600 hover:text-primary-700">
-                View All
+                {t("dashboardPage.viewAll")}
               </button>
             </div>
 
@@ -317,7 +325,9 @@ const Dashboard = () => {
                     variant={
                       displayReport.status === "normal" ? "success" : "error"
                     }>
-                    {displayReport.status === "normal" ? "Normal" : "Attention"}
+                    {displayReport.status === "normal"
+                      ? t("dashboardPage.statusNormal")
+                      : t("dashboardPage.statusAttention")}
                   </Badge>
                 </div>
                 <h3 className="text-lg font-bold text-gray-900 mb-1 line-clamp-1">
@@ -327,14 +337,14 @@ const Dashboard = () => {
                   {displayReport.lab || "Unknown Lab"} •{" "}
                   {displayReport.date
                     ? new Date(displayReport.date).toLocaleDateString("en-GB", {
-                      month: "short",
-                      day: "numeric",
-                    })
+                        month: "short",
+                        day: "numeric",
+                      })
                     : "No Date"}
                 </p>
 
                 <div className="flex items-center text-primary-600 font-bold text-sm mt-2 group-hover:translate-x-1 transition-transform">
-                  View Details
+                  {t("dashboardPage.viewDetails")}
                   <ChevronRight className="w-4 h-4 ml-1" />
                 </div>
               </CardBody>
@@ -348,15 +358,15 @@ const Dashboard = () => {
                 <Stethoscope className="w-6 h-6 text-primary-600" />
               </div>
               <h3 className="text-xl font-black mb-2 text-gray-900">
-                Consult a Specialist
+                {t("dashboardPage.consultSpecialist")}
               </h3>
               <p className="text-sm font-bold text-gray-500 leading-relaxed mb-8">
-                Connect with professional doctors for live video consultations and expert advice.
+                {t("dashboardPage.consultDesc")}
               </p>
               <Button
                 className="w-full bg-primary-600 text-white hover:bg-primary-700 shadow-lg shadow-primary-100 font-black rounded-2xl py-4 flex items-center justify-center gap-2"
                 onClick={() => navigate("/consultants")}>
-                Find a Doctor
+                {t("dashboardPage.findDoctor")}
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </Button>
             </CardBody>
@@ -382,7 +392,6 @@ const Dashboard = () => {
               </Button>
             </CardBody>
           </Card>
-
         </div>
       </div>
       <ChatInterface />

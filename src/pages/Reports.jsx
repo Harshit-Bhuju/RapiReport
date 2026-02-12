@@ -63,14 +63,14 @@ const Reports = () => {
   const filteredReports = reports.filter(
     (r) =>
       (r.type || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (r.lab || "").toLowerCase().includes(searchQuery.toLowerCase())
+      (r.lab || "").toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   const onPickFile = (e) => {
     const file = e?.target?.files?.[0];
     if (!file) return;
     if (!file.type.startsWith("image/")) {
-      toast.error("Please upload an image (JPG, PNG)");
+      toast.error(t("reports.errorImage"));
       return;
     }
     setImageFile(file);
@@ -84,11 +84,10 @@ const Reports = () => {
     e.preventDefault();
     const file = e.dataTransfer?.files?.[0];
     if (file && file.type.startsWith("image/")) {
-      setImageFile(file);
-      setImageUrl(URL.createObjectURL(file));
+      setPreviewImage(URL.createObjectURL(file));
       setShowUpload(true);
     } else {
-      toast.error("Please drop an image (JPG, PNG)");
+      toast.error(t("reports.errorDrop"));
     }
   };
   const handleDragOver = (e) => e.preventDefault();
@@ -108,11 +107,11 @@ const Reports = () => {
       const res = await axios.post(
         API.GEMINI_ANALYZE_REPORT,
         { image: base64, mimeType: imageFile.type },
-        { withCredentials: true }
+        { withCredentials: true },
       );
 
       if (res.data?.status !== "success") {
-        toast.error(res.data?.message || "Analysis failed");
+        toast.error(res.data?.message || t("reports.errorAnalysis"));
         return;
       }
 
@@ -129,13 +128,13 @@ const Reports = () => {
       formData.append("tests", JSON.stringify(data.tests || []));
 
       const newId = await addReport(formData);
-      toast.success("Report analyzed and saved!");
+      toast.success(t("reports.uploadSuccess"));
       clearUpload();
       fetchReports();
       if (newId) navigate(`/results/${newId}`);
     } catch (err) {
       console.error(err);
-      toast.error(err.response?.data?.message || "Failed to analyze report");
+      toast.error(err.response?.data?.message || t("reports.errorSave"));
     } finally {
       setIsAnalyzing(false);
     }
@@ -156,7 +155,9 @@ const Reports = () => {
             <FileText className="w-8 h-8 text-primary-600" />
             {t("reports.title")}
           </h1>
-          <p className="text-gray-500 font-bold mt-2">{t("reports.subtitle")}</p>
+          <p className="text-gray-500 font-bold mt-2">
+            {t("reports.subtitle")}
+          </p>
         </div>
         <input
           ref={fileInputRef}
@@ -168,8 +169,7 @@ const Reports = () => {
         <Button
           size="lg"
           className="rounded-2xl shadow-xl shadow-primary-100"
-          onClick={triggerFilePick}
-        >
+          onClick={triggerFilePick}>
           <Plus className="mr-2 w-5 h-5" />
           {t("reports.uploadNew")}
         </Button>
@@ -181,14 +181,15 @@ const Reports = () => {
           className="border-2 border-dashed border-gray-200 hover:border-primary-300 transition-colors cursor-pointer"
           onClick={triggerFilePick}
           onDrop={handleDrop}
-          onDragOver={handleDragOver}
-        >
+          onDragOver={handleDragOver}>
           <CardBody className="py-10 text-center">
             <div className="w-16 h-16 rounded-2xl bg-primary-50 flex items-center justify-center mx-auto mb-4 text-primary-600">
               <Upload className="w-8 h-8" />
             </div>
-            <p className="text-lg font-bold text-gray-900 mb-1">Drop your lab report here</p>
-            <p className="text-sm text-gray-500">or click to browse • JPG, PNG (max 5MB)</p>
+            <p className="text-lg font-bold text-gray-900 mb-1">
+              {t("reports.dropZone")}
+            </p>
+            <p className="text-sm text-gray-500">{t("reports.browse")}</p>
           </CardBody>
         </Card>
       )}
@@ -201,10 +202,10 @@ const Reports = () => {
               <div className="flex-1">
                 <p className="text-sm font-bold text-primary-700 uppercase tracking-wider mb-2">
                   <Sparkles className="w-4 h-4 inline mr-1" />
-                  AI Report Analysis
+                  {t("reports.aiAnalysis")}
                 </p>
                 <p className="text-gray-600 text-sm">
-                  Upload a clear photo of your lab report. AI will extract tests and summarize.
+                  {t("reports.aiAnalysisDesc")}
                 </p>
               </div>
               <Button variant="ghost" size="icon" onClick={clearUpload}>
@@ -218,22 +219,25 @@ const Reports = () => {
                 className="max-h-40 rounded-xl border border-gray-200 object-contain"
               />
               <div className="flex-1 flex flex-col justify-center gap-3">
-                <p className="text-sm font-bold text-gray-600">{imageFile.name}</p>
+                <p className="text-sm font-bold text-gray-600">
+                  {imageFile.name}
+                </p>
                 <div className="flex gap-3">
                   <Button
                     onClick={handleAnalyzeAndSave}
                     loading={isAnalyzing}
-                    className="gap-2 shadow-lg"
-                  >
+                    className="gap-2 shadow-lg">
                     {isAnalyzing ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
                     ) : (
                       <Zap className="w-4 h-4" />
                     )}
-                    {isAnalyzing ? "Analyzing..." : "Analyze & Save"}
+                    {isAnalyzing
+                      ? t("reports.analyzing")
+                      : t("reports.analyzeSave")}
                   </Button>
                   <Button variant="secondary" onClick={clearUpload}>
-                    Cancel
+                    {t("common.cancel")}
                   </Button>
                 </div>
               </div>
@@ -251,7 +255,9 @@ const Reports = () => {
             </div>
             <div>
               <p className="text-2xl font-black text-gray-900">{stats.total}</p>
-              <p className="text-sm font-bold text-gray-500">Total Reports</p>
+              <p className="text-sm font-bold text-gray-500">
+                {t("reports.totalReports")}
+              </p>
             </div>
           </CardBody>
         </Card>
@@ -261,8 +267,12 @@ const Reports = () => {
               <Microscope className="w-6 h-6" />
             </div>
             <div>
-              <p className="text-2xl font-black text-gray-900">{stats.normal}</p>
-              <p className="text-sm font-bold text-gray-500">Normal</p>
+              <p className="text-2xl font-black text-gray-900">
+                {stats.normal}
+              </p>
+              <p className="text-sm font-bold text-gray-500">
+                {t("reports.normal")}
+              </p>
             </div>
           </CardBody>
         </Card>
@@ -272,8 +282,12 @@ const Reports = () => {
               <BarChart3 className="w-6 h-6" />
             </div>
             <div>
-              <p className="text-2xl font-black text-gray-900">{stats.abnormal}</p>
-              <p className="text-sm font-bold text-gray-500">Needs Attention</p>
+              <p className="text-2xl font-black text-gray-900">
+                {stats.abnormal}
+              </p>
+              <p className="text-sm font-bold text-gray-500">
+                {t("reports.needsAttention")}
+              </p>
             </div>
           </CardBody>
         </Card>
@@ -303,8 +317,7 @@ const Reports = () => {
                 key={report.id}
                 hover
                 className="border-gray-50 hover:border-primary-100 group transition-all duration-300"
-                onClick={() => navigate(`/results/${report.id}`)}
-              >
+                onClick={() => navigate(`/results/${report.id}`)}>
                 <CardBody className="flex items-center justify-between p-4 sm:p-6">
                   <div className="flex items-center gap-6">
                     <div className="w-14 h-14 rounded-2xl bg-gray-50 flex items-center justify-center text-gray-400 group-hover:bg-primary-50 group-hover:text-primary-600 transition-colors overflow-hidden">
@@ -344,19 +357,19 @@ const Reports = () => {
                   <div className="flex items-center gap-6">
                     <Badge
                       variant={report.status === "normal" ? "success" : "error"}
-                      className="px-4 py-1.5 text-[10px]"
-                    >
-                      {(report.status || "normal").toUpperCase()}
+                      className="px-4 py-1.5 text-[10px]">
+                      {report.status === "normal"
+                        ? t("reports.normal").toUpperCase()
+                        : t("reports.needsAttention").toUpperCase()}
                     </Badge>
                     <div className="flex items-center gap-2">
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           removeReport(report.id);
-                          toast.success("Report removed");
+                          toast.success(t("reports.removeSuccess"));
                         }}
-                        className="p-2 text-gray-300 hover:text-error-600 rounded-xl hover:bg-error-50 transition-colors"
-                      >
+                        className="p-2 text-gray-300 hover:text-error-600 rounded-xl hover:bg-error-50 transition-colors">
                         <Trash2 className="w-4 h-4" />
                       </button>
                       <div className="w-10 h-10 rounded-full border border-gray-50 flex items-center justify-center group-hover:bg-primary-50 group-hover:text-primary-600 transition-all">
@@ -372,13 +385,15 @@ const Reports = () => {
           <Card className="border-dashed border-2 border-gray-200">
             <CardBody className="py-16 text-center">
               <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500 font-bold text-lg mb-2">No reports yet</p>
+              <p className="text-gray-500 font-bold text-lg mb-2">
+                {t("reports.noReports")}
+              </p>
               <p className="text-gray-400 text-sm mb-6">
-                Upload a lab report image to get AI-powered analysis and insights.
+                {t("reports.noReportsDesc")}
               </p>
               <Button className="gap-2" onClick={triggerFilePick}>
                 <Upload className="w-4 h-4" />
-                Upload Report
+                {t("reports.uploadNew")}
               </Button>
             </CardBody>
           </Card>
@@ -388,17 +403,14 @@ const Reports = () => {
       {previewImage && (
         <div
           className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
-          onClick={() => setPreviewImage(null)}
-        >
+          onClick={() => setPreviewImage(null)}>
           <div
             className="relative max-w-5xl max-h-full w-full flex items-center justify-center"
-            onClick={(e) => e.stopPropagation()}
-          >
+            onClick={(e) => e.stopPropagation()}>
             <button
               type="button"
               onClick={() => setPreviewImage(null)}
-              className="absolute top-4 right-4 rounded-full bg-black/70 text-white p-2 hover:bg-black focus:outline-none focus:ring-2 focus:ring-white"
-            >
+              className="absolute top-4 right-4 rounded-full bg-black/70 text-white p-2 hover:bg-black focus:outline-none focus:ring-2 focus:ring-white">
               <X className="w-5 h-5" />
             </button>
             <img

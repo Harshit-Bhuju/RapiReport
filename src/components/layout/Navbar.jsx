@@ -36,15 +36,11 @@ const Navbar = () => {
     }
 
     if (user?.role === "admin") {
-      return [
-        { name: "Admin Panel", path: "/admin" }
-      ];
+      return [{ name: t("nav.adminPanel"), path: "/admin" }];
     }
 
     if (user?.role === "doctor") {
-      return [
-        { name: t("nav.dashboard"), path: "/doctor-dashboard" },
-      ];
+      return [{ name: t("nav.dashboard"), path: "/doctor-dashboard" }];
     }
 
     // Role: user
@@ -62,7 +58,6 @@ const Navbar = () => {
     if (user?.role === "doctor") return "/doctor-dashboard";
     return "/dashboard";
   };
-
 
   return (
     <nav className="sticky top-0 z-40 w-full bg-white/80 backdrop-blur-md border-b border-gray-100">
@@ -82,7 +77,7 @@ const Navbar = () => {
               Rapi<span className="text-primary-600">Report</span>
             </span>
             <span className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] leading-none mt-1">
-              Precision Health Insights
+              {t("hero.mockTitle")}
             </span>
           </div>
         </Link>

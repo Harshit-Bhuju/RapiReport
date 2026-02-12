@@ -140,8 +140,8 @@ const RiskAnalysis = () => {
             type="info"
             insights={[
               {
-                en: "Prevention AI is currently 98.4% accurate in identifying potential health trends based on current data.",
-                ne: "प्रिभेन्सन AI हाल तपाईंको डेटाको आधारमा सम्भावित स्वास्थ्य प्रवृत्तिहरू पहिचान गर्न ९८.४% सटीक छ।",
+                en: t("risk.preventionAccuracyEn"),
+                ne: t("risk.preventionAccuracyNe"),
               },
             ]}
           />

@@ -67,13 +67,13 @@ const Profile = () => {
     try {
       const result = await updateProfile(formData);
       if (result.success) {
-        toast.success("Profile updated successfully!");
+        toast.success(t("profilePage.updateSuccess"));
         // Navigation removed as requested
       } else {
-        toast.error(result.message || "Failed to update profile");
+        toast.error(result.message || t("profilePage.updateError"));
       }
     } catch (error) {
-      toast.error("An error occurred while saving your profile.");
+      toast.error(t("profilePage.updateError"));
     } finally {
       setIsSaving(false);
     }
@@ -84,10 +84,10 @@ const Profile = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-black text-gray-900 tracking-tight">
-            Health Profile
+            {t("profilePage.title")}
           </h1>
           <p className="text-gray-500 font-medium mt-1">
-            Update your medical background and preferences
+            {t("profilePage.medicalInfo")}
           </p>
         </div>
         <div className="flex gap-3">
@@ -116,20 +116,20 @@ const Profile = () => {
                   <User className="w-5 h-5" />
                 </div>
                 <h2 className="text-lg font-bold text-gray-900">
-                  Basic Details
+                  {t("profilePage.basicDetails")}
                 </h2>
               </div>
 
               <div className="space-y-4">
                 <Input
-                  label="Full Name"
+                  label={t("profilePage.labels.name")}
                   value={formData.name}
                   onChange={(e) =>
                     setFormData({ ...formData, name: e.target.value })
                   }
                 />
                 <Input
-                  label="Age"
+                  label={t("profilePage.labels.age")}
                   type="number"
                   value={formData.age}
                   onChange={(e) =>
@@ -138,7 +138,7 @@ const Profile = () => {
                 />
                 <div>
                   <label className="text-sm font-bold text-gray-700 mb-2 block">
-                    Gender
+                    {t("profilePage.labels.gender")}
                   </label>
                   <div className="grid grid-cols-3 gap-2">
                     {["Male", "Female", "Other"].map((g) => (
@@ -152,19 +152,19 @@ const Profile = () => {
                             ? "bg-primary-50 border-primary-600 text-primary-700"
                             : "border-gray-50 hover:border-gray-100 text-gray-400",
                         )}>
-                        {g}
+                        {t(`common.${g.toLowerCase()}`)}
                       </button>
                     ))}
                   </div>
                 </div>
                 <div>
                   <label className="text-sm font-bold text-gray-700 mb-2 block">
-                    Preferred Language
+                    {t("profilePage.labels.language")}
                   </label>
                   <div className="grid grid-cols-2 gap-2">
                     {[
-                      { key: "ne", label: "Nepali" },
-                      { key: "en", label: "English" },
+                      { key: "ne", label: t("nav.nepali") },
+                      { key: "en", label: t("nav.english") },
                     ].map((l) => (
                       <button
                         key={l.key}
@@ -200,7 +200,7 @@ const Profile = () => {
                       <Heart className="w-5 h-5" />
                     </div>
                     <h2 className="text-lg font-bold text-gray-900">
-                      Medical Conditions
+                      {t("profilePage.labels.medicalConditions")}
                     </h2>
                   </div>
 
@@ -222,11 +222,11 @@ const Profile = () => {
 
                   <div className="space-y-2">
                     <label className="text-sm font-bold text-gray-700">
-                      Additional Details
+                      {t("profilePage.labels.additionalDetails")}
                     </label>
                     <textarea
                       className="w-full p-4 rounded-xl border-2 border-gray-50 focus:border-primary-500 focus:ring-0 transition-all min-h-[100px] resize-none text-sm"
-                      placeholder="Type any other conditions..."
+                      placeholder={t("profilePage.placeholderConditions")}
                       value={formData.customConditions}
                       onChange={(e) =>
                         setFormData({
@@ -245,7 +245,7 @@ const Profile = () => {
                       <ShieldCheck className="w-5 h-5" />
                     </div>
                     <h2 className="text-lg font-bold text-gray-900">
-                      Family History
+                      {t("profilePage.familyHistory")}
                     </h2>
                   </div>
 
@@ -267,11 +267,11 @@ const Profile = () => {
 
                   <div className="space-y-2">
                     <label className="text-sm font-bold text-gray-700">
-                      Other Family Issues
+                      {t("profilePage.labels.otherFamilyIssues")}
                     </label>
                     <textarea
                       className="w-full p-4 rounded-xl border-2 border-gray-50 focus:border-primary-500 focus:ring-0 transition-all min-h-[100px] resize-none text-sm"
-                      placeholder="Type parental history details..."
+                      placeholder={t("profilePage.placeholderParental")}
                       value={formData.customParentalHistory}
                       onChange={(e) =>
                         setFormData({
@@ -286,7 +286,7 @@ const Profile = () => {
 
               <div className="mt-10 pt-8 border-t border-gray-50 flex justify-end">
                 <Button onClick={handleSave} className="w-full sm:w-auto px-8">
-                  <Save className="w-4 h-4 mr-2" /> Save Changes
+                  <Save className="w-4 h-4 mr-2" /> {t("profilePage.save")}
                 </Button>
               </div>
             </CardBody>

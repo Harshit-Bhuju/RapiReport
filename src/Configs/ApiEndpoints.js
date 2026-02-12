@@ -73,6 +73,7 @@ const API = {
   AI_DIET_SUGGESTION: `${BASE_URL}/api/ai_diet_suggestion.php`,
   OCR_HISTORY_LIST: `${BASE_URL}/health/ocr_history_list.php`,
   OCR_HISTORY_DELETE: `${BASE_URL}/health/ocr_history_delete.php`,
+  OCR_HISTORY_SAVE: `${BASE_URL}/health/ocr_history_save.php`,
 
   // Optional Python OCR microservice (FastAPI/EasyOCR)
   OCR_UPLOAD: OCR_SERVICE_BASE_URL ? `${OCR_SERVICE_BASE_URL}/upload` : null,

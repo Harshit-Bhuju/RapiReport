@@ -7,6 +7,7 @@ import {
   Sparkles,
   ShieldCheck,
   Zap,
+  ClipboardList,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/store/authStore";
@@ -28,6 +29,8 @@ const Dashboard = () => {
     {
       label: t("dashboardPage.bloodTests"),
       value: "12",
+      icon: ClipboardList,
+      color: "text-primary-600",
       bg: "bg-primary-50",
     },
     {

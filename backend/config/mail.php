@@ -14,20 +14,17 @@ function sendResponseAndContinue($data)
 {
     $response = json_encode($data);
 
-    // Send response to client immediately
     header("Connection: close");
     header("Content-Type: application/json");
     header("Content-Length: " . strlen($response));
 
     echo $response;
 
-    // Flush all output buffers
     if (ob_get_level() > 0) {
         ob_end_flush();
     }
     flush();
 
-    // Continue processing even if user closes connection
     ignore_user_abort(true);
 }
 
@@ -49,10 +46,9 @@ function sendEmail($email, $subject, $custom_template)
         $mail->isHTML(true);
         $mail->Subject = $subject;
 
-        $email_template = $custom_template;
-
-        $mail->Body = $email_template;
+        $mail->Body = $custom_template;
         $mail->send();
+        return true;
     } catch (Exception $e) {
         error_log("Email Error: {$mail->ErrorInfo}");
         return false;
@@ -63,14 +59,14 @@ function sendOTPEmail($email, $otp, $type = 'signup')
 {
     $templates = [
         'signup' => [
-            'subject' => 'Your CultureConnect Account is Almost Ready',
-            'title' => 'Verify Your New CultureConnect Account',
+            'subject' => 'Your RapiReport Account is Almost Ready',
+            'title' => 'Verify Your New RapiReport Account',
             'message' => 'To complete your registration, please use the following verification code to confirm your email address:'
         ],
         'forgot' => [
             'subject' => 'Reset Your Password',
             'title' => 'Reset Your Password',
-            'message' => 'We received a request to reset the password for your CultureConnect account. Please use the following verification code:'
+            'message' => 'We received a request to reset the password for your RapiReport account. Please use the following verification code:'
         ]
     ];
 
@@ -80,9 +76,44 @@ function sendOTPEmail($email, $otp, $type = 'signup')
     return sendEmail($email, $config['subject'], $body);
 }
 
+function sendFamilyInvitationEmail($email, $inviterName, $relation, $magicLink)
+{
+    $subject = "Family Invitation from $inviterName on RapiReport";
+    $body = "
+    <html>
+    <head>
+        <style>
+            .container { font-family: Arial, sans-serif; line-height: 1.6; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px; }
+            .header { color: #4a90e2; font-size: 24px; font-weight: bold; text-align: center; }
+            .content { margin-top: 20px; }
+            .button { display: block; width: 200px; margin: 30px auto; padding: 15px; background-color: #4a90e2; color: #fff; text-decoration: none; text-align: center; border-radius: 5px; font-weight: bold; }
+            .footer { margin-top: 30px; font-size: 12px; color: #777; text-align: center; }
+        </style>
+    </head>
+    <body>
+        <div class='container'>
+            <div class='header'>RapiReport Family</div>
+            <div class='content'>
+                <p>Hello,</p>
+                <p><strong>$inviterName</strong> has invited you to join their family on RapiReport as their <strong>$relation</strong>.</p>
+                <p>By joining, you'll be able to share health reports and keep track of each other's wellness.</p>
+                <a href='$magicLink' class='button'>Accept Invitation</a>
+                <p>This link will automatically sign you in and connect you to $inviterName.</p>
+            </div>
+            <div class='footer'>
+                If you didn't expect this invitation, you can safely ignore this email.<br>
+                &copy; 2026 RapiReport Team
+            </div>
+        </div>
+    </body>
+    </html>";
+
+    return sendEmail($email, $subject, $body);
+}
+
 function sendAccountCreatedEmail($email)
 {
-    $subject = 'Your CultureConnect Account is Ready!';
+    $subject = 'Your RapiReport Account is Ready!';
     $body = getAccountCreatedTemplate();
 
     return sendEmail($email, $subject, $body);
@@ -90,7 +121,7 @@ function sendAccountCreatedEmail($email)
 
 function sendSellerAccountCreatedEmail($email)
 {
-    $subject = 'Your CultureConnect Seller Account is Ready!';
+    $subject = 'Your RapiReport Seller Account is Ready!';
     $body = getSellerAccountCreatedTemplate();
 
     return sendEmail($email, $subject, $body);
@@ -98,7 +129,7 @@ function sendSellerAccountCreatedEmail($email)
 
 function sendTeacherPendingVerificationEmail($email, $teacher_name)
 {
-    $subject = 'Your CultureConnect Teacher Account is Under Review';
+    $subject = 'Your RapiReport Teacher Account is Under Review';
     $body = getTeacherPendingVerificationTemplate($teacher_name);
 
     return sendEmail($email, $subject, $body);
@@ -106,7 +137,7 @@ function sendTeacherPendingVerificationEmail($email, $teacher_name)
 
 function sendTeacherVerifiedEmail($email, $teacher_name)
 {
-    $subject = 'Your CultureConnect Teacher Account is Verified! 🎉';
+    $subject = 'Your RapiReport Teacher Account is Verified! 🎉';
     $body = getTeacherVerifiedTemplate($teacher_name);
 
     return sendEmail($email, $subject, $body);
@@ -117,7 +148,7 @@ function sendAccountDeletedEmail($email)
     date_default_timezone_set('Asia/Kathmandu');
     $deleted_at = date('F j, Y, g:i A');
 
-    $subject = 'Your CultureConnect Account is Deleted';
+    $subject = 'Your RapiReport Account is Deleted';
     $body = getAccountDeletedTemplate($deleted_at);
 
     return sendEmail($email, $subject, $body);
@@ -149,7 +180,7 @@ function getOTPTemplate($otp, $title, $message)
         <p style='margin-top: 20px; font-size: 14px; color: #555;'>
             If you did not request this, please ignore this email. Your account is safe.
         </p>
-        <p>Thanks,<br>The <span style='color:red;'>CultureConnect</span> Team</p>
+        <p>Thanks,<br>The <span style='color:red;'>RapiReport</span> Team</p>
     </body>
     </html>";
 }
@@ -212,14 +243,14 @@ function getAccountCreatedTemplate()
     <body>
         <div class='container'>
             <div class='card'>
-                <div class='title'>Thank You for Joining CultureConnect!</div>
+                <div class='title'>Thank You for Joining RapiReport!</div>
                 <div class='message'>
-                    We're thrilled to have you on board. Your account has been successfully created, and you now have full access to explore, connect, and enjoy everything <strong>CultureConnect</strong> offers.
+                    We're thrilled to have you on board. Your account has been successfully created, and you now have full access to explore, connect, and enjoy everything <strong>RapiReport</strong> offers.
                 </div>
                 <div class='highlight-box'>Account Created Successfully 🎉</div>
                 <div class='footer'>
                     If you did not create this account, please contact our support immediately.<br>
-                    We're excited to have you with us!<br>- The <span style='color:red;'>CultureConnect</span> Team
+                    We're excited to have you with us!<br>- The <span style='color:red;'>RapiReport</span> Team
                 </div>
             </div>
         </div>
@@ -323,51 +354,49 @@ function getTeacherPendingVerificationTemplate($teacher_name)
     </head>
     <body>
         <div class='container'>
-            <div class='card'>
-                <div class='emoji'>⏳</div>
-                <div class='title'>Teacher Account Submitted for Review</div>
-                <div class='subtitle'>Welcome, {$teacher_name}!</div>
-                
-                <div class='message'>
-                    Thank you for registering as a teacher on <strong>CultureConnect</strong>! 
-                    We've received your application and our team is currently reviewing your credentials.
-                </div>
+            <div class='emoji'>⏳</div>
+            <div class='title'>Teacher Account Submitted for Review</div>
+            <div class='subtitle'>Welcome, {$teacher_name}!</div>
+            
+            <div class='message'>
+                Thank you for registering as a teacher on <strong>RapiReport</strong>! 
+                We've received your application and our team is currently reviewing your credentials.
+            </div>
 
-                <div class='status-box'>
-                    STATUS: PENDING VERIFICATION
-                </div>
+            <div class='status-box'>
+                STATUS: PENDING VERIFICATION
+            </div>
 
-                <div class='info-section'>
-                    <div class='info-title'>📋 What Happens Next?</div>
-                    <ul class='info-list'>
-                        <li>Our team will review your profile and certificates</li>
-                        <li>Verification typically takes <strong>5-7 business days</strong></li>
-                        <li>You'll receive an email once your account is verified</li>
-                        <li>After verification, you can start creating and publishing classes</li>
-                    </ul>
-                </div>
+            <div class='info-section'>
+                <div class='info-title'>📋 What Happens Next?</div>
+                <ul class='info-list'>
+                    <li>Our team will review your profile and certificates</li>
+                    <li>Verification typically takes <strong>5-7 business days</strong></li>
+                    <li>You'll receive an email once your account is verified</li>
+                    <li>After verification, you can start creating and publishing classes</li>
+                </ul>
+            </div>
 
-                <div class='info-section'>
-                    <div class='info-title'>✅ What We're Reviewing:</div>
-                    <ul class='info-list'>
-                        <li>Teaching credentials and certificates</li>
-                        <li>Profile information and bio</li>
-                        <li>Teaching category alignment</li>
-                        <li>Overall profile completeness</li>
-                    </ul>
-                </div>
+            <div class='info-section'>
+                <div class='info-title'>✅ What We're Reviewing:</div>
+                <ul class='info-list'>
+                    <li>Teaching credentials and certificates</li>
+                    <li>Profile information and bio</li>
+                    <li>Teaching category alignment</li>
+                    <li>Overall profile completeness</li>
+                </ul>
+            </div>
 
-                <div class='message' style='margin-top: 25px;'>
-                    <strong>Important:</strong> While your account is under review, you won't be able to create classes yet. 
-                    We'll notify you as soon as your account is verified!
-                </div>
+            <div class='message' style='margin-top: 25px;'>
+                <strong>Important:</strong> While your account is under review, you won't be able to create classes yet. 
+                We'll notify you as soon as your account is verified!
+            </div>
 
-                <div class='footer'>
-                    If you have any questions or need to update your application, please contact us at 
-                    <strong>support@cultureconnect.com</strong><br><br>
-                    Thank you for your patience!<br>
-                    - The <span style='color:#e11d48;'>CultureConnect</span> Team
-                </div>
+            <div class='footer'>
+                If you have any questions or need to update your application, please contact us at 
+                <strong>support@rapireport.com</strong><br><br>
+                Thank you for your patience!<br>
+                - The <span style='color:#e11d48;'>RapiReport</span> Team
             </div>
         </div>
     </body>
@@ -479,7 +508,7 @@ function getTeacherVerifiedTemplate($teacher_name)
                 
                 <div class='message'>
                     Great news! Your teacher account has been <strong>successfully verified</strong>. 
-                    You are now approved to teach on <strong>CultureConnect</strong> and can start creating classes right away!
+                    You are now approved to teach on <strong>RapiReport</strong> and can start creating classes right away!
                 </div>
 
                 <div class='highlight-box'>✅ ACCOUNT VERIFIED</div>
@@ -502,9 +531,9 @@ function getTeacherVerifiedTemplate($teacher_name)
 
                 <div class='footer'>
                     Ready to start your teaching journey? Log in to your account and create your first class!<br><br>
-                    If you need any help, our support team is here for you at <strong>support@cultureconnect.com</strong><br><br>
-                    Welcome to the CultureConnect teaching community!<br>
-                    - The <span style='color:#e11d48;'>CultureConnect</span> Team
+                    If you need any help, our support team is here for you at <strong>support@rapireport.com</strong><br><br>
+                    Welcome to the RapiReport teaching community!<br>
+                    - The <span style='color:#e11d48;'>RapiReport</span> Team
                 </div>
             </div>
         </div>
@@ -585,7 +614,7 @@ function getAccountDeletedTemplate($deleted_at)
         <div class='container'>
             <h1 class='headline'>Account Deleted — Irreversible</h1>
             <p class='sub'>
-                We're writing to confirm that your CultureConnect account has been <strong>permanently deleted</strong>.
+                We're writing to confirm that your RapiReport account has been <strong>permanently deleted</strong>.
                 All of your profile data, posts, and other associated information have been removed and cannot be recovered.
             </p>
             <div class='notice-box'>
@@ -598,8 +627,8 @@ function getAccountDeletedTemplate($deleted_at)
                 but in most cases deletions are final.
             </p>
             <p class='footer'>
-                Thank you for being part of <strong>CultureConnect</strong>.<br/>
-                — The <span style='color:#e11d48;'>CultureConnect</span> Team
+                Thank you for being part of <strong>RapiReport</strong>.<br/>
+                — The <span style='color:#e11d48;'>RapiReport</span> Team
             </p>
             <p style='margin-top:18px; font-size:13px; color:#9ca3af;'>
                 <em>Deleted on: {$deleted_at}</em>
@@ -666,14 +695,14 @@ function getSellerAccountCreatedTemplate()
     <body>
         <div class='container'>
             <div class='card'>
-                <div class='title'>Your CultureConnect Seller Account is Ready!</div>
+                <div class='title'>Your RapiReport Seller Account is Ready!</div>
                 <div class='message'>
-                    Congratulations! Your seller account has been successfully created. You can now list your products and manage your store efficiently on <strong>CultureConnect</strong>.
+                    Congratulations! Your seller account has been successfully created. You can now list your products and manage your store efficiently on <strong>RapiReport</strong>.
                 </div>
                 <div class='highlight-box'>Seller Account Successfully Created ✅</div>
                 <div class='footer'>
                     If you did not create this account, please contact our support immediately to secure your information.<br>
-                    Welcome aboard!<br>- The <span style='color:red;'>CultureConnect</span> Team
+                    Welcome aboard!<br>- The <span style='color:red;'>RapiReport</span> Team
                 </div>
             </div>
         </div>
@@ -681,11 +710,9 @@ function getSellerAccountCreatedTemplate()
 </html>";
 }
 
-// Add this function to your mail.php file
-
 function sendTeacherRejectedEmail($email, $teacher_name)
 {
-    $subject = 'CultureConnect Teacher Application Update';
+    $subject = 'RapiReport Teacher Application Update';
     $body = getTeacherRejectedTemplate($teacher_name);
 
     return sendEmail($email, $subject, $body);
@@ -787,23 +814,6 @@ function getTeacherRejectedTemplate($teacher_name)
     </head>
     <body>
         <div class='container'>
-            <div class='card'>
-                <div class='emoji'>❌</div>
-                <div class='title'>Teacher Application Update</div>
-                <div class='subtitle'>Hello, {$teacher_name}</div>
-                
-                <div class='message'>
-                    Thank you for your interest in becoming a teacher on <strong>CultureConnect</strong>. 
-                    After careful review, we regret to inform you that we are unable to approve your teacher application at this time.
-                </div>
-
-                <div class='status-box'>
-                    APPLICATION NOT APPROVED
-                </div>
-
-                <div class='info-section'>
-                    <div class='info-title'>📋 Common Reasons for Non-Approval:</div>
-                    <ul class='info-list'>
                         <li>Incomplete or unclear teaching credentials</li>
                         <li>Insufficient teaching experience documentation</li>
                         <li>Profile information needs more detail</li>

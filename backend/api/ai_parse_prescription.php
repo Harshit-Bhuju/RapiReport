@@ -55,22 +55,46 @@ if ($historyNote) {
 }
 $prompt .= "\n\nOutput only the JSON object.";
 
-$modelId = getenv("GEMINI_MODEL") ?: "gemini-1.5-flash";
-$url = "https://generativelanguage.googleapis.com/v1beta/models/{$modelId}:generateContent?key={$apiKey}";
-$postData = [
-    'contents' => [['parts' => [['text' => $prompt]]]],
-];
-$ch = curl_init($url);
-curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-curl_setopt($ch, CURLOPT_POST, true);
-curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($postData));
-curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-$response = curl_exec($ch);
-$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-curl_close($ch);
+// Your key supports gemini-2.x only (no gemini-pro or 1.5)
+$models = array_filter([
+    getenv("GEMINI_MODEL"),
+    "gemini-2.0-flash",
+    "gemini-2.0-flash-001",
+    "gemini-2.5-flash",
+    "gemini-2.0-flash-lite",
+    "gemini-flash-latest",
+]);
+$models = array_unique($models);
+
+$response = null;
+$httpCode = 0;
+$errBody = null;
+foreach ($models as $modelId) {
+    if (empty($modelId)) continue;
+    $url = "https://generativelanguage.googleapis.com/v1beta/models/{$modelId}:generateContent?key={$apiKey}";
+    $postData = ['contents' => [['parts' => [['text' => $prompt]]]]];
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($postData));
+    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    if ($httpCode === 200) break;
+    $errBody = json_decode($response, true);
+    if ($httpCode !== 429) break;
+}
 
 if ($httpCode !== 200) {
-    echo json_encode(['status' => 'error', 'message' => 'AI service error', 'meds' => [], 'alternatives' => [], 'clarityScore' => 0, 'warnings' => []]);
+    $errBody = $errBody ?? json_decode($response ?? '{}', true);
+    $rawMsg = $errBody['error']['message'] ?? 'AI service error';
+    if (strpos($rawMsg, 'quota') !== false || strpos($rawMsg, 'RESOURCE_EXHAUSTED') !== false || $httpCode === 429) {
+        preg_match('/retry in ([\d.]+)s/i', $rawMsg, $m);
+        $retrySec = isset($m[1]) ? (int) ceil((float) $m[1]) : 60;
+        $rawMsg = "API quota exceeded. Please wait {$retrySec} seconds and try again.";
+    }
+    echo json_encode(['status' => 'error', 'message' => $rawMsg, 'meds' => [], 'alternatives' => [], 'clarityScore' => 0, 'warnings' => []]);
     exit;
 }
 

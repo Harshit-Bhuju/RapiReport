@@ -102,11 +102,13 @@ def refine_with_gemini(raw_text: str) -> Tuple[Optional[str], Optional[str]]:
 
         genai.configure(api_key=GEMINI_KEY)
 
+        # Your key supports gemini-2.x only (no gemini-pro or 1.5)
         model_names = [
             os.getenv("GEMINI_MODEL"),
-            "gemini-1.5-flash",
             "gemini-2.0-flash",
-            "gemini-pro-latest",
+            "gemini-2.0-flash-001",
+            "gemini-2.5-flash",
+            "gemini-2.0-flash-lite",
             "gemini-flash-latest",
         ]
 

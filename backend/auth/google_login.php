@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/../config/session_config.php';
-include("../config/dbconnect.php");
-include("../config/header.php");
+require_once("../config/dbconnect.php");
+require_once("../config/header.php");
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Check if we got JSON data (common with Axios)

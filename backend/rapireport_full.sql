@@ -138,6 +138,7 @@ CREATE TABLE IF NOT EXISTS `prescriptions` (
   `doctor_user_id` int(11) DEFAULT NULL,
   `note` varchar(500) DEFAULT NULL,
   `raw_text` text DEFAULT NULL,
+  `image_path` varchar(255) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`),
   KEY `user_id` (`user_id`),

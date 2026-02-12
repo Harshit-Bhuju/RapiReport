@@ -1,5 +1,5 @@
 <?php
-include(__DIR__ . "/dbconnect.php");
+require_once(__DIR__ . "/dbconnect.php");
 // ngrok http 80 --pooling-enabled
 // ngrok http 5173 --pooling-enabled
 

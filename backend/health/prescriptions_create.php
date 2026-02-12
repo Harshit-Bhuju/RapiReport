@@ -70,8 +70,20 @@ if (isset($_POST['note']) || isset($_POST['rawText'])) {
     $meds = $input['meds'] ?? [];
 }
 
-$stmt = $conn->prepare("INSERT INTO prescriptions (user_id, note, raw_text, image_path) VALUES (?, ?, ?, ?)");
-$stmt->bind_param('isss', $user_id, $note, $raw_text, $image_path);
+// Check if image_path column exists (for older DB schemas)
+$hasImagePath = false;
+$cols = $conn->query("SHOW COLUMNS FROM prescriptions LIKE 'image_path'");
+if ($cols && $cols->num_rows > 0) {
+    $hasImagePath = true;
+}
+
+if ($hasImagePath) {
+    $stmt = $conn->prepare("INSERT INTO prescriptions (user_id, note, raw_text, image_path) VALUES (?, ?, ?, ?)");
+    $stmt->bind_param('isss', $user_id, $note, $raw_text, $image_path);
+} else {
+    $stmt = $conn->prepare("INSERT INTO prescriptions (user_id, note, raw_text) VALUES (?, ?, ?)");
+    $stmt->bind_param('iss', $user_id, $note, $raw_text);
+}
 if (!$stmt->execute()) {
     $stmt->close();
     $conn->close();

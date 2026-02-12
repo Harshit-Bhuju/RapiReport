@@ -1,11 +1,12 @@
 <?php
+
 /**
  * gemini_ocr.php — Uses Gemini Vision to read handwritten prescriptions.
  * Accepts a base64-encoded image, sends it to Gemini, returns extracted text + medicines.
  */
 require_once __DIR__ . '/cors.php';
 require_once __DIR__ . '/../config/session_config.php';
-include __DIR__ . '/../config/dbconnect.php';
+require_once __DIR__ . '/../config/dbconnect.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode(['status' => 'error', 'message' => 'Method not allowed']);
@@ -29,8 +30,8 @@ if (empty($imageBase64)) {
     exit;
 }
 
-$apiKey = getenv("GEMINI_API_KEY") ?: $_ENV["GEMINI_API_KEY"] ?? $_SERVER["GEMINI_API_KEY"] ?? 
-          getenv("VITE_GEMINI_API_KEY") ?: $_ENV["VITE_GEMINI_API_KEY"] ?? $_SERVER["VITE_GEMINI_API_KEY"] ?? "";
+$apiKey = getenv("GEMINI_API_KEY") ?: $_ENV["GEMINI_API_KEY"] ?? $_SERVER["GEMINI_API_KEY"] ??
+    getenv("VITE_GEMINI_API_KEY") ?: $_ENV["VITE_GEMINI_API_KEY"] ?? $_SERVER["VITE_GEMINI_API_KEY"] ?? "";
 
 if (empty($apiKey)) {
     $rootEnv = __DIR__ . '/../../.env';
@@ -76,42 +77,82 @@ Return a valid JSON object (no markdown, no code fences) with this structure:
 If you cannot read a word clearly, include your best guess with a ? suffix (e.g. "Amoxicillin?").
 Always return the JSON object even if no medicines are found (empty meds array).';
 
-$modelId = getenv("GEMINI_MODEL") ?: "gemini-1.5-flash";
-$url = "https://generativelanguage.googleapis.com/v1beta/models/{$modelId}:generateContent?key={$apiKey}";
+// Fallback models if primary hits quota (each has separate quota)
+// Your key supports: gemini-2.x, gemini-flash-latest. NOT: gemini-pro, gemini-pro-vision, gemini-1.5-flash
+$models = array_filter([
+    getenv("GEMINI_MODEL"),
+    "gemini-2.0-flash",
+    "gemini-2.0-flash-001",
+    "gemini-2.5-flash",
+    "gemini-2.0-flash-lite",
+    "gemini-flash-latest",
+]);
+$models = array_unique($models);
 
-$postData = [
-    'contents' => [[
-        'parts' => [
-            ['text' => $prompt],
-            [
-                'inline_data' => [
-                    'mime_type' => $mimeType,
-                    'data' => $imageBase64
+$response = null;
+$httpCode = 0;
+$errBody = null;
+
+foreach ($models as $modelId) {
+    if (empty($modelId)) continue;
+    $url = "https://generativelanguage.googleapis.com/v1beta/models/{$modelId}:generateContent?key={$apiKey}";
+    $postData = [
+        'contents' => [[
+            'parts' => [
+                ['text' => $prompt],
+                [
+                    'inline_data' => [
+                        'mime_type' => $mimeType,
+                        'data' => $imageBase64
+                    ]
                 ]
             ]
-        ]
-    ]]
-];
+        ]]
+    ];
 
-$ch = curl_init($url);
-curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-curl_setopt($ch, CURLOPT_POST, true);
-curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($postData));
-curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-curl_setopt($ch, CURLOPT_TIMEOUT, 30);
-$response = curl_exec($ch);
-$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-curl_close($ch);
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($postData));
+    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    if ($httpCode === 200) break;
+
+    $errBody = json_decode($response, true);
+    $errMsg = $errBody['error']['message'] ?? '';
+    // If quota exceeded (429), try next model; otherwise stop
+    if ($httpCode !== 429) break;
+}
 
 if ($httpCode !== 200) {
-    $errBody = json_decode($response, true);
-    $errMsg = $errBody['error']['message'] ?? 'Gemini API error';
-    echo json_encode(['status' => 'error', 'message' => $errMsg]);
+    $errBody = $errBody ?? json_decode($response ?? '{}', true);
+    $rawMsg = $errBody['error']['message'] ?? 'Gemini API error';
+    // User-friendly quota message
+    if (strpos($rawMsg, 'quota') !== false || strpos($rawMsg, 'RESOURCE_EXHAUSTED') !== false || $httpCode === 429) {
+        $retryMatch = [];
+        preg_match('/retry in ([\d.]+)s/i', $rawMsg, $retryMatch);
+        $retrySec = isset($retryMatch[1]) ? (int) ceil((float) $retryMatch[1]) : 60;
+        $userMsg = "API quota exceeded. Please wait {$retrySec} seconds and try again. Or check your plan at https://ai.google.dev/gemini-api/docs/rate-limits";
+    } else {
+        $userMsg = $rawMsg;
+    }
+    echo json_encode(['status' => 'error', 'message' => $userMsg]);
     exit;
 }
 
 $responseData = json_decode($response, true);
-$text = $responseData['candidates'][0]['content']['parts'][0]['text'] ?? '';
+$candidates = $responseData['candidates'] ?? [];
+$candidate = $candidates[0] ?? null;
+if (!$candidate || empty($candidate['content']['parts'])) {
+    $blockReason = $candidate['finishReason'] ?? $responseData['promptFeedback']['blockReason'] ?? 'No content generated';
+    echo json_encode(['status' => 'error', 'message' => 'Gemini returned no content. Reason: ' . $blockReason]);
+    exit;
+}
+$text = $candidate['content']['parts'][0]['text'] ?? '';
 $text = preg_replace('/^```\w*\s*|\s*```$/m', '', trim($text));
 $parsed = json_decode($text, true);
 
@@ -140,4 +181,3 @@ echo json_encode([
     'meds' => $meds,
     'historyId' => $stmt->insert_id
 ]);
-?>

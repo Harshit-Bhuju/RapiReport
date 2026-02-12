@@ -78,7 +78,6 @@ const DoctorProfile = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Preview card */}
         <div className="lg:col-span-1 order-2 lg:order-1">
           <Card className="border-none shadow-xl shadow-gray-100/50 sticky top-24">
             <CardBody className="p-6">
@@ -126,7 +125,6 @@ const DoctorProfile = () => {
           </Card>
         </div>
 
-        {/* Form */}
         <div className="lg:col-span-2 order-1 lg:order-2 space-y-6">
           <Card className="border-none shadow-xl shadow-gray-100/50">
             <CardBody className="p-6 sm:p-8">

@@ -33,8 +33,8 @@ import DoctorConsultation from "@/pages/DoctorConsultation";
 import QuestGame from "@/pages/QuestGame";
 import Family from "@/pages/Family";
 import Profile from "@/pages/Profile";
-import AdminPanel from "@/pages/AdminPanel";
-import DoctorProfile from "@/pages/DoctorProfile";
+import { AdminPanel, AdminLayout } from "@/pages/admin";
+import { DoctorProfile, DoctorLayout } from "@/pages/doctor";
 import ProfileSetup from "@/components/features/ProfileSetup";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 
@@ -206,9 +206,9 @@ function App() {
                 path="/admin"
                 element={
                   <ProtectedRoute>
-                    <DashboardLayout>
+                    <AdminLayout>
                       <AdminPanel />
-                    </DashboardLayout>
+                    </AdminLayout>
                   </ProtectedRoute>
                 }
               />
@@ -216,9 +216,9 @@ function App() {
                 path="/doctor-profile"
                 element={
                   <ProtectedRoute>
-                    <DashboardLayout>
+                    <DoctorLayout>
                       <DoctorProfile />
-                    </DashboardLayout>
+                    </DoctorLayout>
                   </ProtectedRoute>
                 }
               />

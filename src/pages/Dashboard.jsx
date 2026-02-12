@@ -296,7 +296,7 @@ const Dashboard = () => {
               <button
                 onClick={() => navigate("/reports")}
                 className="text-xs font-bold text-primary-600 hover:text-primary-700">
-                View All
+                {t("dashboardPage.viewAll")}
               </button>
             </div>
 
@@ -317,7 +317,9 @@ const Dashboard = () => {
                     variant={
                       displayReport.status === "normal" ? "success" : "error"
                     }>
-                    {displayReport.status === "normal" ? "Normal" : "Attention"}
+                    {displayReport.status === "normal"
+                      ? t("dashboardPage.statusNormal")
+                      : t("dashboardPage.statusAttention")}
                   </Badge>
                 </div>
                 <h3 className="text-lg font-bold text-gray-900 mb-1 line-clamp-1">
@@ -334,7 +336,7 @@ const Dashboard = () => {
                 </p>
 
                 <div className="flex items-center text-primary-600 font-bold text-sm mt-2 group-hover:translate-x-1 transition-transform">
-                  View Details
+                  {t("dashboardPage.viewDetails")}
                   <ChevronRight className="w-4 h-4 ml-1" />
                 </div>
               </CardBody>

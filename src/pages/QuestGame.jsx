@@ -16,10 +16,15 @@ import {
   Video,
   X,
   Activity,
+  ChevronRight,
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useTranslation } from "react-i18next";
+
 import { getAIBaseUrl } from "../config";
 
 const QuestGame = () => {
+  const { t } = useTranslation();
   const authUser = useAuthStore((s) => s.user);
   const {
     quests,
@@ -152,19 +157,18 @@ const QuestGame = () => {
             </button>
             <CheckCircle2 className="w-16 h-16 text-emerald-500 mx-auto mb-4" />
             <h2 className="text-3xl font-black text-gray-900 mb-2">
-              Quest Complete!
+              {t("quest.objectiveCleared")}
             </h2>
             <p className="text-gray-600 mb-4">
-              You earned{" "}
-              <span className="font-bold text-emerald-600">
-                +{lastQuestDone.points} points
-              </span>{" "}
-              for completing "{lastQuestDone.title}".
+              {t("quest.clearedSubtitle", {
+                exercise: lastQuestDone.title,
+                points: lastQuestDone.points,
+              })}
             </p>
             <button
               onClick={handleNextQuest}
               className="bg-indigo-600 text-white font-bold py-3 px-6 rounded-full text-lg hover:bg-indigo-700 transition-colors shadow-lg">
-              Next Quest
+              {t("quest.proceedNext")}
             </button>
           </div>
         </div>
@@ -175,10 +179,10 @@ const QuestGame = () => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-black text-gray-900 tracking-tight uppercase">
-              Quest Game
+              {t("quest.title")}
             </h1>
             <p className="text-gray-500 font-bold text-sm">
-              Tailored fitness challenges & location-based rewards.
+              {t("hero.subtitle")}
             </p>
           </div>
           <div className="flex gap-3">
@@ -186,7 +190,7 @@ const QuestGame = () => {
               <Target className="w-6 h-6 text-indigo-600" />
               <div>
                 <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest leading-tight">
-                  Today's Quests
+                  {t("quest.dailyQuests")}
                 </p>
                 <p className="font-black text-xl leading-none">
                   {user.questsToday || 0}/10
@@ -197,7 +201,7 @@ const QuestGame = () => {
               <Zap className="w-6 h-6 text-orange-500" />
               <div>
                 <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest leading-tight">
-                  Points
+                  {t("quest.pointsToday")}
                 </p>
                 <p className="font-black text-xl leading-none">
                   {user.pointsToday || 0}
@@ -208,7 +212,7 @@ const QuestGame = () => {
               <Footprints className="w-6 h-6 text-emerald-500" />
               <div>
                 <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest leading-tight">
-                  Walked
+                  {t("quest.walked")}
                 </p>
                 <p className="font-black text-xl leading-none">
                   {(distanceWalkedMeters / 1000).toFixed(2)} km
@@ -228,26 +232,26 @@ const QuestGame = () => {
               <div className="flex items-center gap-2 mb-4">
                 <Activity className="w-5 h-5 text-indigo-300" />
                 <h3 className="font-black uppercase text-xs tracking-widest">
-                  My Progress
+                  {t("quest.myProgress")}
                 </h3>
               </div>
               <div className="grid grid-cols-2 gap-4 mb-6">
                 <div className="bg-white/10 p-4 rounded-2xl">
                   <p className="text-[9px] font-black text-indigo-300 uppercase">
-                    Weekly Points
+                    {t("quest.weeklyPoints")}
                   </p>
                   <p className="text-xl font-black">{user.weeklyPoints || 0}</p>
                 </div>
                 <div className="bg-white/10 p-4 rounded-2xl">
                   <p className="text-[9px] font-black text-indigo-300 uppercase">
-                    Today's Cap
+                    {t("quest.dailyCap")}
                   </p>
                   <p className="text-xl font-black">{user.questsToday}/10</p>
                 </div>
               </div>
               <div className="space-y-3">
                 <p className="text-[9px] font-black text-indigo-300 uppercase mb-2">
-                  Daily Earnings (Last 7 Days)
+                  {t("quest.earningsLast7Days")}
                 </p>
                 {user.dailyEarnings && user.dailyEarnings.length > 0 ? (
                   user.dailyEarnings.map((day, i) => (
@@ -272,7 +276,7 @@ const QuestGame = () => {
                   ))
                 ) : (
                   <p className="text-indigo-400 text-[10px] font-bold">
-                    No points earned recently.
+                    {t("quest.noPointsRecent")}
                   </p>
                 )}
               </div>
@@ -282,7 +286,7 @@ const QuestGame = () => {
               <div className="flex items-center gap-2 mb-4">
                 <Target className="w-5 h-5 text-indigo-600" />
                 <h3 className="font-black text-gray-900 uppercase text-xs tracking-widest">
-                  Active Objective
+                  {t("quest.activeObjective")}
                 </h3>
               </div>
               <div className="space-y-4">
@@ -299,8 +303,8 @@ const QuestGame = () => {
                       <span
                         className={`text-[10px] font-black px-2 py-1 rounded-lg ${q.completed ? "bg-green-100 text-green-600" : "bg-indigo-50 text-indigo-600"}`}>
                         {q.completed
-                          ? "DONE"
-                          : `NEXT OBJECTIVE (+${q.points} PTS)`}
+                          ? t("quest.done")
+                          : t("quest.nextObjective", { points: q.points })}
                       </span>
                     </div>
                     <h4 className="font-bold text-gray-900 leading-tight">
@@ -311,7 +315,7 @@ const QuestGame = () => {
                     </p>
                     {currentLocation && q.lat && (
                       <p className="text-[9px] font-black text-indigo-500 uppercase mt-2">
-                        Direction:{" "}
+                        {t("quest.direction")}:{" "}
                         {Math.round(
                           distanceMeters(
                             currentLocation.lat,
@@ -320,13 +324,13 @@ const QuestGame = () => {
                             q.lng,
                           ),
                         )}
-                        m away
+                        m {t("quest.away")}
                       </p>
                     )}
                     {q.type === "walk" && (
                       <div className="mt-4 space-y-2">
                         <div className="flex justify-between text-[9px] font-black uppercase text-gray-400">
-                          <span>Progress</span>
+                          <span>{t("quest.progress")}</span>
                           <span>
                             {Math.round(distanceWalkedMeters)} /{" "}
                             {q.targetMeters}m
@@ -346,7 +350,7 @@ const QuestGame = () => {
                 ))}
                 {quests.length === 0 && (
                   <p className="text-gray-400 font-bold text-xs text-center py-4">
-                    No objective active. Check back tomorrow!
+                    {t("quest.noObjective")}
                   </p>
                 )}
               </div>
@@ -362,10 +366,10 @@ const QuestGame = () => {
         {/* Mobile Header */}
         <div className="px-4 pt-4">
           <h1 className="text-2xl font-black text-gray-900 tracking-tight uppercase">
-            Quest Game
+            {t("quest.title")}
           </h1>
           <p className="text-gray-500 font-medium text-sm">
-            Complete pushup challenges
+            {t("hero.subtitle")}
           </p>
         </div>
 
@@ -379,7 +383,7 @@ const QuestGame = () => {
           <div className="flex justify-around items-center bg-indigo-50/50 p-6 rounded-3xl gap-4">
             <div className="text-center">
               <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">
-                Quests
+                {t("quest.dailyQuests")}
               </p>
               <p className="text-3xl font-black text-gray-900">
                 {user.questsToday || 0}/10
@@ -388,7 +392,7 @@ const QuestGame = () => {
             <div className="w-px h-12 bg-gray-200" />
             <div className="text-center">
               <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-1">
-                Points
+                {t("quest.pointsToday")}
               </p>
               <p className="text-3xl font-black text-indigo-600">
                 {user.pointsToday || 0}
@@ -397,7 +401,7 @@ const QuestGame = () => {
             <div className="w-px h-12 bg-gray-200" />
             <div className="text-center">
               <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">
-                Walked
+                {t("quest.walked")}
               </p>
               <p className="text-2xl font-black text-emerald-600">
                 {(distanceWalkedMeters / 1000).toFixed(1)}km
@@ -428,7 +432,7 @@ const QuestGame = () => {
           <div className="space-y-6">
             <div>
               <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">
-                Places to Visit
+                {t("quest.placesToVisit")}
               </p>
               <div className="grid gap-3">
                 {placeQuests.map((q) => (
@@ -462,7 +466,7 @@ const QuestGame = () => {
                             q.lng,
                           ),
                         )}
-                        m away
+                        m {t("quest.away")}
                       </p>
                     )}
                   </button>
@@ -472,7 +476,7 @@ const QuestGame = () => {
 
             <div>
               <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">
-                Walk Progress
+                {t("quest.walkProgress")}
               </p>
               <div className="grid gap-3">
                 {walkQuests.map((q) => (
@@ -522,11 +526,11 @@ const QuestGame = () => {
             <div className="flex items-center gap-3">
               <MapPin className="w-6 h-6 animate-pulse" />
               <span className="font-black text-lg tracking-tight uppercase">
-                Arrived at {currentAvailableQuest.title}
+                {t("quest.arrivedAt", { title: currentAvailableQuest.title })}
               </span>
             </div>
             <p className="text-[10px] font-bold text-indigo-100 uppercase tracking-widest mt-1">
-              Click to Start Objective
+              {t("quest.clickToStart")}
             </p>
           </button>
         </div>
@@ -558,7 +562,7 @@ const QuestGame = () => {
                 <Zap className="w-6 h-6 text-emerald-600" />
                 <div className="text-left">
                   <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">
-                    Points Reward
+                    {t("quest.pointsReward")}
                   </p>
                   <p className="text-3xl font-black text-emerald-700">
                     +{engagedQuest.points}
@@ -573,7 +577,9 @@ const QuestGame = () => {
                 onClick={() => {
                   if (
                     window.confirm(
-                      `Skip this quest? You'll get 0 points but it will count toward your daily limit (${user.questsToday + 1}/10).`,
+                      t("quest.skipQuestConfirm", {
+                        current: user.questsToday + 1,
+                      }),
                     )
                   ) {
                     skipQuest(engagedQuest.id);
@@ -581,7 +587,7 @@ const QuestGame = () => {
                 }}
                 className="w-full py-4 bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-800 rounded-[2rem] font-bold uppercase text-sm tracking-widest transition-all border-2 border-gray-200 hover:border-gray-300 flex items-center justify-center gap-2">
                 <X className="w-5 h-5" />
-                ⏭️ Skip This Quest (0 Points)
+                {t("quest.skipQuest")}
               </button>
 
               {/* AI TRACKING BUTTON */}
@@ -590,10 +596,10 @@ const QuestGame = () => {
                   onClick={startAITracker}
                   className="w-full group relative flex items-center justify-center gap-4 py-6 bg-orange-600 hover:bg-orange-700 text-white rounded-[2rem] font-black uppercase tracking-widest transition-all shadow-xl shadow-orange-200">
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-white text-orange-600 px-4 py-1.5 rounded-full text-xs border-2 border-orange-200 font-black uppercase">
-                    ✨ Recommended
+                    ✨ {t("quest.recommended")}
                   </div>
                   <Video className="w-6 h-6 group-hover:scale-110 transition-transform" />
-                  <span>Start AI Tracking</span>
+                  <span>{t("quest.startAI")}</span>
                 </button>
               )}
 
@@ -614,7 +620,7 @@ const QuestGame = () => {
             </div>
 
             <p className="text-center text-xs text-gray-400 font-bold uppercase tracking-widest mt-6">
-              Quest {(user.questsToday || 0) + 1} of 10 Today
+              {t("quest.questLimit", { current: (user.questsToday || 0) + 1 })}
             </p>
           </div>
         </div>

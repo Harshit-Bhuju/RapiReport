@@ -466,19 +466,27 @@
     "questLimit": "Quest {{current}} of 10 Today"
   },
   "profilePage": {
-    "title": "My Profile",
+    "title": "Health Profile",
     "personalInfo": "Personal Information",
     "medicalInfo": "Medical Background",
     "familyHistory": "Family History",
     "edit": "Edit Profile",
     "save": "Save Changes",
+    "basicDetails": "Basic Details",
+    "updateSuccess": "Profile updated successfully!",
+    "updateError": "Failed to update profile",
+    "placeholderConditions": "Type any other conditions...",
+    "placeholderParental": "Type parental history details...",
     "labels": {
       "name": "Full Name",
       "email": "Email Address",
       "age": "Age",
       "gender": "Gender",
       "bloodGroup": "Blood Group",
-      "language": "Language Preference"
+      "language": "Language Preference",
+      "medicalConditions": "Medical Conditions",
+      "additionalDetails": "Additional Details",
+      "otherFamilyIssues": "Other Family Issues"
     }
   },
   "booking": {
@@ -490,7 +498,22 @@
     "confirm": "Confirm Booking",
     "success": "Booking Successful",
     "failed": "Booking Failed",
-    "back": "Back to Consultants"
+    "back": "Back to Consultants",
+    "noDoctor": "No Doctor Selected",
+    "noDoctorDesc": "Please select a doctor from the specialists list.",
+    "selectAppointment": "Select Appointment",
+    "chooseDate": "Choose Date",
+    "availableSlots": "Available Slots",
+    "consultationNotes": "Consultation Notes (Optional)",
+    "placeholderNotes": "Tell the doctor about your condition...",
+    "orderSummary": "Order Summary",
+    "consultationFee": "Consultation Fee",
+    "serviceCharge": "Service Charge",
+    "totalAmount": "Total Amount",
+    "securePayment": "Secure Payment via eSewa Gateway. Your transaction is protected.",
+    "payViaEsewa": "Pay via eSewa",
+    "rs": "Rs.",
+    "errorSlot": "Please select a date and time slot."
   },
   "footer": {
     "about": "About RapiReport",

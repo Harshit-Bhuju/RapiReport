@@ -130,7 +130,9 @@ const HealthPlanner = () => {
         <div className="lg:col-span-2 space-y-10">
           <section>
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-black text-gray-900">Your Routine</h2>
+              <h2 className="text-xl font-black text-gray-900">
+                {t("planner.routine")}
+              </h2>
             </div>
             <Card className="border-none shadow-sm">
               <CardBody className="p-8">
@@ -147,10 +149,10 @@ const HealthPlanner = () => {
             <div className="flex items-center justify-between mb-8">
               <div>
                 <h2 className="text-xl font-black text-gray-900">
-                  Family Circle
+                  {t("planner.familyCircle")}
                 </h2>
                 <p className="text-xs font-bold text-gray-400 mt-1 uppercase tracking-widest">
-                  Monitor loved ones
+                  {t("planner.monitor")}
                 </p>
               </div>
               <button
@@ -274,7 +276,7 @@ const HealthPlanner = () => {
                 </div>
               </div>
               <p className="text-center text-xs font-bold text-gray-500">
-                {t("planner.activitiesCompleted") || "Progress"}
+                {t("planner.activitiesCompleted")}
               </p>
             </CardBody>
           </Card>

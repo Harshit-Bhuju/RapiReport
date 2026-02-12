@@ -466,19 +466,27 @@
     "questLimit": "आजको १० मध्ये {{current}} खोज"
   },
   "profilePage": {
-    "title": "मेरो प्रोफाइल",
+    "title": "स्वास्थ्य प्रोफाइल",
     "personalInfo": "व्यक्तिगत जानकारी",
     "medicalInfo": "मेडिकल पृष्ठभूमि",
     "familyHistory": "पारिवारिक इतिहास",
     "edit": "प्रोफाइल सम्पादन",
     "save": "परिवर्तनहरू सुरक्षित गर्नुहोस्",
+    "basicDetails": "आधारभूत विवरणहरू",
+    "updateSuccess": "प्रोफाइल सफलतापूर्वक अपडेट गरियो!",
+    "updateError": "प्रोफाइल अपडेट गर्न असफल भयो",
+    "placeholderConditions": "अन्य कुनै अवस्थाहरू टाइप गर्नुहोस्...",
+    "placeholderParental": "अभिभावकको इतिहास विवरण टाइप गर्नुहोस्...",
     "labels": {
       "name": "पूरा नाम",
       "email": "इमेल ठेगाना",
       "age": "उमेर",
       "gender": "लिङ्ग",
       "bloodGroup": "रक्त समूह",
-      "language": "रुचाइएको भाषा"
+      "language": "रुचाइएको भाषा",
+      "medicalConditions": "चिकित्सा अवस्थाहरू",
+      "additionalDetails": "थप विवरणहरू",
+      "otherFamilyIssues": "अन्य पारिवारिक समस्याहरू"
     }
   },
   "booking": {
@@ -490,7 +498,22 @@
     "confirm": "बुकिङ पुष्टि गर्नुहोस्",
     "success": "बुकिङ सफल भयो",
     "failed": "बुकिङ असफल भयो",
-    "back": "विशेषज्ञहरूमा फर्कनुहोस्"
+    "back": "विशेषज्ञहरूमा फर्कनुहोस्",
+    "noDoctor": "कुनै डाक्टर चयन गरिएको छैन",
+    "noDoctorDesc": "कृपया विशेषज्ञ सूचीबाट डाक्टर चयन गर्नुहोस्।",
+    "selectAppointment": "अपोइन्टमेन्ट चयन गर्नुहोस्",
+    "chooseDate": "मिति छान्नुहोस्",
+    "availableSlots": "उपलब्ध स्लटहरू",
+    "consultationNotes": "परामर्श नोटहरू (ऐच्छिक)",
+    "placeholderNotes": "डाक्टरलाई आफ्नो अवस्थाको बारेमा बताउनुहोस्...",
+    "orderSummary": "अर्डर सारांश",
+    "consultationFee": "परामर्श शुल्क",
+    "serviceCharge": "सेवा शुल्क",
+    "totalAmount": "कुल रकम",
+    "securePayment": "eSewa गेटवे मार्फत सुरक्षित भुक्तानी। तपाईंको लेनदेन सुरक्षित छ।",
+    "payViaEsewa": "eSewa मार्फत भुक्तानी गर्नुहोस्",
+    "rs": "रु.",
+    "errorSlot": "कृपया मिति र समय स्लट चयन गर्नुहोस्।"
   },
   "footer": {
     "about": "RapiReport को बारेमा",

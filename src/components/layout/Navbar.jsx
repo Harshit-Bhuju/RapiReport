@@ -19,11 +19,14 @@ const Navbar = () => {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
-  const { isAuthenticated, logout, user } = useAuthStore();
+  const { isAuthenticated, logout, user, updateProfile } = useAuthStore();
 
   const toggleLanguage = () => {
     const newLang = i18n.language === "ne" ? "en" : "ne";
     i18n.changeLanguage(newLang);
+    if (isAuthenticated) {
+      updateProfile({ ...user, language: newLang });
+    }
     setIsOpen(false);
   };
 

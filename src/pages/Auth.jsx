@@ -7,6 +7,7 @@ import { useAuthStore } from "@/store/authStore";
 import { useGoogleLogin } from "@react-oauth/google";
 import { jwtDecode } from "jwt-decode";
 import axios from "axios";
+import api from "@/lib/api";
 import API from "@/Configs/ApiEndpoints";
 import Button from "@/components/ui/Button";
 import { Card, CardBody } from "@/components/ui/Card";
@@ -20,7 +21,7 @@ import {
 import logoIcon from "@/assets/logos/rapireport_logo.png";
 
 const Auth = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { login: setAuth } = useAuthStore();
   const [isLoading, setIsLoading] = useState(false);
@@ -40,24 +41,29 @@ const Auth = () => {
         const { sub, email, name, picture } = userInfo.data;
 
         // Send to our backend
-        const formData = new FormData();
-        formData.append("google_id", sub);
-        formData.append("email", email);
-        formData.append("username", name);
-        formData.append("picture", picture);
+        const response = await api.post(API.GOOGLE_LOGIN, {
+          google_id: sub,
+          email: email,
+          username: name,
+          picture: picture
+        });
 
-        const response = await axios.post(API.GOOGLE_LOGIN, formData);
-
-        if (response.data.status === "success") {
+        if (response.data.status === "success" || response.data.status === "not_null") {
           setAuth(response.data.user, tokenResponse.access_token);
-          toast.success(t("auth.welcome", { name: response.data.user.name }));
+          // Sync language preference
+          if (response.data.user.language) {
+            i18n.changeLanguage(response.data.user.language);
+          }
+          toast.success(`Welcome back, ${response.data.user.name}!`);
           navigate("/dashboard");
         } else {
-          toast.error(t("auth.loginFailed"));
+          console.error("Login Response Error Data:", response.data);
+          toast.error(response.data.message || "Login failed");
         }
       } catch (error) {
-        console.error("Google Login Error:", error);
-        toast.error(t("auth.googleLoginError"));
+        console.error("Google Login Error Object:", error);
+        console.error("Google Login Error Response:", error.response?.data);
+        toast.error(error.response?.data?.message || "Failed to login with Google");
       } finally {
         setIsLoading(false);
       }

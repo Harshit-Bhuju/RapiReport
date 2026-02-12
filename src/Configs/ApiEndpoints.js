@@ -15,6 +15,7 @@ export const BASE_URL = getBaseUrl();
 const API = {
     // Authentication
     GOOGLE_LOGIN: `${BASE_URL}/auth/google_login.php`,
+    UPDATE_PROFILE: `${BASE_URL}/auth/update_profile.php`,
     LOGOUT: `${BASE_URL}/auth/logout.php`,
 
     // Territory/Game APIs

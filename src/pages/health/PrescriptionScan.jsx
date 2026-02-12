@@ -137,8 +137,22 @@ const PrescriptionScan = () => {
       await worker.terminate();
       const t = (text || "").trim();
       setRawText(t);
-      if (!t) toast.error("OCR returned empty text. Try a clearer image.");
-      else toast.success("Scan complete. Review below.");
+      if (!t) {
+        toast.error("OCR returned empty text. Try a clearer image.");
+      } else {
+        toast.success("Scan complete. Review below.");
+        // Save to history
+        try {
+          await axios.post(
+            API.OCR_HISTORY_SAVE,
+            { raw_text: t, image_path: "" },
+            { withCredentials: true },
+          );
+          fetchOcrHistory();
+        } catch (saveErr) {
+          console.error("Failed to save scan to history", saveErr);
+        }
+      }
     } catch (e) {
       console.error(e);
       toast.error("OCR failed. Try again.");

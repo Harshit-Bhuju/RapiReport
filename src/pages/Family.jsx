@@ -16,6 +16,13 @@ import {
   VideoOff,
   Mic,
   MicOff,
+  Heart,
+  FileText,
+  Thermometer,
+  ShieldAlert,
+  Calendar,
+  Droplets,
+  X,
 } from "lucide-react";
 import Button from "@/components/ui/Button";
 import Modal from "@/components/ui/Modal";
@@ -34,6 +41,9 @@ const Family = () => {
   const [newMemberRelation, setNewMemberRelation] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
+  const [memberHealthData, setMemberHealthData] = useState({}); // { memberId: healthData }
+  const [isHealthModalOpen, setIsHealthModalOpen] = useState(false);
+  const [healthModalMember, setHealthModalMember] = useState(null);
   const [members, setMembers] = useState([]);
   const [isCallModalOpen, setIsCallModalOpen] = useState(false);
   const [callInfo, setCallInfo] = useState(null); // { member, roomId, callId, isCaller }
@@ -728,16 +738,51 @@ const Family = () => {
     }
   };
 
+  // Fetch health data for each member
+  useEffect(() => {
+    const fetchHealth = async () => {
+      const acceptedMembers = members.filter((m) => m.status === "accepted");
+      for (const m of acceptedMembers) {
+        if (memberHealthData[m.member_id]) continue; // already loaded
+        try {
+          const res = await axios.get(API.FAMILY_MEMBER_HEALTH, {
+            params: { member_id: m.member_id },
+            withCredentials: true,
+          });
+          if (res.data?.status === "success") {
+            setMemberHealthData((prev) => ({
+              ...prev,
+              [m.member_id]: res.data.data,
+            }));
+          }
+        } catch (err) {
+          console.error("Failed to fetch health for member", m.member_id, err);
+        }
+      }
+    };
+    if (members.length > 0) fetchHealth();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [members]);
+
+  const handleViewHealth = (cardMember) => {
+    // cardMember has id = member_id
+    const fullMember = members.find((m) => m.member_id === cardMember.id);
+    setHealthModalMember({
+      ...cardMember,
+      health: memberHealthData[cardMember.id] || null,
+      raw: fullMember,
+    });
+    setIsHealthModalOpen(true);
+  };
+
   // Map API data to FamilyMemberCard expected format
   const mapToCard = (m) => ({
     id: m.member_id,
     name: m.username || m.email,
     relation: m.relation || "Family",
-    healthScore: 80, // placeholder until real health data is linked
-    completedTasks: 0,
-    totalTasks: 0,
     alerts: m.status === "pending" ? ["Invitation pending"] : [],
     avatar: m.profile_picture || null,
+    health: memberHealthData[m.member_id] || null,
   });
 
   return (
@@ -770,6 +815,9 @@ const Family = () => {
             <FamilyMemberCard
               key={member.link_id}
               member={mapToCard(member)}
+              onViewHealth={
+                member.status === "accepted" ? handleViewHealth : undefined
+              }
               actions={
                 <>
                   <Button
@@ -1154,6 +1202,258 @@ const Family = () => {
           </div>
         </div>
       )}
+      {/* Health Details Modal */}
+      <Modal
+        isOpen={isHealthModalOpen}
+        onClose={() => {
+          setIsHealthModalOpen(false);
+          setHealthModalMember(null);
+        }}
+        title={
+          healthModalMember
+            ? t("family.healthDetails", {
+                name: healthModalMember.name,
+              }) || `${healthModalMember.name}'s Health`
+            : "Health Details"
+        }
+        size="lg">
+        {healthModalMember && healthModalMember.health && (
+          <div className="space-y-6">
+            {/* Header / Profile Summary */}
+            <div className="flex items-center gap-4 bg-primary-50 p-4 rounded-2xl border border-primary-100">
+              <div className="w-16 h-16 rounded-2xl bg-white flex items-center justify-center text-primary-500 shadow-sm shrink-0">
+                {healthModalMember.avatar ? (
+                  <img
+                    src={healthModalMember.avatar}
+                    alt={healthModalMember.name}
+                    className="w-full h-full rounded-2xl object-cover"
+                  />
+                ) : (
+                  <Users className="w-8 h-8" />
+                )}
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-black text-gray-900 leading-tight">
+                  {healthModalMember.name}
+                </h3>
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">
+                  {healthModalMember.relation}
+                </p>
+                <div className="flex gap-3 mt-2">
+                  {healthModalMember.health.profile?.age && (
+                    <span className="text-xs font-bold text-gray-600 bg-white px-2 py-1 rounded-lg border border-gray-100">
+                      {healthModalMember.health.profile.age} years
+                    </span>
+                  )}
+                  {healthModalMember.health.profile?.gender && (
+                    <span className="text-xs font-bold text-gray-600 bg-white px-2 py-1 rounded-lg border border-gray-100 capitalize">
+                      {healthModalMember.health.profile.gender}
+                    </span>
+                  )}
+                  {healthModalMember.health.profile?.bloodGroup && (
+                    <div className="flex items-center gap-1 text-xs font-bold text-error-600 bg-error-50 px-2 py-1 rounded-lg border border-error-100">
+                      <Droplets className="w-3 h-3" />
+                      {healthModalMember.health.profile.bloodGroup}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Medical Profile Section */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Conditions */}
+              <div className="bg-white border border-gray-100 p-4 rounded-2xl shadow-sm">
+                <div className="flex items-center gap-2 mb-3 text-gray-900 font-black">
+                  <Heart className="w-4 h-4 text-primary-500" />
+                  {t("family.conditions") || "Conditions"}
+                </div>
+                {healthModalMember.health.profile?.conditions ? (
+                  <p className="text-sm text-gray-600 leading-relaxed">
+                    {healthModalMember.health.profile.conditions}
+                  </p>
+                ) : (
+                  <p className="text-xs text-gray-400 italic">None listed</p>
+                )}
+              </div>
+
+              {/* Allergies */}
+              <div className="bg-white border border-gray-100 p-4 rounded-2xl shadow-sm">
+                <div className="flex items-center gap-2 mb-3 text-gray-900 font-black">
+                  <ShieldAlert className="w-4 h-4 text-warning-500" />
+                  {t("family.allergies") || "Allergies"}
+                </div>
+                {healthModalMember.health.profile?.allergies ? (
+                  <p className="text-sm text-gray-600 leading-relaxed">
+                    {healthModalMember.health.profile.allergies}
+                  </p>
+                ) : (
+                  <p className="text-xs text-gray-400 italic">None listed</p>
+                )}
+              </div>
+            </div>
+
+            {/* Parental History (Full width) */}
+            {healthModalMember.health.profile?.parentalHistory &&
+              (healthModalMember.health.profile.parentalHistory.length > 0 ||
+                healthModalMember.health.profile.customParentalHistory) && (
+                <div className="bg-white border border-gray-100 p-4 rounded-2xl shadow-sm">
+                  <div className="flex items-center gap-2 mb-3 text-gray-900 font-black">
+                    <Users className="w-4 h-4 text-purple-500" />
+                    {t("family.parentalHistory") || "Parental History"}
+                  </div>
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {healthModalMember.health.profile.parentalHistory.map(
+                      (h, i) => (
+                        <span
+                          key={i}
+                          className="px-2.5 py-1 rounded-lg bg-purple-50 text-purple-700 text-xs font-bold border border-purple-100">
+                          {h}
+                        </span>
+                      ),
+                    )}
+                  </div>
+                  {healthModalMember.health.profile.customParentalHistory && (
+                    <p className="text-xs text-gray-500 mt-2 border-t border-gray-50 pt-2">
+                      <span className="font-bold">Other:</span>{" "}
+                      {healthModalMember.health.profile.customParentalHistory}
+                    </p>
+                  )}
+                </div>
+              )}
+
+            {/* Recent Symptoms */}
+            <div>
+              <div className="flex items-center justify-between mb-3 px-1">
+                <div className="flex items-center gap-2 text-gray-900 font-black">
+                  <Thermometer className="w-4 h-4 text-error-500" />
+                  {t("family.recentSymptoms") || "Recent Symptoms"}
+                </div>
+                <span className="text-xs font-bold text-gray-400">
+                  Last {healthModalMember.health.symptoms?.length || 0} entries
+                </span>
+              </div>
+
+              {healthModalMember.health.symptoms &&
+              healthModalMember.health.symptoms.length > 0 ? (
+                <div className="space-y-3">
+                  {healthModalMember.health.symptoms.map((s) => (
+                    <div
+                      key={s.id}
+                      className="bg-white border border-gray-100 p-3 rounded-xl flex items-start justify-between shadow-sm">
+                      <div>
+                        <p className="text-sm font-bold text-gray-800">
+                          {s.text}
+                        </p>
+                        <div className="flex gap-2 mt-1">
+                          <span
+                            className={cn(
+                              "text-[10px] uppercase font-black px-1.5 py-0.5 rounded border",
+                              s.severity === "severe"
+                                ? "bg-error-50 text-error-600 border-error-100"
+                                : s.severity === "moderate"
+                                  ? "bg-warning-50 text-warning-600 border-warning-100"
+                                  : "bg-success-50 text-success-600 border-success-100",
+                            )}>
+                            {s.severity}
+                          </span>
+                          {s.vitals && s.vitals.temp && (
+                            <span className="text-[10px] font-bold text-gray-500 flex items-center gap-1">
+                              <Thermometer className="w-3 h-3" />
+                              {s.vitals.temp}°C
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <span className="text-[10px] font-medium text-gray-400 whitespace-nowrap bg-gray-50 px-2 py-1 rounded-lg">
+                        {new Date(s.date).toLocaleDateString()}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-6 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+                  <Thermometer className="w-6 h-6 text-gray-300 mx-auto mb-2" />
+                  <p className="text-xs text-gray-400 font-medium">
+                    No symptoms logged recently
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Recent Reports */}
+            <div>
+              <div className="flex items-center justify-between mb-3 px-1">
+                <div className="flex items-center gap-2 text-gray-900 font-black">
+                  <FileText className="w-4 h-4 text-blue-500" />
+                  {t("family.recentReports") || "Recent Reports"}
+                </div>
+                <span className="text-xs font-bold text-gray-400">
+                  Last {healthModalMember.health.reports?.length || 0} entries
+                </span>
+              </div>
+
+              {healthModalMember.health.reports &&
+              healthModalMember.health.reports.length > 0 ? (
+                <div className="space-y-3">
+                  {healthModalMember.health.reports.map((r) => (
+                    <div
+                      key={r.id}
+                      className="bg-white border border-gray-100 p-3 rounded-xl shadow-sm hover:border-primary-200 transition-colors">
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <h4 className="text-sm font-bold text-gray-800">
+                            {r.lab}
+                          </h4>
+                          <p className="text-xs text-gray-500 font-medium mt-0.5 uppercase tracking-wide">
+                            {r.type}
+                          </p>
+                        </div>
+                        <span className="text-[10px] font-medium text-gray-400 bg-gray-50 px-2 py-1 rounded-lg whitespace-nowrap">
+                          {new Date(r.date).toLocaleDateString()}
+                        </span>
+                      </div>
+
+                      {/* AI Summary Preview if available */}
+                      {r.summary && (
+                        <div className="bg-primary-50/50 p-2 rounded-lg border border-primary-100/50 mb-2">
+                          <p className="text-xs text-gray-600 line-clamp-2">
+                            {r.summary}
+                          </p>
+                        </div>
+                      )}
+
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={cn(
+                            "text-[10px] font-bold px-2 py-0.5 rounded-md",
+                            r.status === "Critical"
+                              ? "bg-error-100 text-error-700"
+                              : r.status === "Abnormal"
+                                ? "bg-warning-100 text-warning-700"
+                                : "bg-success-100 text-success-700",
+                          )}>
+                          {r.status || "Normal"}
+                        </span>
+                        <span className="text-[10px] font-medium text-gray-400">
+                          {r.testCount} tests
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-6 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+                  <FileText className="w-6 h-6 text-gray-300 mx-auto mb-2" />
+                  <p className="text-xs text-gray-400 font-medium">
+                    No reports uploaded recently
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 };

@@ -92,6 +92,7 @@ const API = {
   FAMILY_CALL_INCOMING: `${BASE_URL}/health/family_call_incoming.php`,
   FAMILY_CALL_STATUS: `${BASE_URL}/health/family_call_status.php`,
   FAMILY_CHAT: `${BASE_URL}/health/family_chat.php`,
+  FAMILY_MEMBER_HEALTH: `${BASE_URL}/health/family_member_health.php`,
 
   // Optional Python OCR microservice (FastAPI/EasyOCR)
   OCR_UPLOAD: OCR_SERVICE_BASE_URL ? `${OCR_SERVICE_BASE_URL}/upload` : null,

@@ -4,6 +4,10 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useAuthStore } from "@/store/authStore";
+import { useGoogleLogin } from "@react-oauth/google";
+import { jwtDecode } from "jwt-decode";
+import axios from "axios";
+import API from "@/Configs/ApiEndpoints";
 import Button from "@/components/ui/Button";
 import { Card, CardBody } from "@/components/ui/Card";
 import {
@@ -20,22 +24,49 @@ const Auth = () => {
   const { login: setAuth } = useAuthStore();
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleGoogleLogin = async () => {
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      setAuth(
-        {
-          name: "Prashant Dahal",
-          email: "prashant.dahal@gmail.com",
-          avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Prashant",
-        },
-        "fake-jwt-token",
-      );
-      toast.success("Welcome back, Prashant!");
-      navigate("/dashboard");
-    }, 1200);
-  };
+  const handleGoogleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      setIsLoading(true);
+      try {
+        // Get user info from Google using the access token
+        const userInfo = await axios.get(
+          "https://www.googleapis.com/oauth2/v3/userinfo",
+          {
+            headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
+          }
+        );
+
+        const { sub, email, name, picture } = userInfo.data;
+
+        // Send to our backend
+        const formData = new FormData();
+        formData.append("google_id", sub);
+        formData.append("email", email);
+        formData.append("username", name);
+        formData.append("picture", picture);
+
+        const response = await axios.post(API.GOOGLE_LOGIN, formData);
+
+        if (response.data.status === "success") {
+          setAuth(response.data.user, tokenResponse.access_token);
+          toast.success(`Welcome ${response.data.user.name}!`);
+          navigate("/dashboard");
+        } else {
+          toast.error(response.data.message || "Login failed");
+        }
+      } catch (error) {
+        console.error("Google Login Error:", error);
+        toast.error("Failed to login with Google");
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    onError: (error) => {
+      console.error("Login Failed:", error);
+      toast.error("Google Login Failed");
+    },
+  });
+
 
   const features = [
     {

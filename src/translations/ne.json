@@ -128,7 +128,9 @@
     "googleLoginFailed": "Google लगइन असफल भयो"
   },
   "dashboardPage": {
-    "greeting": "शुभ प्रभात, {{name}}!",
+    "greetingMorning": "शुभ प्रभात, {{name}}!",
+    "greetingAfternoon": "शुभ दिउँसो, {{name}}!",
+    "greetingEvening": "शुभ सन्ध्या, {{name}}!",
     "summary": "आज तपाईंको स्वास्थ्य बुद्धिमत्ताको सारांश यहाँ छ।",
     "analyzeNew": "नयाँ रिपोर्ट विश्लेषण",
     "bloodTests": "रक्त परीक्षणहरू",

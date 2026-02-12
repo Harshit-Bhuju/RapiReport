@@ -128,7 +128,9 @@
     "googleLoginFailed": "Google Login Failed"
   },
   "dashboardPage": {
-    "greeting": "Good morning, {{name}}!",
+    "greetingMorning": "Good morning, {{name}}!",
+    "greetingAfternoon": "Good afternoon, {{name}}!",
+    "greetingEvening": "Good evening, {{name}}!",
     "summary": "Here's a summary of your health intelligence today.",
     "analyzeNew": "Analyze New Report",
     "bloodTests": "Blood Tests",

@@ -120,13 +120,21 @@ const Dashboard = () => {
           status: "normal",
         };
 
+  const currentHour = new Date().getHours();
+  let greetingKey = "dashboardPage.greetingMorning";
+  if (currentHour >= 12 && currentHour < 17) {
+    greetingKey = "dashboardPage.greetingAfternoon";
+  } else if (currentHour >= 17 || currentHour < 5) {
+    greetingKey = "dashboardPage.greetingEvening";
+  }
+
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       {/* Welcome Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
           <h1 className="text-3xl md:text-4xl font-black text-gray-900 tracking-tight">
-            {t("dashboardPage.greeting", {
+            {t(greetingKey, {
               name: user?.name?.split(" ")[0] || "User",
             })}
             <span className="text-primary-600">.</span>

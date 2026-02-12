@@ -40,17 +40,32 @@ const ChatInterface = ({ isFullPage = false, initialPrescription = null }) => {
 
   // Handle initial prescription if provided
   useEffect(() => {
-    if (initialPrescription && initialPrescription.meds?.length > 0) {
-      const medNames = initialPrescription.meds.map((m) => m.name).join(", ");
-      const autoPrompt = `I have a scanned prescription with these medicines: ${medNames}. 
+    if (initialPrescription) {
+      let autoPrompt = "";
+
+      if (initialPrescription.meds?.length > 0) {
+        const medNames = initialPrescription.meds.map((m) => m.name).join(", ");
+        autoPrompt = `I have a scanned prescription with these medicines: ${medNames}. 
       Please provide:
       1. Common brand alternatives for each (available in Nepal).
       2. Estimated market prices in NPR for these brands.
       3. A brief explanation of how each medicine works (mechanism of action).
       
       Raw prescription context: ${initialPrescription.rawText}`;
+      } else if (initialPrescription.rawText) {
+        autoPrompt = `I have a scanned prescription text:
+            
+            "${initialPrescription.rawText}"
+            
+            Please analyze this text and provide:
+            1. Any identified medicines and their uses.
+            2. Common brand alternatives in Nepal if applicable.
+            3. General health advice based on this prescription text.`;
+      }
 
-      handleSend(autoPrompt);
+      if (autoPrompt) {
+        handleSend(autoPrompt);
+      }
     }
   }, [initialPrescription]);
 

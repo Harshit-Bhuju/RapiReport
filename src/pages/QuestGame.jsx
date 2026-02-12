@@ -114,38 +114,13 @@ const QuestGame = () => {
     }
   };
 
-  const startAITracker = async () => {
-    try {
-      await fetch(`${getAIBaseUrl()}/reset`);
-      setIsAITracking(true);
-      setAiReps(0);
-    } catch (e) {
-      toast.error("AI Tracker server not found. Please run tracker_server.py");
-    }
+  const startAITracker = () => {
+    // No Python server needed - AITracker handles everything client-side
+    setIsAITracking(true);
+    setAiReps(0);
   };
 
-  // Polling AI Status
-  useEffect(() => {
-    let interval;
-    if (isAITracking && engagedQuest) {
-      interval = setInterval(async () => {
-        try {
-          const res = await fetch(`${getAIBaseUrl()}/status`);
-          const data = await res.json();
-          setAiReps(data.push_ups);
-
-          if (data.push_ups >= (engagedQuest.targetReps || 20)) {
-            clearInterval(interval);
-            handleQuestComplete();
-            toast.success("Goal Reached! AI verified.");
-          }
-        } catch (e) {
-          console.error("AI Status Error", e);
-        }
-      }, 500);
-    }
-    return () => clearInterval(interval);
-  }, [isAITracking, engagedQuest]);
+  // No polling needed - AITracker component handles rep counting via callbacks
 
   const handleNextQuest = () => {
     setShowSuccess(false);

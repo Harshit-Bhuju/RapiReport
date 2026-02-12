@@ -1,250 +1,516 @@
-import React, { useRef, useEffect, useState, useCallback } from 'react';
-import Webcam from 'react-webcam';
-import { Pose } from '@mediapipe/pose';
-import { Camera } from '@mediapipe/camera_utils';
-import { Camera as CameraIcon, RotateCcw, X } from 'lucide-react';
+import React, { useRef, useEffect, useState } from 'react';
+import { X, Activity } from 'lucide-react';
 
 const AITracker = ({ targetReps, onRepCount, onTargetReached, onClose }) => {
-    const webcamRef = useRef(null);
-    const canvasRef = useRef(null);
-    const [cameraType, setCameraType] = useState('user'); // 'user' (front) or 'environment' (back)
-    const [reps, setReps] = useState(0);
-    const [feedback, setFeedback] = useState("Get Ready!");
-    const [progress, setProgress] = useState(0);
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
+  const [reps, setReps] = useState(0);
+  const [direction, setDirection] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [formFeedback, setFormFeedback] = useState('');
+  const animationFrameRef = useRef(null);
+  const poseRef = useRef(null);
+  const lastRepTime = useRef(0);
+  
+  const repsRef = useRef(0);
+  const directionRef = useRef(0);
 
-    // Logic State
-    const direction = useRef(0); // 0: down, 1: up
-    const count = useRef(0);
+  useEffect(() => {
+    repsRef.current = reps;
+  }, [reps]);
 
-    const calculateAngle = (a, b, c) => {
-        const radians = Math.atan2(c.y - b.y, c.x - b.x) - Math.atan2(a.y - b.y, a.x - b.x);
-        let angle = Math.abs(radians * 180.0 / Math.PI);
-        if (angle > 180.0) angle = 360 - angle;
-        return angle;
-    };
+  useEffect(() => {
+    directionRef.current = direction;
+  }, [direction]);
 
-    const onResults = useCallback((results) => {
-        if (!canvasRef.current || !webcamRef.current?.video) return;
+  // Load MediaPipe Pose
+  useEffect(() => {
+    const loadMediaPipe = async () => {
+      try {
+        const script1 = document.createElement('script');
+        script1.src = 'https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js';
+        script1.crossOrigin = 'anonymous';
+        document.body.appendChild(script1);
 
-        const videoWidth = webcamRef.current.video.videoWidth;
-        const videoHeight = webcamRef.current.video.videoHeight;
-        canvasRef.current.width = videoWidth;
-        canvasRef.current.height = videoHeight;
+        const script2 = document.createElement('script');
+        script2.src = 'https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js';
+        script2.crossOrigin = 'anonymous';
+        document.body.appendChild(script2);
 
-        const ctx = canvasRef.current.getContext('2d');
-        ctx.save();
-        ctx.clearRect(0, 0, videoWidth, videoHeight);
+        const script3 = document.createElement('script');
+        script3.src = 'https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js';
+        script3.crossOrigin = 'anonymous';
+        document.body.appendChild(script3);
 
-        // Draw landmarks if needed (simplified for performance)
-        // We mainly need logic
+        const script4 = document.createElement('script');
+        script4.src = 'https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js';
+        script4.crossOrigin = 'anonymous';
+        document.body.appendChild(script4);
 
-        if (results.poseLandmarks) {
-            const landmarks = results.poseLandmarks;
-
-            // keypoints: 11(L.Shoulder), 13(L.Elbow), 15(L.Wrist)
-            // keypoints: 12(R.Shoulder), 14(R.Elbow), 16(R.Wrist)
-
-            const leftShoulder = landmarks[11];
-            const leftElbow = landmarks[13];
-            const leftWrist = landmarks[15];
-
-            const rightShoulder = landmarks[12];
-            const rightElbow = landmarks[14];
-            const rightWrist = landmarks[16];
-
-            // Confidence check
-            if (leftShoulder.visibility > 0.5 && leftElbow.visibility > 0.5 && leftWrist.visibility > 0.5 &&
-                rightShoulder.visibility > 0.5 && rightElbow.visibility > 0.5 && rightWrist.visibility > 0.5) {
-
-                const angleL = calculateAngle(leftShoulder, leftElbow, leftWrist);
-                const angleR = calculateAngle(rightShoulder, rightElbow, rightWrist);
-
-                // Simple Average or Min logic
-                // Using the same logic as Python: 
-                // ~170 is up, ~90 is down
-
-                // Interpolate progress (160 -> 0%, 70 -> 100%)
-                const perL = Math.max(0, Math.min(100, (160 - angleL) / (160 - 70) * 100));
-                const perR = Math.max(0, Math.min(100, (160 - angleR) / (160 - 70) * 100));
-
-                // Use average for smoother UI
-                const avgPer = (perL + perR) / 2;
-                setProgress(avgPer);
-
-                // State Machine
-                // Down
-                if (perL >= 90 || perR >= 90) { // Relaxed checking (if either arm is down)
-                    if (direction.current === 0) {
-                        direction.current = 1;
-                        setFeedback("UP!");
-                    }
-                }
-
-                // Up
-                if (perL <= 20 && perR <= 20) {
-                    if (direction.current === 1) {
-                        direction.current = 0;
-                        count.current += 1;
-                        setReps(count.current);
-                        onRepCount(count.current);
-                        setFeedback("DOWN!");
-
-                        if (count.current >= targetReps) {
-                            onTargetReached();
-                        }
-                    }
-                }
-
-                // Drawing Overlay
-                // Draw Skeleton Lines
-                ctx.strokeStyle = '#00FF00';
-                ctx.lineWidth = 4;
-
-                const toX = (val) => val * videoWidth;
-                const toY = (val) => val * videoHeight;
-
-                ctx.beginPath();
-                ctx.moveTo(toX(leftShoulder.x), toY(leftShoulder.y));
-                ctx.lineTo(toX(leftElbow.x), toY(leftElbow.y));
-                ctx.lineTo(toX(leftWrist.x), toY(leftWrist.y));
-                ctx.stroke();
-
-                ctx.beginPath();
-                ctx.moveTo(toX(rightShoulder.x), toY(rightShoulder.y));
-                ctx.lineTo(toX(rightElbow.x), toY(rightElbow.y));
-                ctx.lineTo(toX(rightWrist.x), toY(rightWrist.y));
-                ctx.stroke();
-
-            } else {
-                setFeedback("Show Upper Body");
-            }
-        }
-        ctx.restore();
-    }, [targetReps, onRepCount, onTargetReached]);
-
-    useEffect(() => {
-        const pose = new Pose({
-            locateFile: (file) => {
-                return `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`;
-            }
+        await new Promise((resolve) => {
+          script4.onload = resolve;
         });
 
-        pose.setOptions({
-            modelComplexity: 0, // 0 = Lite (Fastest/Smoothest), 1 = Full, 2 = Heavy
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        if (window.Pose) {
+          const pose = new window.Pose({
+            locateFile: (file) => {
+              return `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`;
+            }
+          });
+
+          pose.setOptions({
+            modelComplexity: 1,
             smoothLandmarks: true,
+            enableSegmentation: false,
+            smoothSegmentation: false,
             minDetectionConfidence: 0.5,
             minTrackingConfidence: 0.5
-        });
+          });
 
-        pose.onResults(onResults);
-
-        if (webcamRef.current && webcamRef.current.video) {
-            const camera = new Camera(webcamRef.current.video, {
-                onFrame: async () => {
-                    if (webcamRef.current && webcamRef.current.video) {
-                        await pose.send({ image: webcamRef.current.video });
-                    }
-                },
-                // Let Camera Utils handle responsive sizes 
-                // width: 640,
-                // height: 480
-            });
-            camera.start();
+          pose.onResults(onResults);
+          poseRef.current = pose;
+          setIsLoading(false);
+        } else {
+          throw new Error('MediaPipe Pose not loaded');
         }
-    }, [onResults]);
-
-    const toggleCamera = () => {
-        setCameraType(prev => prev === 'user' ? 'environment' : 'user');
+      } catch (err) {
+        console.error('Error loading MediaPipe:', err);
+        setError('Failed to load AI tracker. Please refresh and try again.');
+        setIsLoading(false);
+      }
     };
 
+    loadMediaPipe();
+
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, []);
+
+  // Start camera
+  useEffect(() => {
+    const startCamera = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: 'user',
+            width: { ideal: 640 },
+            height: { ideal: 480 },
+            frameRate: { ideal: 30 }
+          },
+        });
+        
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          videoRef.current.onloadedmetadata = () => {
+            videoRef.current.play();
+            if (canvasRef.current) {
+              canvasRef.current.width = videoRef.current.videoWidth;
+              canvasRef.current.height = videoRef.current.videoHeight;
+            }
+          };
+        }
+      } catch (err) {
+        console.error('Error accessing camera:', err);
+        setError('Cannot access camera. Please grant permission.');
+      }
+    };
+    
+    startCamera();
+
+    return () => {
+      if (videoRef.current?.srcObject) {
+        videoRef.current.srcObject.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, []);
+
+  // Calculate angle between three points
+  const calculateAngle = (a, b, c) => {
+    const radians =
+      Math.atan2(c.y - b.y, c.x - b.x) - Math.atan2(a.y - b.y, a.x - b.x);
+    let angle = Math.abs((radians * 180.0) / Math.PI);
+    if (angle > 180) {
+      angle = 360 - angle;
+    }
+    return angle;
+  };
+
+  // Process pose results
+  const onResults = (results) => {
+    if (!canvasRef.current) return;
+
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    ctx.save();
+    ctx.scale(-1, 1);
+    ctx.translate(-canvas.width, 0);
+
+    if (videoRef.current) {
+      ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+    }
+
+    ctx.restore();
+
+    if (results.poseLandmarks) {
+      const landmarks = results.poseLandmarks;
+
+      const mirroredLandmarks = landmarks.map(lm => ({
+        ...lm,
+        x: 1 - lm.x
+      }));
+
+      drawConnections(ctx, mirroredLandmarks, canvas.width, canvas.height);
+
+      // Get all key points
+      const rightShoulder = mirroredLandmarks[12];
+      const rightElbow = mirroredLandmarks[14];
+      const rightWrist = mirroredLandmarks[16];
+      const leftShoulder = mirroredLandmarks[11];
+      const leftElbow = mirroredLandmarks[13];
+      const leftWrist = mirroredLandmarks[15];
+      const rightHip = mirroredLandmarks[24];
+      const leftHip = mirroredLandmarks[23];
+      const rightKnee = mirroredLandmarks[26];
+      const leftKnee = mirroredLandmarks[25];
+
+      // Check visibility threshold - IMPORTANT!
+      const visibilityThreshold = 0.6;
+      
+      if (rightShoulder?.visibility > visibilityThreshold && 
+          rightElbow?.visibility > visibilityThreshold && 
+          rightWrist?.visibility > visibilityThreshold && 
+          leftShoulder?.visibility > visibilityThreshold && 
+          leftElbow?.visibility > visibilityThreshold && 
+          leftWrist?.visibility > visibilityThreshold &&
+          rightHip?.visibility > visibilityThreshold && 
+          leftHip?.visibility > visibilityThreshold && 
+          rightKnee?.visibility > visibilityThreshold && 
+          leftKnee?.visibility > visibilityThreshold) {
+        
+        const toPixel = (lm) => ({
+          x: lm.x * canvas.width,
+          y: lm.y * canvas.height
+        });
+
+        const rShoulder = toPixel(rightShoulder);
+        const rElbow = toPixel(rightElbow);
+        const rWrist = toPixel(rightWrist);
+        const lShoulder = toPixel(leftShoulder);
+        const lElbow = toPixel(leftElbow);
+        const lWrist = toPixel(leftWrist);
+        const rHip = toPixel(rightHip);
+        const lHip = toPixel(leftHip);
+        const rKnee = toPixel(rightKnee);
+        const lKnee = toPixel(leftKnee);
+
+        // Calculate arm angles
+        const rightArmAngle = calculateAngle(rShoulder, rElbow, rWrist);
+        const leftArmAngle = calculateAngle(lShoulder, lElbow, lWrist);
+        const avgArmAngle = (rightArmAngle + leftArmAngle) / 2;
+
+        // Calculate body angles (shoulder-hip-knee)
+        const rightBodyAngle = calculateAngle(rShoulder, rHip, rKnee);
+        const leftBodyAngle = calculateAngle(lShoulder, lHip, lKnee);
+        const avgBodyAngle = (rightBodyAngle + leftBodyAngle) / 2;
+
+        // STRICT PLANK CHECK - Body must be straight
+        const isPlank = avgBodyAngle > 160 && avgBodyAngle < 200;
+
+        // Calculate vertical movement (shoulder height change)
+        const avgShoulderY = (rShoulder.y + lShoulder.y) / 2;
+        
+        // Store initial shoulder height
+        if (!window.initialShoulderY) {
+          window.initialShoulderY = avgShoulderY;
+        }
+        
+        // Calculate vertical displacement
+        const verticalMovement = Math.abs(avgShoulderY - window.initialShoulderY);
+        
+        // Must have significant vertical movement (at least 50 pixels)
+        const hasVerticalMovement = verticalMovement > 50;
+
+        // Draw angles
+        drawAngle(ctx, rElbow, rightArmAngle);
+        drawAngle(ctx, lElbow, leftArmAngle);
+        
+        // Draw body angle with color feedback
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+        ctx.fillRect(rHip.x - 40, rHip.y - 50, 80, 35);
+        ctx.fillStyle = isPlank ? '#00FF00' : '#FF0000';
+        ctx.font = 'bold 18px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(Math.round(avgBodyAngle) + '°', rHip.x, rHip.y - 22);
+
+        // STRICT PUSHUP DETECTION
+        const now = Date.now();
+        const currentDirection = directionRef.current;
+        const currentReps = repsRef.current;
+
+        let feedback = '';
+
+        // MUST HAVE ALL CONDITIONS:
+        // 1. Body in plank position
+        // 2. Significant vertical movement
+        // 3. Proper arm angles
+        
+        if (!isPlank) {
+          feedback = '⚠️ Keep body straight (plank position)!';
+          setFormFeedback(feedback);
+        } else if (!hasVerticalMovement) {
+          feedback = '⚠️ Lower your body more!';
+          setFormFeedback(feedback);
+        } else {
+          // DOWN PHASE: Arms bend DEEPLY + body straight + vertical drop
+          if (avgArmAngle < 80 && // STRICTER: < 80 instead of < 90
+              currentDirection === 0 && 
+              now - lastRepTime.current > 800) { // LONGER DEBOUNCE: 800ms
+            
+            setDirection(1);
+            directionRef.current = 1;
+            feedback = '✓ Going down...';
+            setFormFeedback(feedback);
+          }
+          // UP PHASE: Arms extend FULLY + body straight + return to height
+          else if (avgArmAngle > 165 && // STRICTER: > 165 instead of > 160
+                   currentDirection === 1 && 
+                   now - lastRepTime.current > 800) {
+            
+            setDirection(0);
+            directionRef.current = 0;
+            lastRepTime.current = now;
+            
+            const newReps = currentReps + 1;
+            setReps(newReps);
+            repsRef.current = newReps;
+            onRepCount(newReps);
+            
+            feedback = '✅ REP COUNTED!';
+            setFormFeedback(feedback);
+
+            // Reset initial shoulder height for next rep
+            window.initialShoulderY = avgShoulderY;
+
+            if (newReps >= targetReps) {
+              setTimeout(() => onTargetReached(), 500);
+            }
+          } else if (currentDirection === 1) {
+            feedback = '↑ Push up fully!';
+            setFormFeedback(feedback);
+          } else {
+            feedback = '✓ Ready - Go down';
+            setFormFeedback(feedback);
+          }
+        }
+
+        drawProgressBar(ctx, canvas.width, canvas.height, avgArmAngle, isPlank);
+      } else {
+        // Not all body parts visible
+        setFormFeedback('⚠️ Show full body in frame');
+      }
+    }
+
+    drawUI(ctx, canvas.width, canvas.height);
+  };
+
+  const drawConnections = (ctx, landmarks, width, height) => {
+    const connections = [
+      [11, 12], // shoulders
+      [11, 13], [13, 15], // left arm
+      [12, 14], [14, 16], // right arm
+      [11, 23], [12, 24], // torso
+      [23, 24], // hips
+      [23, 25], [25, 27], // left leg
+      [24, 26], [26, 28], // right leg
+    ];
+
+    ctx.strokeStyle = '#00D9FF';
+    ctx.lineWidth = 4;
+    ctx.lineCap = 'round';
+
+    connections.forEach(([start, end]) => {
+      const startLm = landmarks[start];
+      const endLm = landmarks[end];
+
+      if (startLm && endLm && startLm.visibility > 0.5 && endLm.visibility > 0.5) {
+        ctx.beginPath();
+        ctx.moveTo(startLm.x * width, startLm.y * height);
+        ctx.lineTo(endLm.x * width, endLm.y * height);
+        ctx.stroke();
+      }
+    });
+
+    landmarks.forEach((lm, i) => {
+      if (lm.visibility > 0.5 && [11, 12, 13, 14, 15, 16, 23, 24, 25, 26].includes(i)) {
+        ctx.fillStyle = '#FF6B6B';
+        ctx.beginPath();
+        ctx.arc(lm.x * width, lm.y * height, 8, 0, 2 * Math.PI);
+        ctx.fill();
+        ctx.strokeStyle = '#FFFFFF';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+    });
+  };
+
+  const drawAngle = (ctx, point, angle) => {
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+    ctx.fillRect(point.x - 40, point.y - 50, 80, 35);
+    
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = 'bold 22px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText(Math.round(angle) + '°', point.x, point.y - 22);
+  };
+
+  const drawProgressBar = (ctx, width, height, angle, isPlank) => {
+    const progress = Math.min(100, Math.max(0, ((160 - angle) / 70) * 100));
+    
+    const barX = 20;
+    const barY = 100;
+    const barWidth = 30;
+    const barHeight = 300;
+
+    ctx.fillStyle = 'rgba(40, 40, 40, 0.9)';
+    ctx.fillRect(barX, barY, barWidth, barHeight);
+
+    // Color based on form
+    ctx.fillStyle = isPlank ? '#00D9FF' : '#FF6B6B';
+    const fillHeight = (progress / 100) * barHeight;
+    ctx.fillRect(barX, barY + barHeight - fillHeight, barWidth, fillHeight);
+
+    ctx.strokeStyle = '#FFFFFF';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(barX, barY, barWidth, barHeight);
+
+    const barXRight = width - 50;
+    ctx.fillStyle = 'rgba(40, 40, 40, 0.9)';
+    ctx.fillRect(barXRight, barY, barWidth, barHeight);
+    ctx.fillStyle = isPlank ? '#00D9FF' : '#FF6B6B';
+    ctx.fillRect(barXRight, barY + barHeight - fillHeight, barWidth, fillHeight);
+    ctx.strokeStyle = '#FFFFFF';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(barXRight, barY, barWidth, barHeight);
+  };
+
+  const drawUI = (ctx, width, height) => {
+    const currentReps = repsRef.current;
+    const currentDirection = directionRef.current;
+
+    ctx.fillStyle = 'rgba(40, 40, 40, 0.95)';
+    ctx.fillRect(0, 0, width, 70);
+    ctx.fillRect(0, height - 80, width, 80);
+
+    ctx.fillStyle = '#00D9FF';
+    ctx.font = 'bold 56px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText(currentReps, width / 2 - 60, height - 25);
+
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = 'bold 28px Arial';
+    ctx.fillText('REPS', width / 2 + 60, height - 25);
+
+    ctx.font = 'bold 22px Arial';
+    ctx.textAlign = 'left';
+    ctx.fillText(`Target: ${targetReps}`, 20, 45);
+    
+    ctx.textAlign = 'right';
+    ctx.fillStyle = currentDirection === 1 ? '#00FF00' : '#FFD700';
+    ctx.fillText(currentDirection === 1 ? '↓ DOWN' : '↑ UP', width - 20, 45);
+  };
+
+  useEffect(() => {
+    if (!poseRef.current || !videoRef.current || isLoading) return;
+
+    const sendFrame = async () => {
+      if (videoRef.current && videoRef.current.readyState === 4) {
+        await poseRef.current.send({ image: videoRef.current });
+      }
+      animationFrameRef.current = requestAnimationFrame(sendFrame);
+    };
+
+    sendFrame();
+
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, [isLoading]);
+
+  if (error) {
     return (
-        <div className="relative w-full h-full bg-black rounded-3xl overflow-hidden flex flex-col">
-            {isLoading && (
-                <div className="absolute inset-0 flex items-center justify-center bg-gray-900 z-50">
-                    <div className="text-center">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
-                        <p className="text-white font-bold animate-pulse">Starting Camera...</p>
-                        <p className="text-xs text-gray-400 mt-2">Please allow camera access</p>
-                    </div>
-                </div>
-            )}
-
-            {cameraError && (
-                <div className="absolute inset-0 flex items-center justify-center bg-gray-900 z-50 p-6 text-center">
-                    <div>
-                        <X className="w-12 h-12 text-red-500 mx-auto mb-4" />
-                        <p className="text-white font-bold text-lg">Camera Error</p>
-                        <p className="text-gray-400 text-sm mt-2">{cameraError}</p>
-                        <p className="text-gray-500 text-xs mt-4">Check permissions. Try using Chrome or Safari.</p>
-                    </div>
-                </div>
-            )}
-
-            <Webcam
-                ref={webcamRef}
-                audio={false}
-                mirrored={cameraType === 'user'}
-                screenshotFormat="image/jpeg"
-                videoConstraints={{
-                    facingMode: cameraType
-                    // Removed width/height to let browser decide native res (fixes black screen)
-                }}
-                onUserMedia={() => setIsLoading(false)}
-                onUserMediaError={(e) => {
-                    console.error("Camera Error:", e);
-                    setIsLoading(false);
-                    setCameraError("Camera failed to load.");
-                }}
-                className="absolute inset-0 w-full h-full object-cover z-0"
-            />
-            <canvas
-                ref={canvasRef}
-                className={`absolute inset-0 w-full h-full object-cover z-10 ${cameraType === 'user' ? 'scale-x-[-1]' : ''}`}
-            />
-
-            {/* TOP BAR */}
-            <div className="absolute top-4 left-4 right-4 z-40 flex justify-between items-start">
-                <div className="bg-black/60 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/10">
-                    <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest">REPS</p>
-                    <p className="text-3xl font-black text-white leading-none">{reps} / {targetReps}</p>
-                </div>
-
-                <button
-                    onClick={onClose}
-                    className="p-3 bg-red-500 hover:bg-red-600 rounded-full text-white shadow-lg transition-all">
-                    <X size={20} />
-                </button>
-            </div>
-
-            {/* BOTTOM BAR CONTROLS */}
-            <div className="absolute bottom-6 left-6 right-6 z-40 flex flex-col items-center gap-4">
-
-                {/* Feedback Text */}
-                <div className="bg-black/60 backdrop-blur-md px-8 py-3 rounded-2xl border border-white/10">
-                    <p className="text-xl font-black text-orange-400 uppercase tracking-widest drop-shadow-sm">{feedback}</p>
-                </div>
-
-                {/* Camera Controls */}
-                <div className="flex gap-4">
-                    <button
-                        onClick={toggleCamera}
-                        className="flex items-center gap-2 px-6 py-4 bg-indigo-600 hover:bg-indigo-700 rounded-full text-white shadow-xl shadow-indigo-500/40 transition-all active:scale-95 border-2 border-indigo-400/50">
-                        <RotateCcw size={20} />
-                        <span className="font-bold uppercase text-xs tracking-widest">Switch Camera</span>
-                    </button>
-                </div>
-            </div>
-
-
-            {/* Progress Bar Side */}
-            <div className="absolute right-2 top-1/2 -translate-y-1/2 h-48 w-2 bg-gray-800 rounded-full overflow-hidden">
-                <div
-                    className="absolute bottom-0 w-full bg-green-500 transition-all duration-200"
-                    style={{ height: `${progress}%` }}
-                />
-            </div>
+      <div className="relative w-full h-full bg-black flex items-center justify-center">
+        <div className="text-center p-8">
+          <X className="w-16 h-16 text-red-500 mx-auto mb-4" />
+          <p className="text-white font-bold mb-2">{error}</p>
+          <button
+            onClick={onClose}
+            className="mt-4 px-6 py-3 bg-red-500 text-white rounded-lg font-bold"
+          >
+            Close
+          </button>
         </div>
+      </div>
     );
+  }
+
+  return (
+    <div className="relative w-full h-full bg-black overflow-hidden">
+      {isLoading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black z-20">
+          <div className="text-center">
+            <Activity className="w-12 h-12 text-white animate-pulse mx-auto mb-4" />
+            <p className="text-white font-bold text-lg">Loading AI Tracker...</p>
+            <p className="text-gray-400 text-sm mt-2">Initializing pose detection...</p>
+          </div>
+        </div>
+      )}
+
+      <video
+        ref={videoRef}
+        autoPlay
+        playsInline
+        muted
+        className="hidden"
+      />
+
+      <canvas
+        ref={canvasRef}
+        className="absolute inset-0 w-full h-full object-cover"
+      />
+
+      <button
+        onClick={onClose}
+        className="absolute top-4 right-4 z-30 p-3 bg-red-500 rounded-full text-white hover:bg-red-600 transition-all shadow-lg"
+      >
+        <X className="w-6 h-6" />
+      </button>
+
+      <div className="absolute top-4 left-4 z-30 bg-black/90 px-5 py-3 rounded-xl border-2 border-cyan-400">
+        <p className="text-white font-black text-lg">
+          {reps} / {targetReps}
+        </p>
+        <p className="text-cyan-400 text-xs font-bold uppercase tracking-wider">Pushups</p>
+      </div>
+
+      {/* Form Feedback */}
+      {formFeedback && (
+        <div className="absolute top-24 left-1/2 transform -translate-x-1/2 z-30 bg-black/90 px-6 py-3 rounded-xl border-2 border-cyan-400">
+          <p className="text-white font-bold text-lg text-center">{formFeedback}</p>
+        </div>
+      )}
+    </div>
+  );
 };
 
 export default AITracker;

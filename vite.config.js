@@ -15,9 +15,9 @@ export default defineConfig({
     allowedHosts: true,
     proxy: {
       "/api": {
-        target: "http://localhost/api",
+        target: "http://localhost/RapiReport/backend",
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, "/v1"),
+        rewrite: (path) => path.replace(/^\/api/, ""),
       },
     },
   },

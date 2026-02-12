@@ -62,10 +62,37 @@
 
 @layer utilities {
   .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary-600 to-primary-800;
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary-600 to-indigo-600;
   }
 
   .glass-morphism {
-    @apply bg-white/70 backdrop-blur-md border border-white/20 shadow-xl;
+    @apply bg-white/70 backdrop-blur-xl border border-white/20 shadow-2xl;
+  }
+
+  .mesh-gradient {
+    background-color: #f8fafc;
+    background-image:
+      radial-gradient(at 0% 0%, hsla(217, 100%, 97%, 1) 0, transparent 50%),
+      radial-gradient(at 50% 0%, hsla(215, 100%, 95%, 1) 0, transparent 50%),
+      radial-gradient(at 100% 0%, hsla(213, 100%, 97%, 1) 0, transparent 50%),
+      radial-gradient(at 40% 40%, hsla(212, 100%, 96%, 1) 0, transparent 40%),
+      radial-gradient(at 90% 80%, hsla(211, 100%, 95%, 1) 0, transparent 50%),
+      radial-gradient(at 10% 90%, hsla(210, 100%, 97%, 1) 0, transparent 50%);
+  }
+
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  @keyframes float {
+
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+
+    50% {
+      transform: translateY(-20px);
+    }
   }
 }

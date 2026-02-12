@@ -1,94 +1,68 @@
-import api from "./api";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 /**
- * Chat service for AI health consultation.
+ * RapiReport AI Chat Service
+ * Handles health-related consultations using Google Gemini AI.
  */
+
+const rawApiKey = import.meta.env.VITE_GEMINI_API_KEY;
+const apiKey = rawApiKey ? rawApiKey.trim() : null;
+
+if (!apiKey) {
+  console.error("VITE_GEMINI_API_KEY is missing in environment variables.");
+}
+
+const genAI = new GoogleGenerativeAI(apiKey || "");
+
+const SYSTEM_PROMPT = `
+You are RapiReport AI, a specialized Health Intelligence Assistant for Nepal. 
+Your goal is to help users understand their medical reports and provide general health guidance.
+
+### KEY GUIDELINES:
+1. **Scope**: Only answer health, wellness, and medical report related questions. 
+2. **Medical Disclaimer**: Always include a disclaimer that you are an AI and not a substitute for professional medical advice.
+3. **Tone**: Helpful, empathetic, and professional.
+4. **Bilingual**: Support both English and Nepali. Respond in the language used by the user.
+5. **Report Analysis**: Explain medical values in simple terms based on standard ranges, but advise consulting a doctor.
+6. **Restrictions**: Politely decline non-health related queries.
+
+### DISCLAIMERS:
+- EN: "Note: This is an AI-generated health insight. Please consult a qualified doctor for medical diagnosis and treatment."
+- NE: "द्रष्टव्य: यो AI द्वारा उत्पन्न स्वास्थ्य जानकारी हो। कृपया चिकित्सा निदान र उपचारको लागि योग्य डाक्टरसँग परामर्श गर्नुहोस्।"
+`;
+
 const chatService = {
   /**
-   * Send a message to the AI and get a response.
+   * Send a message to the Gemini AI and get a response.
    * @param {string} message - The user's message.
    * @param {string} language - The current language ('en' or 'ne').
    * @returns {Promise<Object>} The AI response.
    */
   sendMessage: async (message, language = "en") => {
     try {
-      // In a real implementation, this would call the backend API
-      // The vite proxy is set up to rewrite /api to /v1
-      // and target http://localhost/api
-
-      const response = await api.post("/chat", {
-        message,
-        language,
+      // Use a current model: gemini-2.5-flash (stable) or set VITE_GEMINI_MODEL in .env to override
+      const modelId = import.meta.env.VITE_GEMINI_MODEL || "gemini-2.5-flash";
+      const model = genAI.getGenerativeModel({
+        model: modelId,
+        systemInstruction: SYSTEM_PROMPT,
       });
+
+      const result = await model.generateContent(message);
+      const response = await result.response;
+      const text = response.text();
+
+      if (!text) throw new Error("Received empty response from AI.");
 
       return {
         text: {
-          en:
-            response.data?.reply?.en ||
-            response.data?.reply ||
-            "I am processing your request.",
-          ne:
-            response.data?.reply?.ne ||
-            response.data?.reply ||
-            "म तपाईंको अनुरोध प्रक्रिया गर्दैछु।",
+          en: text,
+          ne: text,
         },
       };
     } catch (error) {
-      console.error("Chat Service Error:", error);
-
-      // Fallback/Simulation for development if backend is not ready
-      return new Promise((resolve) => {
-        setTimeout(() => {
-          resolve(chatService.getMockResponse(message, language));
-        }, 1500);
-      });
+      console.error("Gemini AI Chat Error:", error);
+      throw error;
     }
-  },
-
-  /**
-   * Mock response generator for development.
-   */
-  getMockResponse: (message, language) => {
-    const lowerMsg = message.toLowerCase();
-
-    if (
-      lowerMsg.includes("hello") ||
-      lowerMsg.includes("namaste") ||
-      lowerMsg.includes("hi")
-    ) {
-      return {
-        text: {
-          en: "Hello! I am your AI Health Consultant. How can I assist you with your health reports or questions today?",
-          ne: "नमस्ते! म तपाईंको एआई स्वास्थ्य परामर्शदाता हुँ। आज म तपाईंलाई तपाईंको स्वास्थ्य रिपोर्ट वा प्रश्नहरूमा कसरी मद्दत गर्न सक्छु?",
-        },
-      };
-    }
-
-    if (lowerMsg.includes("sugar") || lowerMsg.includes("diabetes")) {
-      return {
-        text: {
-          en: "Based on general health guidelines, if your blood sugar is high, you should monitor your carbohydrate intake and ensure regular exercise. Have you checked your latest reports?",
-          ne: "सामान्य स्वास्थ्य दिशानिर्देशहरूका अनुसार, यदि तपाईंको ब्लड सुगर उच्च छ भने, तपाईंले कार्बोहाइड्रेटको मात्रा कम गर्नुपर्छ र नियमित व्यायाम गर्नुपर्छ। के तपाईंले आफ्नो पछिल्लो रिपोर्टहरू जाँच गर्नुभयो?",
-        },
-      };
-    }
-
-    if (lowerMsg.includes("pain") || lowerMsg.includes("headache")) {
-      return {
-        text: {
-          en: "Persistent pain should always be evaluated by a professional. In the meantime, ensure you are well-hydrated and resting. When did the pain start?",
-          ne: "लगातार दुखाइलाई सधैं विशेषज्ञले मूल्याङ्कन गर्नुपर्छ। यस बीचमा, पर्याप्त पानी पिउनुहोस् र आराम गर्नुहोस्। दुखाइ कहिले सुरु भयो?",
-        },
-      };
-    }
-
-    // Default response
-    return {
-      text: {
-        en: "I've noted your question. To give you the best advice, could you provide more details or refer to a specific test from your reports?",
-        ne: "मैले तपाईंको प्रश्न नोट गरें। तपाईंलाई राम्रो सल्लाह दिनको लागि, के तपाईं थप विवरण दिन सक्नुहुन्छ वा आफ्नो रिपोर्टको कुनै विशेष परीक्षण उल्लेख गर्न सक्नुहुन्छ?",
-      },
-    };
   },
 };
 

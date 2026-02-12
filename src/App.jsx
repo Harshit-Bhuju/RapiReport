@@ -7,6 +7,7 @@ import {
 } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { useAuthStore } from "./store/authStore";
+import { useEffect } from "react";
 
 // Layout
 import Navbar from "@/components/layout/Navbar";
@@ -29,12 +30,23 @@ import RiskAnalysis from "@/pages/RiskAnalysis";
 import HealthPlanner from "@/pages/HealthPlanner";
 import NotFound from "@/pages/NotFound";
 import DoctorConsultation from "@/pages/DoctorConsultation";
-import TerritoryGame from "@/pages/TerritoryGame";
+import QuestGame from "@/pages/QuestGame";
 import Family from "@/pages/Family";
+import Profile from "@/pages/Profile";
+import { AdminPanel, AdminLayout } from "@/pages/admin";
+import { DoctorProfile, DoctorLayout } from "@/pages/doctor";
 import ProfileSetup from "@/components/features/ProfileSetup";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 
 function App() {
+  const { checkAuth, isAuthenticated } = useAuthStore();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      checkAuth();
+    }
+  }, []);
+
   return (
     <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <div className="flex flex-col min-h-screen">
@@ -150,11 +162,11 @@ function App() {
                 }
               />
               <Route
-                path="/territory-game"
+                path="/quest-game"
                 element={
                   <ProtectedRoute>
                     <DashboardLayout>
-                      <TerritoryGame />
+                      <QuestGame />
                     </DashboardLayout>
                   </ProtectedRoute>
                 }
@@ -180,6 +192,36 @@ function App() {
                 }
               />
 
+              <Route
+                path="/profile"
+                element={
+                  <ProtectedRoute>
+                    <DashboardLayout>
+                      <Profile />
+                    </DashboardLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin"
+                element={
+                  <ProtectedRoute>
+                    <AdminLayout>
+                      <AdminPanel />
+                    </AdminLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/doctor-profile"
+                element={
+                  <ProtectedRoute>
+                    <DoctorLayout>
+                      <DoctorProfile />
+                    </DoctorLayout>
+                  </ProtectedRoute>
+                }
+              />
               <Route path="/404" element={<NotFound />} />
               <Route path="*" element={<Navigate to="/404" replace />} />
             </Routes>

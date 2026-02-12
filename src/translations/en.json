@@ -22,7 +22,6 @@
     "title": "Save 8 Hours Monthly on Health Tracking",
     "subtitle": "Convert messy diagnostic data into professional reports. AI-powered medical insights for Nepal.",
     "cta": "Start Free Version",
-    "demo": "Watch Demo",
     "badge": "🚀 RapiReport v1.0 is Live",
     "noCard": "No credit card required",
     "trustedLabs": "Trusted by 50+ Labs",
@@ -60,6 +59,28 @@
     "partnerLabs": "Partner Labs",
     "userRating": "User Rating"
   },
+  "howItWorks": {
+    "title": "Your Health Journey in 3 Steps",
+    "subtitle": "How RapiReport Works",
+    "step1": {
+      "title": "Secure Upload",
+      "desc": "Upload your lab reports in PDF or image format safely."
+    },
+    "step2": {
+      "title": "AI Analysis",
+      "desc": "Our specialized AI reads and interprets the medical data."
+    },
+    "step3": {
+      "title": "Personalized Insights",
+      "desc": "Get a simple, actionable report with tailored health tips."
+    }
+  },
+  "trust": {
+    "title": "Trusted Healthcare Intelligence",
+    "security": "Military-grade 256-bit encryption for all health data.",
+    "hipaa": "HIPAA Compliant",
+    "encryption": "End-to-end Encrypted"
+  },
   "auth": {
     "login": "Login to Your Account",
     "signup": "Create New Account",
@@ -89,7 +110,11 @@
     "termsAgree": "By continuing, you agree to our",
     "terms": "Terms of Service",
     "privacy": "Privacy Policy",
-    "and": "and"
+    "and": "and",
+    "welcome": "Welcome {{name}}!",
+    "loginFailed": "Login failed",
+    "googleLoginError": "Failed to login with Google",
+    "googleLoginFailed": "Google Login Failed"
   },
   "dashboardPage": {
     "greeting": "Good morning, {{name}}!",
@@ -168,7 +193,16 @@
     "todaysProgress": "Today's Progress",
     "activitiesCompleted": "2 of 3 activities completed",
     "healthTip": "Health Tip",
-    "tipText": "Consistency is more important than intensity when starting new routines."
+    "tipText": "Consistency is more important than intensity when starting new routines.",
+    "addMember": {
+      "title": "Add Family Member",
+      "nameLabel": "Name",
+      "relationLabel": "Relation",
+      "save": "Save",
+      "cancel": "Cancel",
+      "placeholderName": "e.g. Mom",
+      "placeholderRelation": "e.g. Mother"
+    }
   },
   "notFound": {
     "title": "Page Not Found",
@@ -272,7 +306,9 @@
       "step3": {
         "title": "Family History",
         "subtitle": "Risk assessment based on parental complications.",
-        "parentsLabel": "Parents' medical complications?"
+        "parentsLabel": "Parents' medical complications?",
+        "customLabel": "Other Family Health Issues",
+        "customPlaceholder": "Type any other parental health conditions or details here..."
       },
       "finish": "Complete Setup"
     }
@@ -282,5 +318,19 @@
     "bp": "BP",
     "heart": "Heart Disease",
     "thyroid": "Thyroid"
+  },
+  "family": {
+    "title": "Family Health",
+    "subtitle": "Monitor and support your family's health journey",
+    "addMember": "Add Member",
+    "chat": "Chat",
+    "call": "Call",
+    "addMemberEmpty": "Add Family Member",
+    "inviteViaEmail": "Invite via Email",
+    "modalDescription": "Enter the email address of the family member you want to add. We will send them an invitation to join your family circle.",
+    "emailLabel": "Email Address",
+    "emailPlaceholder": "member@example.com",
+    "sendInvitation": "Send Invitation",
+    "chatWith": "Chat with {{name}}"
   }
 }

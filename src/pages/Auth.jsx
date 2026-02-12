@@ -7,6 +7,7 @@ import { useAuthStore } from "@/store/authStore";
 import { useGoogleLogin } from "@react-oauth/google";
 import { jwtDecode } from "jwt-decode";
 import axios from "axios";
+import api from "@/lib/api";
 import API from "@/Configs/ApiEndpoints";
 import Button from "@/components/ui/Button";
 import { Card, CardBody } from "@/components/ui/Card";
@@ -17,9 +18,10 @@ import {
   ArrowRight,
   Sparkles,
 } from "lucide-react";
+import logoIcon from "@/assets/logos/rapireport_logo.png";
 
 const Auth = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { login: setAuth } = useAuthStore();
   const [isLoading, setIsLoading] = useState(false);
@@ -33,40 +35,49 @@ const Auth = () => {
           "https://www.googleapis.com/oauth2/v3/userinfo",
           {
             headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
-          }
+          },
         );
 
         const { sub, email, name, picture } = userInfo.data;
 
         // Send to our backend
-        const formData = new FormData();
-        formData.append("google_id", sub);
-        formData.append("email", email);
-        formData.append("username", name);
-        formData.append("picture", picture);
+        const response = await api.post(API.GOOGLE_LOGIN, {
+          google_id: sub,
+          email: email,
+          username: name,
+          picture: picture
+        });
 
-        const response = await axios.post(API.GOOGLE_LOGIN, formData);
-
-        if (response.data.status === "success") {
+        if (response.data.status === "success" || response.data.status === "not_null") {
           setAuth(response.data.user, tokenResponse.access_token);
-          toast.success(`Welcome ${response.data.user.name}!`);
-          navigate("/dashboard");
+          // Sync language preference
+          if (response.data.user.language) {
+            i18n.changeLanguage(response.data.user.language);
+          }
+          toast.success(`Welcome back, ${response.data.user.name}!`);
+
+          if (response.data.user.profileComplete) {
+            navigate("/dashboard");
+          } else {
+            navigate("/profile-setup");
+          }
         } else {
+          console.error("Login Response Error Data:", response.data);
           toast.error(response.data.message || "Login failed");
         }
       } catch (error) {
-        console.error("Google Login Error:", error);
-        toast.error("Failed to login with Google");
+        console.error("Google Login Error Object:", error);
+        console.error("Google Login Error Response:", error.response?.data);
+        toast.error(error.response?.data?.message || "Failed to login with Google");
       } finally {
         setIsLoading(false);
       }
     },
     onError: (error) => {
       console.error("Login Failed:", error);
-      toast.error("Google Login Failed");
+      toast.error(t("auth.googleLoginFailed"));
     },
   });
-
 
   const features = [
     {
@@ -169,8 +180,12 @@ const Auth = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="text-center mb-10">
-            <div className="lg:hidden inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-primary-600 text-white font-black text-2xl shadow-xl shadow-primary-200 mb-6 mx-auto">
-              R
+            <div className="lg:hidden mb-6 mx-auto">
+              <img
+                src={logoIcon}
+                alt="RapiReport"
+                className="w-16 h-16 rounded-2xl shadow-xl shadow-primary-100"
+              />
             </div>
             <h2 className="text-3xl font-black text-gray-900 mb-3 tracking-tight">
               {t("auth.createTitle")}

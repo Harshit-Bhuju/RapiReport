@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuthStore } from "@/store/authStore";
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 import Button from "@/components/ui/Button";
 import { Card, CardBody } from "@/components/ui/Card";
 import Input from "@/components/ui/Input";
@@ -15,10 +16,11 @@ import {
 import { cn } from "@/lib/utils";
 
 const ProfileSetup = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { updateProfile } = useAuthStore();
   const [step, setStep] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     age: "",
@@ -26,8 +28,26 @@ const ProfileSetup = () => {
     conditions: [],
     customConditions: "",
     parentalHistory: [],
-    language: "en",
+    customParentalHistory: "",
+    language: i18n.language || "en",
   });
+
+  useEffect(() => {
+    if (useAuthStore.getState().user) {
+      const user = useAuthStore.getState().user;
+      setFormData(prev => ({
+        ...prev,
+        name: user.name || prev.name,
+        age: user.age || prev.age,
+        gender: user.gender || prev.gender,
+        conditions: Array.isArray(user.conditions) ? user.conditions : prev.conditions,
+        customConditions: user.customConditions || prev.customConditions,
+        parentalHistory: Array.isArray(user.parentalHistory) ? user.parentalHistory : prev.parentalHistory,
+        customParentalHistory: user.customParentalHistory || prev.customParentalHistory,
+        language: user.language || i18n.language
+      }));
+    }
+  }, [i18n.language]);
 
   const conditions = [
     { key: "diabetes", label: t("conditions.diabetes") },
@@ -45,9 +65,20 @@ const ProfileSetup = () => {
     }));
   };
 
-  const handleFinish = () => {
-    updateProfile(formData);
-    navigate("/dashboard");
+  const handleFinish = async () => {
+    setIsLoading(true);
+    const result = await updateProfile(formData);
+    setIsLoading(false);
+
+    if (result.success) {
+      if (formData.language) {
+        i18n.changeLanguage(formData.language);
+      }
+      toast.success(t("profile.setup.success") || "Profile setup complete!");
+      navigate("/dashboard");
+    } else {
+      toast.error(result.message || "Failed to update profile");
+    }
   };
 
   return (
@@ -145,9 +176,10 @@ const ProfileSetup = () => {
                       ].map((l) => (
                         <button
                           key={l.key}
-                          onClick={() =>
-                            setFormData({ ...formData, language: l.key })
-                          }
+                          onClick={() => {
+                            setFormData({ ...formData, language: l.key });
+                            i18n.changeLanguage(l.key);
+                          }}
                           className={cn(
                             "py-2 rounded-xl border-2 font-bold text-xs transition-all",
                             formData.language === l.key
@@ -237,7 +269,7 @@ const ProfileSetup = () => {
                   <label className="text-sm font-bold text-gray-700 mb-3 block">
                     {t("profile.setup.step3.parentsLabel")}
                   </label>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-2 mb-6">
                     {conditions.map((c) => (
                       <button
                         key={c.key}
@@ -251,6 +283,23 @@ const ProfileSetup = () => {
                         {c.label}
                       </button>
                     ))}
+                  </div>
+
+                  <div className="space-y-3">
+                    <label className="text-sm font-bold text-gray-700 block">
+                      {t("profile.setup.step3.customLabel")}
+                    </label>
+                    <textarea
+                      placeholder={t("profile.setup.step3.customPlaceholder")}
+                      className="w-full p-4 rounded-xl border-2 border-gray-100 focus:border-primary-500 focus:ring-0 transition-all min-h-[120px] resize-none text-sm"
+                      value={formData.customParentalHistory}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          customParentalHistory: e.target.value,
+                        })
+                      }
+                    />
                   </div>
                 </div>
               </div>

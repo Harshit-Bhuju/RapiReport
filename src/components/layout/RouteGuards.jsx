@@ -8,7 +8,7 @@ export const ProtectedRoute = ({ children, requireProfile = true }) => {
   if (!isAuthenticated) return <Navigate to="/auth" replace />;
 
   if (requireProfile && !isProfileComplete) {
-    // return <Navigate to="/profile-setup" replace />;
+    return <Navigate to="/profile-setup" replace />;
   }
 
   return children;
@@ -21,7 +21,8 @@ export const PublicRoute = ({ children }) => {
 };
 
 export const FlowRoute = ({ children }) => {
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, isProfileComplete } = useAuthStore();
   if (!isAuthenticated) return <Navigate to="/auth" replace />;
+  if (isProfileComplete) return <Navigate to="/dashboard" replace />;
   return children;
 };

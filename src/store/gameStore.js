@@ -1,196 +1,374 @@
 import { create } from "zustand";
 
-// ─── Constants ────────────────────────────────────────────────────────
-const SQUARE_SIZE = 0.0001; // ~10m (0.0001 degrees)
-const RENDER_RADIUS = 0.005; // ~500m radius for generating grid content
-
-// ─── Helpers ──────────────────────────────────────────────────────────
-export const getSquareId = (lat, lng) => {
-  const col = Math.round(lng / SQUARE_SIZE);
-  const row = Math.round(lat / SQUARE_SIZE);
-  return `${col}_${row}`;
+// Distance in meters between two lat/lng points (Haversine)
+const distanceMeters = (lat1, lng1, lat2, lng2) => {
+  const R = 6371000;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLng / 2) ** 2;
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
 };
 
-export const getSquareVertices = (lat, lng) => {
-  const half = SQUARE_SIZE / 2;
-  return [
-    [lat + half, lng - half],
-    [lat + half, lng + half],
-    [lat - half, lng + half],
-    [lat - half, lng - half],
-  ];
-};
+// Quest pool: place (go to X) and walk (walk Y meters). Tagged by age & health.
+// ageGroup: "any" | "young" (<25) | "adult" (25-55) | "senior" (55+)
+// fitnessLevel: "light" | "moderate" | "active" — affects suggested difficulty & reward
+// healthConsideration: "any" | "heart" | "diabetes" | "bp" | "thyroid" | "general"
+const QUEST_POOL = [
+  // —— Place quests (go to this place) ——
+  {
+    id: "p1",
+    type: "place",
+    title: "Central Park",
+    description: "Visit the main park for a short stroll",
+    lat: 27.7172,
+    lng: 85.324,
+    radiusMeters: 80,
+    points: 40,
+    icon: "park",
+    ageGroup: "any",
+    fitnessLevel: "light",
+    healthConsideration: "any",
+  },
+  {
+    id: "p2",
+    type: "place",
+    title: "Health Post North",
+    description: "Reach the health post",
+    lat: 27.72,
+    lng: 85.33,
+    radiusMeters: 60,
+    points: 50,
+    icon: "health",
+    ageGroup: "any",
+    fitnessLevel: "light",
+    healthConsideration: "heart",
+  },
+  {
+    id: "p3",
+    type: "place",
+    title: "Community Center",
+    description: "Find the community center",
+    lat: 27.71,
+    lng: 85.31,
+    radiusMeters: 70,
+    points: 45,
+    icon: "community",
+    ageGroup: "any",
+    fitnessLevel: "moderate",
+    healthConsideration: "any",
+  },
+  {
+    id: "p4",
+    type: "place",
+    title: "Temple Square",
+    description: "Walk to the temple square",
+    lat: 27.714,
+    lng: 85.318,
+    radiusMeters: 70,
+    points: 35,
+    icon: "pin",
+    ageGroup: "any",
+    fitnessLevel: "light",
+    healthConsideration: "general",
+  },
+  {
+    id: "p5",
+    type: "place",
+    title: "Local Clinic",
+    description: "Visit the local clinic area",
+    lat: 27.722,
+    lng: 85.327,
+    radiusMeters: 65,
+    points: 55,
+    icon: "health",
+    ageGroup: "adult",
+    fitnessLevel: "moderate",
+    healthConsideration: "any",
+  },
+  {
+    id: "p6",
+    type: "place",
+    title: "Green Garden",
+    description: "Reach the green garden",
+    lat: 27.719,
+    lng: 85.322,
+    radiusMeters: 75,
+    points: 30,
+    icon: "park",
+    ageGroup: "senior",
+    fitnessLevel: "light",
+    healthConsideration: "diabetes",
+  },
+  {
+    id: "p7",
+    type: "place",
+    title: "Youth Park",
+    description: "Go to the youth park",
+    lat: 27.715,
+    lng: 85.335,
+    radiusMeters: 80,
+    points: 60,
+    icon: "park",
+    ageGroup: "young",
+    fitnessLevel: "active",
+    healthConsideration: "any",
+  },
+  {
+    id: "p8",
+    type: "place",
+    title: "BP Check Point",
+    description: "Walk to the blood pressure check point",
+    lat: 27.718,
+    lng: 85.329,
+    radiusMeters: 60,
+    points: 50,
+    icon: "health",
+    ageGroup: "adult",
+    fitnessLevel: "light",
+    healthConsideration: "bp",
+  },
+  // —— Walk quests (walk this much) ——
+  {
+    id: "w1",
+    type: "walk",
+    title: "Short stroll",
+    description: "Walk 200 meters",
+    targetMeters: 200,
+    points: 25,
+    ageGroup: "any",
+    fitnessLevel: "light",
+    healthConsideration: "any",
+  },
+  {
+    id: "w2",
+    type: "walk",
+    title: "Gentle walk",
+    description: "Walk 400 meters",
+    targetMeters: 400,
+    points: 40,
+    ageGroup: "any",
+    fitnessLevel: "light",
+    healthConsideration: "heart",
+  },
+  {
+    id: "w3",
+    type: "walk",
+    title: "Park loop",
+    description: "Walk 600 meters",
+    targetMeters: 600,
+    points: 50,
+    ageGroup: "any",
+    fitnessLevel: "moderate",
+    healthConsideration: "any",
+  },
+  {
+    id: "w4",
+    type: "walk",
+    title: "Morning walk",
+    description: "Walk 800 meters",
+    targetMeters: 800,
+    points: 60,
+    ageGroup: "adult",
+    fitnessLevel: "moderate",
+    healthConsideration: "diabetes",
+  },
+  {
+    id: "w5",
+    type: "walk",
+    title: "Healthy distance",
+    description: "Walk 1 km",
+    targetMeters: 1000,
+    points: 75,
+    ageGroup: "adult",
+    fitnessLevel: "moderate",
+    healthConsideration: "any",
+  },
+  {
+    id: "w6",
+    type: "walk",
+    title: "Senior stroll",
+    description: "Walk 300 meters at your pace",
+    targetMeters: 300,
+    points: 35,
+    ageGroup: "senior",
+    fitnessLevel: "light",
+    healthConsideration: "general",
+  },
+  {
+    id: "w7",
+    type: "walk",
+    title: "Active walk",
+    description: "Walk 1.5 km",
+    targetMeters: 1500,
+    points: 90,
+    ageGroup: "young",
+    fitnessLevel: "active",
+    healthConsideration: "any",
+  },
+  {
+    id: "w8",
+    type: "walk",
+    title: "Cardio goal",
+    description: "Walk 2 km",
+    targetMeters: 2000,
+    points: 110,
+    ageGroup: "adult",
+    fitnessLevel: "active",
+    healthConsideration: "heart",
+  },
+  {
+    id: "w9",
+    type: "walk",
+    title: "Quick 500 m",
+    description: "Walk 500 meters",
+    targetMeters: 500,
+    points: 45,
+    ageGroup: "any",
+    fitnessLevel: "light",
+    healthConsideration: "bp",
+  },
+];
 
-// Point-in-polygon check for loop capture
-const isPointInPoly = (point, polygon) => {
-  const [x, y] = point;
-  let inside = false;
-  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-    const [xi, yi] = polygon[i];
-    const [xj, yj] = polygon[j];
-    const intersect =
-      yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi;
-    if (intersect) inside = !inside;
+function getAgeGroup(age) {
+  if (age == null || age === "") return "adult";
+  const a = Number(age);
+  if (a < 25) return "young";
+  if (a > 55) return "senior";
+  return "adult";
+}
+
+function questMatchesProfile(q, profile) {
+  const hasCondition = (key) =>
+    Array.isArray(profile?.conditions) && profile.conditions.includes(key);
+  if (!profile || (profile.age == null && !profile.conditions?.length)) {
+    return q.ageGroup === "any" && (q.healthConsideration === "any" || q.healthConsideration === "general");
   }
-  return inside;
-};
+  const ageGroup = getAgeGroup(profile.age);
+  if (q.ageGroup !== "any" && q.ageGroup !== ageGroup) return false;
+  if (q.healthConsideration === "any" || q.healthConsideration === "general") return true;
+  return hasCondition(q.healthConsideration);
+}
 
-// ─── Store ────────────────────────────────────────────────────────────
 export const useGameStore = create((set, get) => ({
   user: {
     name: "You",
     pointsToday: 0,
     cumulativePoints: 0,
-    areasCaptured: 0,
-    distanceKm: 0,
+    questsCompleted: 0,
   },
 
   currentLocation: null,
   pathHistory: [],
-  capturedSquares: {}, // Squares owned by the user
-  enemySquares: {}, // Squares pre-populated with enemies
+  distanceWalkedMeters: 0,
+
+  // Profile from auth (age, conditions) — used to filter quests
+  questProfile: null,
+
+  // Active quests (place + walk) with progress. Derived from pool + profile.
+  quests: QUEST_POOL.filter((q) => questMatchesProfile(q, null)).map((q) => ({
+    ...q,
+    completed: false,
+    progressMeters: q.type === "walk" ? 0 : undefined,
+  })),
 
   leaderboard: [
-    { rank: 1, name: "Alpha", points: 2500, areas: 50 },
-    { rank: 2, name: "Bravo", points: 1800, areas: 35 },
-    { rank: 3, name: "Charlie", points: 1200, areas: 20 },
+    { rank: 1, name: "Alpha", points: 2500 },
+    { rank: 2, name: "Bravo", points: 1800 },
+    { rank: 3, name: "Charlie", points: 1200 },
   ],
 
   rewards: [
-    {
-      id: 1,
-      title: "Free AI Consultation",
-      pointsRequired: 500,
-      icon: "stethoscope",
-    },
+    { id: 1, title: "Free AI Consultation", pointsRequired: 500, icon: "stethoscope" },
     { id: 2, title: "Lab Test Voucher", pointsRequired: 300, icon: "ticket" },
-    {
-      id: 3,
-      title: "Premium Access (1 Week)",
-      pointsRequired: 200,
-      icon: "activity",
-    },
+    { id: 3, title: "Premium Access (1 Week)", pointsRequired: 200, icon: "activity" },
     { id: 4, title: "Health Kit Bundle", pointsRequired: 1000, icon: "gift" },
   ],
 
-  // ─── Procedural Grid Content ───
-  // We populate a local area with enemies to ensure no gaps.
-  generateTiledWorld: (lat, lng) => {
-    const enemies = {};
-    const colStart = Math.round(lng / SQUARE_SIZE) - 50;
-    const colEnd = colStart + 100;
-    const rowStart = Math.round(lat / SQUARE_SIZE) - 50;
-    const rowEnd = rowStart + 100;
-
-    for (let c = colStart; c <= colEnd; c++) {
-      for (let r = rowStart; r <= rowEnd; r++) {
-        // Randomly assign ~15% of the world to enemies
-        if (Math.random() > 0.85) {
-          enemies[`${c}_${r}`] = {
-            owner: Math.random() > 0.5 ? "Alpha" : "Bravo",
-            pointsVal: 20,
-          };
-        }
-      }
-    }
-    set({ enemySquares: enemies });
+  setQuestProfile: (profile) => {
+    const matches = QUEST_POOL.filter((q) => questMatchesProfile(q, profile));
+    set((s) => {
+      const existingById = Object.fromEntries(s.quests.map((q) => [q.id, q]));
+      const dist = s.distanceWalkedMeters;
+      const withProgress = matches.map((q) => {
+        const existing = existingById[q.id];
+        const completed = existing?.completed ?? false;
+        const progressMeters =
+          q.type === "walk"
+            ? (completed ? q.targetMeters : Math.min(Math.round(dist), q.targetMeters))
+            : undefined;
+        return {
+          ...q,
+          completed,
+          progressMeters,
+        };
+      });
+      return { questProfile: profile, quests: withProgress };
+    });
   },
 
   updateLocation: (lat, lng) => {
-    const { currentLocation, pathHistory, capturedSquares, enemySquares } =
-      get();
+    const { currentLocation, pathHistory, quests, distanceWalkedMeters } = get();
     const newPoint = [lat, lng];
-    const sqId = getSquareId(lat, lng);
+    const newPath = currentLocation
+      ? [...pathHistory.slice(-300), newPoint]
+      : [newPoint];
+    const addedMeters = pathHistory.length >= 1
+      ? distanceMeters(
+          pathHistory[pathHistory.length - 1][0],
+          pathHistory[pathHistory.length - 1][1],
+          lat,
+          lng,
+        )
+      : 0;
+    const totalWalked = distanceWalkedMeters + addedMeters;
 
-    if (!currentLocation) {
-      get().generateTiledWorld(lat, lng);
-      set({ currentLocation: { lat, lng }, pathHistory: [newPoint] });
-      return;
-    }
+    let updatedQuests = quests;
+    let pointsEarned = 0;
+    let newlyCompleted = 0;
 
-    // Loop Detection
-    let loopClosed = false;
-    let loopStartIndex = -1;
-    if (pathHistory.length > 10) {
-      for (let i = 0; i < pathHistory.length - 10; i++) {
-        const hPoint = pathHistory[i];
-        const dist = Math.sqrt(
-          Math.pow(lat - hPoint[0], 2) + Math.pow(lng - hPoint[1], 2),
-        );
-        if (dist < 0.00015) {
-          loopClosed = true;
-          loopStartIndex = i;
-          break;
+    quests.forEach((q) => {
+      if (q.completed) return;
+      if (q.type === "place") {
+        const dist = distanceMeters(lat, lng, q.lat, q.lng);
+        if (dist <= q.radiusMeters) {
+          pointsEarned += q.points;
+          newlyCompleted += 1;
+          updatedQuests = updatedQuests.map((x) =>
+            x.id === q.id ? { ...x, completed: true } : x,
+          );
+        }
+      } else if (q.type === "walk") {
+        if (totalWalked >= q.targetMeters) {
+          pointsEarned += q.points;
+          newlyCompleted += 1;
+          updatedQuests = updatedQuests.map((x) =>
+            x.id === q.id ? { ...x, completed: true, progressMeters: q.targetMeters } : x,
+          );
+        } else {
+          updatedQuests = updatedQuests.map((x) =>
+            x.id === q.id ? { ...x, progressMeters: Math.round(totalWalked) } : x,
+          );
         }
       }
-    }
+    });
 
-    if (loopClosed) {
-      const loopPolygon = pathHistory.slice(loopStartIndex);
-      let minLat = 90,
-        maxLat = -90,
-        minLng = 180,
-        maxLng = -180;
-      loopPolygon.forEach(([la, ln]) => {
-        minLat = Math.min(minLat, la);
-        maxLat = Math.max(maxLat, la);
-        minLng = Math.min(minLng, ln);
-        maxLng = Math.max(maxLng, ln);
-      });
-
-      const filledCaptures = {};
-      let loopPoints = 0;
-
-      const colS = Math.floor(minLng / SQUARE_SIZE);
-      const colE = Math.ceil(maxLng / SQUARE_SIZE);
-      const rowS = Math.floor(minLat / SQUARE_SIZE);
-      const rowE = Math.ceil(maxLat / SQUARE_SIZE);
-
-      for (let c = colS; c <= colE; c++) {
-        for (let r = rowS; r <= rowE; r++) {
-          const sLat = r * SQUARE_SIZE;
-          const sLng = c * SQUARE_SIZE;
-          if (isPointInPoly([sLat, sLng], loopPolygon)) {
-            const id = `${c}_${r}`;
-            if (!capturedSquares[id]) {
-              const wasEnemy = enemySquares[id];
-              filledCaptures[id] = { owner: "You", timestamp: Date.now() };
-              loopPoints += wasEnemy ? 25 : 10;
-            }
-          }
-        }
-      }
-
-      set((s) => ({
-        user: {
-          ...s.user,
-          pointsToday: s.user.pointsToday + loopPoints + 100,
-          areasCaptured: s.user.areasCaptured + 1,
-        },
-        capturedSquares: { ...s.capturedSquares, ...filledCaptures },
-        pathHistory: [],
-      }));
-    }
-
-    // Walking Capture
-    if (!capturedSquares[sqId]) {
-      const wasEnemy = enemySquares[sqId];
-      set((s) => ({
-        capturedSquares: {
-          ...s.capturedSquares,
-          [sqId]: { owner: "You", timestamp: Date.now() },
-        },
-        user: {
-          ...s.user,
-          pointsToday: s.user.pointsToday + (wasEnemy ? 15 : 5),
-        },
-      }));
-    }
-
-    set((s) => ({
+    set({
       currentLocation: { lat, lng },
-      pathHistory: [...s.pathHistory, newPoint],
-    }));
+      pathHistory: newPath,
+      distanceWalkedMeters: totalWalked,
+      quests: updatedQuests,
+      user: {
+        ...get().user,
+        pointsToday: get().user.pointsToday + pointsEarned,
+        cumulativePoints: get().user.cumulativePoints + pointsEarned,
+        questsCompleted: get().user.questsCompleted + newlyCompleted,
+      },
+    });
   },
 
   redeemReward: (rewardId) => {

@@ -4,7 +4,8 @@ import { useAuthStore } from "@/store/authStore";
 import {
   CalendarCheck,
   Clock,
-  Activity,
+  CalendarCheck,
+  Clock,
   Coffee,
   Moon,
   Sun,
@@ -281,7 +282,7 @@ const HealthPlanner = () => {
                 </div>
               </div>
               <p className="text-center text-xs font-bold text-gray-500">
-                {t("planner.activitiesCompleted")}
+                {t("planner.activitiesCompleted") || "Progress"}
               </p>
             </CardBody>
           </Card>

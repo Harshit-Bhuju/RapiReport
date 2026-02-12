@@ -2,7 +2,14 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Card, CardBody } from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
-import { Gift, HeartPulse, Ticket, Activity, ShoppingBag, Loader2 } from "lucide-react";
+import {
+  Gift,
+  HeartPulse,
+  Ticket,
+  Activity,
+  ShoppingBag,
+  Loader2,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import toast from "react-hot-toast";
 import API from "@/Configs/ApiEndpoints";
@@ -38,15 +45,17 @@ const Marketplace = () => {
         return <HeartPulse className="w-6 h-6 text-primary-600" />;
       case "ticket":
         return <Ticket className="w-6 h-6 text-blue-500" />;
-      case "activity":
-        return <Activity className="w-6 h-6 text-success-600" />;
       default:
         return <Gift className="w-6 h-6 text-warning-600" />;
     }
   };
 
-  const list = filter === "all" ? rewards : rewards.filter((r) => r.category === filter);
-  const categories = ["all", ...new Set(rewards.map((r) => r.category).filter(Boolean))];
+  const list =
+    filter === "all" ? rewards : rewards.filter((r) => r.category === filter);
+  const categories = [
+    "all",
+    ...new Set(rewards.map((r) => r.category).filter(Boolean)),
+  ];
 
   const handleRedeem = async (reward) => {
     if (userPoints < reward.pointsRequired) {
@@ -55,9 +64,15 @@ const Marketplace = () => {
     }
     setRedeeming(reward.id);
     try {
-      const r = await axios.post(API.REWARDS_REDEEM, { reward_id: reward.id }, { withCredentials: true });
+      const r = await axios.post(
+        API.REWARDS_REDEEM,
+        { reward_id: reward.id },
+        { withCredentials: true },
+      );
       if (r.data?.status === "success") {
-        setUserPoints((p) => Math.max(0, p - (r.data.pointsSpent ?? reward.pointsRequired)));
+        setUserPoints((p) =>
+          Math.max(0, p - (r.data.pointsSpent ?? reward.pointsRequired)),
+        );
         toast.success(`Redeemed: ${reward.title}`);
       } else {
         toast.error(r.data?.message || "Redemption failed.");
@@ -95,8 +110,12 @@ const Marketplace = () => {
                 <Gift className="w-6 h-6" />
               </div>
               <div>
-                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Your points</p>
-                <p className="text-2xl font-black text-gray-900">{userPoints}</p>
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                  Your points
+                </p>
+                <p className="text-2xl font-black text-gray-900">
+                  {userPoints}
+                </p>
               </div>
             </div>
           </CardBody>
@@ -113,8 +132,7 @@ const Marketplace = () => {
               filter === c
                 ? "bg-primary-50 border-primary-600 text-primary-700"
                 : "border-gray-100 text-gray-500 hover:bg-gray-50",
-            )}
-          >
+            )}>
             {c}
           </button>
         ))}
@@ -127,8 +145,7 @@ const Marketplace = () => {
           return (
             <Card
               key={reward.id}
-              className="border-none shadow-xl shadow-gray-100/50 overflow-hidden"
-            >
+              className="border-none shadow-xl shadow-gray-100/50 overflow-hidden">
               <CardBody className="p-6">
                 <div className="flex items-start gap-4 mb-4">
                   <div className="w-14 h-14 rounded-2xl bg-gray-100 flex items-center justify-center shrink-0">
@@ -152,10 +169,17 @@ const Marketplace = () => {
                   className={cn(
                     "w-full gap-2",
                     (!canRedeem || busy) && "opacity-60 cursor-not-allowed",
+                  )}>
+                  {busy ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <ShoppingBag className="w-4 h-4" />
                   )}
-                >
-                  {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShoppingBag className="w-4 h-4" />}
-                  {busy ? "Redeeming…" : canRedeem ? "Redeem" : "Not enough points"}
+                  {busy
+                    ? "Redeeming…"
+                    : canRedeem
+                      ? "Redeem"
+                      : "Not enough points"}
                 </Button>
               </CardBody>
             </Card>
@@ -163,7 +187,7 @@ const Marketplace = () => {
         })}
       </div>
       <p className="text-xs text-gray-400 text-center">
-        Earn points from Quest Game, adherence, activity, and campaigns.
+        Earn points from Quest Game and campaigns.
       </p>
     </div>
   );

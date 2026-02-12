@@ -39,9 +39,7 @@ import { DoctorDashboard, DoctorProfile, DoctorLayout } from "@/pages/doctor";
 import ProfileSetup from "@/components/features/ProfileSetup";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import PrescriptionScan from "@/pages/health/PrescriptionScan";
-import Adherence from "@/pages/health/Adherence";
 import Symptoms from "@/pages/health/Symptoms";
-import Activity from "@/pages/health/Activity";
 import Diet from "@/pages/health/Diet";
 import Marketplace from "@/pages/health/Marketplace";
 import Campaigns from "@/pages/health/Campaigns";
@@ -224,31 +222,11 @@ function App() {
                 }
               />
               <Route
-                path="/adherence"
-                element={
-                  <ProtectedRoute>
-                    <DashboardLayout>
-                      <Adherence />
-                    </DashboardLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
                 path="/symptoms"
                 element={
                   <ProtectedRoute>
                     <DashboardLayout>
                       <Symptoms />
-                    </DashboardLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/activity"
-                element={
-                  <ProtectedRoute>
-                    <DashboardLayout>
-                      <Activity />
                     </DashboardLayout>
                   </ProtectedRoute>
                 }

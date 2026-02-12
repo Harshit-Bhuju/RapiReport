@@ -2,7 +2,6 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import {
   TrendingUp,
-  Activity,
   Clock,
   ArrowRight,
   Sparkles,
@@ -29,8 +28,6 @@ const Dashboard = () => {
     {
       label: t("dashboardPage.bloodTests"),
       value: "12",
-      icon: Activity,
-      color: "text-primary-600",
       bg: "bg-primary-50",
     },
     {
@@ -127,7 +124,7 @@ const Dashboard = () => {
           <section>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-black text-gray-900 flex items-center gap-2">
-                <Activity className="w-5 h-5 text-error-600" />
+                <TrendingUp className="w-5 h-5 text-error-600" />
                 {t("dashboardPage.vitalTrends")}
               </h2>
             </div>

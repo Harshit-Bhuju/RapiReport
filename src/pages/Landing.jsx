@@ -14,6 +14,9 @@ import {
   ArrowRight,
   Sparkles,
   Activity,
+  Lock,
+  TrendingUp,
+  Clock,
 } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import Button from "@/components/ui/Button";
@@ -25,218 +28,353 @@ const HeroSection = () => {
   const navigate = useNavigate();
 
   return (
-    <section className="relative min-h-[70vh] flex items-center pt-16 pb-12 md:pt-24 md:pb-20 overflow-hidden mesh-gradient">
-      <div className="container-custom relative z-10">
-        <div className="flex flex-col lg:flex-row items-center gap-16 lg:gap-24">
-          <div className="flex-1 text-center lg:text-left">
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, ease: "easeOut" }}>
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.2 }}
-                className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-white/60 backdrop-blur-xl text-primary-700 text-xs font-black mb-6 border border-white shadow-xl shadow-primary-100/20 uppercase tracking-[0.2em]">
-                <Sparkles className="w-4 h-4 animate-pulse" />
-                {t("hero.badge")}
-              </motion.div>
+    <section className="relative pt-32 pb-20 overflow-hidden bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      {/* Animated background elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-20 left-10 w-72 h-72 bg-blue-200/30 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute bottom-20 right-10 w-96 h-96 bg-indigo-200/30 rounded-full blur-3xl animate-pulse delay-1000" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-purple-200/20 rounded-full blur-3xl" />
+      </div>
 
-              <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-gray-900 leading-[1.05] mb-6 tracking-tight text-glow">
-                {t("hero.title")
-                  .split(" ")
-                  .map((word, i) => (
-                    <span
-                      key={i}
-                      className={i === 1 ? "text-primary-600 block" : ""}>
-                      {word}{" "}
-                    </span>
-                  ))}
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-12">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}>
+              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/80 backdrop-blur-sm border border-blue-200/50 text-blue-600 text-sm font-semibold mb-8 shadow-sm">
+                <Sparkles className="w-4 h-4" />
+                {t("hero.badge")}
+              </span>
+
+              <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold text-slate-900 mb-6 leading-[1.1]">
+                {t("hero.title").split(" ").slice(0, 2).join(" ")}
+                <br />
+                <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                  {t("hero.title").split(" ").slice(2).join(" ")}
+                </span>
               </h1>
 
-              <p className="text-lg md:text-xl text-gray-600 mb-8 max-w-2xl mx-auto lg:mx-0 leading-relaxed font-semibold opacity-80">
+              <p className="text-xl text-slate-600 mb-10 max-w-2xl mx-auto leading-relaxed">
                 {t("hero.subtitle")}
               </p>
 
-              <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-6">
+              <div className="flex justify-center mb-12">
                 <Button
                   size="lg"
-                  className="w-full sm:w-auto px-12 py-8 text-xl font-black rounded-3xl shadow-[0_20px_40px_rgba(79,70,229,0.3)] hover:scale-105 hover:shadow-[0_25px_50px_rgba(79,70,229,0.4)] active:scale-95 transition-all bg-primary-600 text-white"
+                  className="px-10 py-4 text-lg font-semibold rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-500/30 hover:shadow-xl transition-all"
                   onClick={() => navigate("/auth")}>
                   {t("hero.cta")}
-                  <ArrowRight className="ml-3 w-6 h-6" />
+                  <ArrowRight className="ml-2 w-5 h-5" />
                 </Button>
+              </div>
 
-                <div className="flex -space-x-4">
-                  {[1, 2, 3, 4].map((i) => (
+              {/* Social Proof */}
+              <div className="flex items-center justify-center gap-8 flex-wrap">
+                <div className="flex -space-x-3">
+                  {[1, 2, 3, 4, 5].map((i) => (
                     <div
                       key={i}
-                      className="w-12 h-12 rounded-full border-4 border-white overflow-hidden shadow-lg transform hover:-translate-y-1 transition-transform cursor-pointer">
+                      className="w-10 h-10 rounded-full border-2 border-white overflow-hidden shadow-md">
                       <img
-                        src={`https://i.pravatar.cc/150?u=${i + 10}`}
+                        src={`https://i.pravatar.cc/150?u=${i + 20}`}
                         alt="User"
+                        className="w-full h-full object-cover"
                       />
                     </div>
                   ))}
-                  <div className="w-12 h-12 rounded-full border-4 border-white bg-slate-100 flex items-center justify-center text-[10px] font-black text-slate-500 shadow-lg">
-                    10K+
-                  </div>
                 </div>
-              </div>
-
-              <div className="mt-16 flex flex-wrap justify-center lg:justify-start gap-10">
-                <div className="flex items-center gap-3 text-sm font-black text-gray-400 uppercase tracking-widest">
-                  <div className="w-10 h-10 rounded-xl bg-success-50 text-success-600 flex items-center justify-center shadow-sm">
-                    <Shield className="w-5 h-5" />
-                  </div>
-                  {t("hero.noCard")}
-                </div>
-                <div className="flex items-center gap-3 text-sm font-black text-gray-400 uppercase tracking-widest">
-                  <div className="w-10 h-10 rounded-xl bg-primary-50 text-primary-600 flex items-center justify-center shadow-sm">
-                    <Activity className="w-5 h-5" />
-                  </div>
-                  {t("hero.trustedLabs")}
-                </div>
+                <p className="text-sm text-slate-600">
+                  Trusted by{" "}
+                  <span className="font-semibold text-slate-900">10,000+</span>{" "}
+                  users
+                </p>
               </div>
             </motion.div>
           </div>
 
-          <div className="flex-1 w-full relative perspective-[2000px]">
-            <motion.div
-              initial={{ opacity: 0, x: 50, rotateY: -15, rotateX: 5 }}
-              animate={{ opacity: 1, x: 0, rotateY: 0, rotateX: 0 }}
-              transition={{ duration: 1.2, ease: "easeOut", delay: 0.3 }}
-              className="relative z-20 group">
-              {/* Main App Mockup Card */}
-              <div className="relative rounded-[3rem] glass-card border-white/50 overflow-hidden transform group-hover:-translate-y-4 transition-all duration-700 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.15)] ring-1 ring-white/20">
-                <div className="p-8 bg-white/40 border-b border-white/40 flex items-center justify-between">
-                  <div className="flex gap-3">
-                    <div className="w-3.5 h-3.5 rounded-full bg-error-400 shadow-inner" />
-                    <div className="w-3.5 h-3.5 rounded-full bg-warning-400 shadow-inner" />
-                    <div className="w-3.5 h-3.5 rounded-full bg-success-400 shadow-inner" />
-                  </div>
-                  <div className="px-4 py-1.5 rounded-full bg-white/50 text-[10px] font-black text-gray-500 uppercase tracking-widest border border-white/50">
-                    {t("hero.mockTitle")}
-                  </div>
+          {/* Hero Image/Mockup */}
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="relative max-w-6xl mx-auto px-4">
+            <div className="relative rounded-2xl overflow-hidden shadow-2xl shadow-slate-900/10 border border-slate-200/50 bg-white">
+              {/* Browser Chrome */}
+              <div className="bg-slate-100 px-4 py-3 flex items-center gap-2 border-b border-slate-200">
+                <div className="flex gap-2">
+                  <div className="w-3 h-3 rounded-full bg-red-400" />
+                  <div className="w-3 h-3 rounded-full bg-yellow-400" />
+                  <div className="w-3 h-3 rounded-full bg-green-400" />
+                </div>
+                <div className="flex-1 mx-4 bg-white rounded-md px-3 py-1.5 text-xs text-slate-500 hidden sm:block">
+                  {t("hero.mockTitle")}
+                </div>
+              </div>
+
+              {/* Dashboard Content */}
+              <div className="p-4 sm:p-6 md:p-8 bg-gradient-to-br from-white to-slate-50">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
+                  {[
+                    {
+                      icon: FileText,
+                      label: "Reports",
+                      value: "24",
+                      color: "blue",
+                    },
+                    {
+                      icon: TrendingUp,
+                      label: "Insights",
+                      value: "156",
+                      color: "green",
+                    },
+                    {
+                      icon: Clock,
+                      label: "Last Upload",
+                      value: "2h ago",
+                      color: "purple",
+                    },
+                  ].map((item, i) => (
+                    <motion.div
+                      key={i}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.4 + i * 0.1 }}
+                      className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-slate-200/50 hover:shadow-md transition-shadow">
+                      <div
+                        className={cn(
+                          "w-10 h-10 rounded-lg flex items-center justify-center mb-3",
+                          item.color === "blue" && "bg-blue-100 text-blue-600",
+                          item.color === "green" &&
+                            "bg-green-100 text-green-600",
+                          item.color === "purple" &&
+                            "bg-purple-100 text-purple-600",
+                        )}>
+                        <item.icon className="w-5 h-5" />
+                      </div>
+                      <p className="text-xl sm:text-2xl font-bold text-slate-900 mb-1">
+                        {item.value}
+                      </p>
+                      <p className="text-sm text-slate-600">{item.label}</p>
+                    </motion.div>
+                  ))}
                 </div>
 
-                <div className="p-8 sm:p-12">
-                  <div className="grid grid-cols-2 gap-8 mb-12">
-                    <motion.div
-                      whileHover={{ scale: 1.05 }}
-                      className="p-8 rounded-[2rem] bg-gradient-to-br from-primary-500/10 to-transparent border border-primary-100 shadow-sm relative overflow-hidden">
-                      <p className="text-[10px] text-primary-600 font-black tracking-widest mb-3 uppercase">
-                        {t("hero.hemoglobin")}
+                {/* Animated Chart Area */}
+                <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-slate-200/50 relative overflow-hidden group/chart">
+                  <div className="flex items-center justify-between mb-6">
+                    <div>
+                      <h4 className="text-sm font-bold text-slate-900">
+                        Health Trend Analysis
+                      </h4>
+                      <p className="text-[10px] text-slate-500">
+                        Real-time biometric tracking
                       </p>
-                      <p className="text-4xl font-black text-gray-900 tracking-tighter">
-                        14.2{" "}
-                        <span className="text-sm font-bold text-gray-400">
-                          g/dL
-                        </span>
-                      </p>
-                      <div className="mt-5 h-2.5 bg-primary-100/50 rounded-full overflow-hidden">
-                        <motion.div
-                          initial={{ width: 0 }}
-                          animate={{ width: "85%" }}
-                          transition={{ duration: 2, delay: 1 }}
-                          className="h-full bg-primary-600 rounded-full shadow-[0_0_10px_rgba(79,70,229,0.5)]"
-                        />
-                      </div>
-                    </motion.div>
-
-                    <motion.div
-                      whileHover={{ scale: 1.05 }}
-                      className="p-8 rounded-[2rem] bg-gradient-to-br from-warning-500/10 to-transparent border border-warning-100 shadow-sm relative overflow-hidden">
-                      <p className="text-[10px] text-warning-600 font-black tracking-widest mb-3 uppercase">
-                        {t("hero.bloodSugar")}
-                      </p>
-                      <p className="text-4xl font-black text-gray-900 tracking-tighter">
-                        98{" "}
-                        <span className="text-sm font-bold text-gray-400">
-                          mg/dL
-                        </span>
-                      </p>
-                      <div className="mt-5 h-2.5 bg-warning-100/50 rounded-full overflow-hidden">
-                        <motion.div
-                          initial={{ width: 0 }}
-                          animate={{ width: "35%" }}
-                          transition={{ duration: 2, delay: 1.2 }}
-                          className="h-full bg-warning-600 rounded-full shadow-[0_0_10px_rgba(245,158,11,0.5)]"
-                        />
-                      </div>
-                    </motion.div>
-                  </div>
-
-                  <div className="space-y-6">
-                    <div className="h-6 bg-gray-100/40 rounded-full w-full relative overflow-hidden">
-                      <motion.div
-                        animate={{ x: ["-100%", "100%"] }}
-                        transition={{
-                          duration: 2,
-                          repeat: Infinity,
-                          ease: "linear",
-                        }}
-                        className="absolute inset-y-0 w-1/3 bg-gradient-to-r from-transparent via-white/50 to-transparent"
-                      />
                     </div>
-                    <div className="h-6 bg-gray-100/40 rounded-full w-5/6" />
-                    <div className="h-6 bg-gray-100/40 rounded-full w-4/6" />
+                    <div className="flex gap-2">
+                      <div className="px-2 py-1 rounded-md bg-blue-50 text-blue-600 text-[8px] font-bold uppercase tracking-wider">
+                        Weekly
+                      </div>
+                      <div className="px-2 py-1 rounded-md bg-slate-50 text-slate-400 text-[8px] font-bold uppercase tracking-wider">
+                        Monthly
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="h-32 sm:h-48 relative">
+                    <svg viewBox="0 0 400 150" className="w-full h-full">
+                      {/* Grid Lines */}
+                      {[0, 1, 2, 3].map((i) => (
+                        <line
+                          key={i}
+                          x1="0"
+                          y1={i * 50}
+                          x2="400"
+                          y2={i * 50}
+                          stroke="#f1f5f9"
+                          strokeWidth="1"
+                        />
+                      ))}
+
+                      {/* Animated Area Chart */}
+                      <motion.path
+                        initial={{ pathLength: 0, opacity: 0 }}
+                        animate={{ pathLength: 1, opacity: 1 }}
+                        transition={{ duration: 2, ease: "easeInOut" }}
+                        d="M0,120 Q50,80 100,100 T200,40 T300,70 T400,20 V150 H0 Z"
+                        fill="url(#gradient-blue)"
+                        className="opacity-20"
+                      />
+                      <motion.path
+                        initial={{ pathLength: 0 }}
+                        animate={{ pathLength: 1 }}
+                        transition={{ duration: 2, ease: "easeInOut" }}
+                        d="M0,120 Q50,80 100,100 T200,40 T300,70 T400,20"
+                        fill="none"
+                        stroke="#3b82f6"
+                        strokeWidth="3"
+                        strokeLinecap="round"
+                      />
+
+                      {/* Pulsing Dots */}
+                      <motion.circle
+                        animate={{ r: [3, 5, 3], opacity: [0.5, 1, 0.5] }}
+                        transition={{ duration: 2, repeat: Infinity }}
+                        cx="200"
+                        cy="40"
+                        r="4"
+                        fill="#3b82f6"
+                      />
+
+                      <defs>
+                        <linearGradient
+                          id="gradient-blue"
+                          x1="0%"
+                          y1="0%"
+                          x2="0%"
+                          y2="100%">
+                          <stop offset="0%" stopColor="#3b82f6" />
+                          <stop
+                            offset="100%"
+                            stopColor="#3b82f6"
+                            stopOpacity="0"
+                          />
+                        </linearGradient>
+                      </defs>
+                    </svg>
+
+                    {/* Scan Line Animation */}
+                    <motion.div
+                      animate={{ top: ["0%", "100%", "0%"] }}
+                      transition={{
+                        duration: 4,
+                        repeat: Infinity,
+                        ease: "linear",
+                      }}
+                      className="absolute left-0 right-0 h-px bg-gradient-to-r from-transparent via-blue-400 to-transparent z-10 opacity-50"
+                    />
+                  </div>
+
+                  {/* Floating Tooltip Mock */}
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-slate-900 text-white p-3 rounded-lg shadow-2xl scale-0 group-hover/chart:scale-100 transition-transform origin-bottom z-20">
+                    <p className="text-[10px] font-bold text-blue-400 mb-1">
+                      Peak Vitality
+                    </p>
+                    <p className="text-sm font-black italic">98.2%</p>
+                  </div>
+                </div>
+                {/* Recent Reports List Mockup */}
+                <div className="mt-8 pt-8 border-t border-slate-200/50">
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-sm font-bold text-slate-900">
+                      Recent Reports
+                    </h4>
+                    <button className="text-[10px] font-bold text-blue-600 hover:underline">
+                      View All
+                    </button>
+                  </div>
+                  <div className="space-y-3">
+                    {[
+                      {
+                        name: "Blood Panel X-24",
+                        date: "Today, 14:20",
+                        status: "Analyzed",
+                        color: "blue",
+                      },
+                      {
+                        name: "MRI Scan Analysis",
+                        date: "Yesterday",
+                        status: "Pending",
+                        color: "orange",
+                      },
+                    ].map((report, i) => (
+                      <motion.div
+                        key={i}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.8 + i * 0.1 }}
+                        className="flex items-center justify-between p-3 rounded-xl bg-white border border-slate-100 hover:border-blue-200 transition-colors cursor-pointer group/item">
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={cn(
+                              "w-8 h-8 rounded-lg flex items-center justify-center",
+                              report.color === "blue"
+                                ? "bg-blue-50 text-blue-600"
+                                : "bg-orange-50 text-orange-600",
+                            )}>
+                            <FileText className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold text-slate-900 group-hover/item:text-blue-600 transition-colors">
+                              {report.name}
+                            </p>
+                            <p className="text-[10px] text-slate-500">
+                              {report.date}
+                            </p>
+                          </div>
+                        </div>
+                        <span
+                          className={cn(
+                            "px-2 py-1 rounded-full text-[8px] font-bold uppercase tracking-wider",
+                            report.status === "Analyzed"
+                              ? "bg-green-100 text-green-700"
+                              : "bg-slate-100 text-slate-600",
+                          )}>
+                          {report.status}
+                        </span>
+                      </motion.div>
+                    ))}
                   </div>
                 </div>
               </div>
+            </div>
 
-              {/* Enhanced Floating Cards */}
-              <motion.div
-                animate={{ y: [0, -20, 0], rotate: [0, -2, 0] }}
-                transition={{
-                  duration: 6,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                }}
-                className="absolute -top-10 -right-10 p-6 rounded-[2rem] bg-white/80 backdrop-blur-2xl shadow-2xl z-30 border border-white group/float cursor-pointer">
-                <div className="flex items-center gap-5">
-                  <div className="w-14 h-14 rounded-2xl bg-primary-600 flex items-center justify-center text-white shadow-xl group-hover/float:scale-110 transition-transform">
-                    <Brain className="w-8 h-8" />
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-black text-primary-600 uppercase tracking-[0.2em] mb-1">
-                      AI Analysis
-                    </p>
-                    <p className="text-base font-black text-gray-900 tracking-tight leading-none">
-                      Insights Generated
-                    </p>
-                  </div>
+            {/* Floating Visuals with higher depth */}
+            <motion.div
+              animate={{ y: [0, -10, 0], rotate: [0, 2, 0] }}
+              transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+              className="absolute -top-6 -left-6 bg-white/90 backdrop-blur-md rounded-2xl p-4 shadow-2xl border border-white/20 hidden lg:block z-30">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-200">
+                  <Activity className="w-6 h-6 text-white" />
                 </div>
-              </motion.div>
-
-              <motion.div
-                animate={{ y: [0, 20, 0], rotate: [0, 2, 0] }}
-                transition={{
-                  duration: 7,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                  delay: 1,
-                }}
-                className="absolute -bottom-10 -left-10 p-6 rounded-[2rem] bg-white/80 backdrop-blur-2xl shadow-2xl z-30 border border-white group/float cursor-pointer">
-                <div className="flex items-center gap-5">
-                  <div className="w-14 h-14 rounded-2xl bg-success-500 flex items-center justify-center text-white shadow-xl group-hover/float:scale-110 transition-transform">
-                    <Shield className="w-8 h-8" />
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-black text-success-600 uppercase tracking-[0.2em] mb-1">
-                      {t("hero.status")}
-                    </p>
-                    <p className="text-base font-black text-gray-900 tracking-tight leading-none">
-                      {t("hero.healthVerified")}
-                    </p>
-                  </div>
+                <div>
+                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">
+                    Live Vitals
+                  </p>
+                  <p className="font-black text-slate-900 text-lg tabular-nums">
+                    72{" "}
+                    <span className="text-xs font-medium text-slate-400">
+                      BPM
+                    </span>
+                  </p>
                 </div>
-              </motion.div>
+              </div>
             </motion.div>
 
-            {/* Subtle glow behind the mockup */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[140%] h-[140%] bg-primary-200/20 blur-[150px] rounded-full -z-10 animate-pulse" />
-          </div>
+            <motion.div
+              animate={{ y: [0, 10, 0] }}
+              transition={{
+                duration: 5,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: 1,
+              }}
+              className="absolute -bottom-4 -right-4 sm:-bottom-6 sm:-right-6 bg-white rounded-xl p-3 sm:p-4 shadow-xl border border-slate-200/50 hidden lg:block">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+                  <Brain className="w-6 h-6 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500">AI Analysis</p>
+                  <p className="font-semibold text-slate-900 text-sm">
+                    98% Accurate
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
         </div>
       </div>
     </section>
@@ -247,47 +385,30 @@ const StatsSection = () => {
   const { t } = useTranslation();
 
   const stats = [
-    {
-      label: t("stats.reportsProcessed"),
-      value: "10K+",
-      color: "from-primary-600 to-indigo-600",
-    },
-    {
-      label: t("stats.partnerLabs"),
-      value: "50+",
-      color: "from-indigo-600 to-primary-600",
-    },
-    {
-      label: t("stats.userRating"),
-      value: "4.9/5",
-      color: "from-primary-600 to-indigo-600",
-    },
+    { label: t("stats.reportsProcessed"), value: "10K+", icon: FileText },
+    { label: t("stats.partnerLabs"), value: "50+", icon: Users },
+    { label: t("stats.userRating"), value: "4.9/5", icon: Sparkles },
   ];
 
   return (
-    <section className="relative py-12 bg-gray-950 overflow-hidden">
-      <div className="absolute inset-0 opacity-10">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary-500 rounded-full blur-[100px]" />
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-indigo-500 rounded-full blur-[100px]" />
-      </div>
-      <div className="container-custom relative z-10">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-12 text-center">
+    <section className="py-16 md:py-20 bg-white">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 md:gap-8 max-w-5xl mx-auto">
           {stats.map((stat, idx) => (
             <motion.div
               key={idx}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ delay: idx * 0.1 }}>
-              <p
-                className={cn(
-                  "text-4xl md:text-5xl font-black mb-2 text-primary-600",
-                )}>
+              transition={{ delay: idx * 0.1 }}
+              className="text-center p-6 md:p-8 rounded-2xl bg-gradient-to-br from-slate-50 to-blue-50 border border-slate-200/50">
+              <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-4">
+                <stat.icon className="w-6 h-6 text-blue-600" />
+              </div>
+              <p className="text-3xl md:text-4xl font-bold text-slate-900 mb-2">
                 {stat.value}
               </p>
-              <p className="text-lg font-bold text-gray-400 uppercase tracking-widest">
-                {stat.label}
-              </p>
+              <p className="text-sm text-slate-600 font-medium">{stat.label}</p>
             </motion.div>
           ))}
         </div>
@@ -304,98 +425,86 @@ const HowItWorks = () => {
       title: t("howItWorks.step1.title"),
       desc: t("howItWorks.step1.desc"),
       icon: UploadCloud,
-      color: "bg-blue-500",
-      shadow: "shadow-blue-200",
+      color: "blue",
     },
     {
       title: t("howItWorks.step2.title"),
       desc: t("howItWorks.step2.desc"),
       icon: Brain,
-      color: "bg-primary-600",
-      shadow: "shadow-primary-200",
+      color: "indigo",
     },
     {
       title: t("howItWorks.step3.title"),
       desc: t("howItWorks.step3.desc"),
       icon: LineChart,
-      color: "bg-success-500",
-      shadow: "shadow-success-200",
+      color: "purple",
     },
   ];
 
   return (
-    <section className="py-20 bg-white relative overflow-hidden">
-      {/* Background patterns */}
-      <div className="absolute top-0 left-0 w-full h-px bg-gray-200" />
-
-      <div className="container-custom">
-        <div className="flex flex-col lg:flex-row items-end justify-between gap-12 mb-16">
-          <div className="max-w-3xl">
-            <motion.p
-              initial={{ opacity: 0, x: -20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              className="text-primary-600 text-sm font-black uppercase tracking-[0.4em] mb-6">
-              {t("howItWorks.subtitle")}
-            </motion.p>
-            <motion.h2
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="text-5xl md:text-7xl font-black text-gray-900 tracking-[-0.03em] leading-tight">
-              {t("howItWorks.title")}
-            </motion.h2>
-          </div>
+    <section className="py-24 bg-gradient-to-b from-white to-slate-50">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center mb-16 max-w-3xl mx-auto">
           <motion.div
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            className="hidden lg:block pb-4">
-            <div className="flex items-center gap-4 text-gray-400 font-bold uppercase tracking-widest text-xs">
-              <span className="w-12 h-px bg-gray-200" />
-              Scroll to explore
-            </div>
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}>
+            <span className="text-blue-600 font-semibold text-sm uppercase tracking-wide mb-4 block">
+              {t("howItWorks.subtitle")}
+            </span>
+            <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">
+              {t("howItWorks.title")}
+            </h2>
+            <p className="text-xl text-slate-600">
+              Simple, secure, and scientifically accurate
+            </p>
           </motion.div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 lg:gap-8 relative">
-          {steps.map((step, idx) => (
-            <motion.div
-              key={idx}
-              initial={{ opacity: 0, y: 40 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: idx * 0.2, duration: 0.8 }}
-              className="relative group">
-              {idx < steps.length - 1 && (
-                <div className="hidden lg:block absolute top-12 left-full w-full h-px bg-dashed-gradient z-0 opacity-20" />
-              )}
+        <div className="max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12 relative">
+            {/* Connection Line - hidden on mobile */}
+            <div
+              className="hidden md:block absolute left-1/4 right-1/4 h-0.5 bg-gradient-to-r from-blue-200 via-indigo-200 to-purple-200"
+              style={{ top: "4rem" }}
+            />
 
-              <div className="relative z-10 p-10 rounded-[3rem] bg-gray-50 border border-gray-100 group-hover:bg-white group-hover:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.08)] group-hover:-translate-y-4 transition-all duration-500 ring-1 ring-transparent group-hover:ring-primary-100">
-                <div className="relative mb-12">
+            {steps.map((step, idx) => (
+              <motion.div
+                key={idx}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: idx * 0.2 }}
+                className="relative">
+                <div className="bg-white rounded-2xl p-8 shadow-lg border border-slate-200/50 hover:shadow-xl transition-all hover:-translate-y-1 relative z-10">
                   <div
                     className={cn(
-                      "w-20 h-20 rounded-3xl flex items-center justify-center text-white shadow-2xl transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-500 relative z-10",
-                      step.color,
-                      step.shadow,
+                      "w-16 h-16 rounded-2xl flex items-center justify-center mb-6 mx-auto",
+                      step.color === "blue" &&
+                        "bg-gradient-to-br from-blue-500 to-blue-600",
+                      step.color === "indigo" &&
+                        "bg-gradient-to-br from-indigo-500 to-indigo-600",
+                      step.color === "purple" &&
+                        "bg-gradient-to-br from-purple-500 to-purple-600",
                     )}>
-                    <step.icon className="w-10 h-10" />
+                    <step.icon className="w-8 h-8 text-white" />
                   </div>
-                  <div className="absolute -top-4 -right-4 w-12 h-12 rounded-full bg-white shadow-lg flex items-center justify-center text-gray-900 font-black text-xl border-4 border-gray-50 group-hover:border-white transition-colors">
-                    0{idx + 1}
+
+                  <div className="absolute -top-3 -right-3 w-8 h-8 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold text-sm shadow-lg">
+                    {idx + 1}
                   </div>
+
+                  <h3 className="text-xl font-bold text-slate-900 mb-3 text-center">
+                    {step.title}
+                  </h3>
+                  <p className="text-slate-600 leading-relaxed text-center">
+                    {step.desc}
+                  </p>
                 </div>
-
-                <h3 className="text-3xl font-black text-gray-900 mb-6 tracking-tight group-hover:text-primary-600 transition-colors">
-                  {step.title}
-                </h3>
-                <p className="text-gray-500 leading-relaxed font-semibold opacity-70 text-lg">
-                  {step.desc}
-                </p>
-
-                <div className="mt-10 h-1.5 w-12 bg-gray-200 rounded-full group-hover:w-full group-hover:bg-primary-500 transition-all duration-700" />
-              </div>
-            </motion.div>
-          ))}
+              </motion.div>
+            ))}
+          </div>
         </div>
       </div>
     </section>
@@ -410,70 +519,76 @@ const Features = () => {
       title: t("features.feature1.title"),
       desc: t("features.feature1.desc"),
       icon: Zap,
-      color: "from-blue-500 to-indigo-600",
-      delay: 0.1,
+      gradient: "from-yellow-400 to-orange-500",
     },
     {
       title: t("features.feature2.title"),
       desc: t("features.feature2.desc"),
       icon: LineChart,
-      color: "from-indigo-600 to-primary-600",
-      delay: 0.2,
+      gradient: "from-green-400 to-emerald-500",
     },
     {
       title: t("features.feature3.title"),
       desc: t("features.feature3.desc"),
       icon: Users,
-      color: "from-primary-600 to-violet-600",
-      delay: 0.3,
+      gradient: "from-blue-400 to-indigo-500",
     },
   ];
 
   return (
-    <section
-      id="features"
-      className="py-20 bg-slate-950 relative overflow-hidden">
-      <div className="container-custom relative z-10">
-        <div className="text-center max-w-4xl mx-auto mb-32">
-          <motion.p
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            className="text-primary-400 text-sm font-black uppercase tracking-[0.5em] mb-8">
-            {t("features.subtitle")}
-          </motion.p>
-          <motion.h2
+    <section id="features" className="py-24 bg-white">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center mb-16 max-w-3xl mx-auto">
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
-            className="text-5xl md:text-7xl font-black text-white mb-8 tracking-tighter leading-tight">
-            {t("features.title")}
-          </motion.h2>
+            viewport={{ once: true }}>
+            <span className="text-blue-600 font-semibold text-sm uppercase tracking-wide mb-4 block">
+              {t("features.subtitle")}
+            </span>
+            <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">
+              {t("features.title")}
+            </h2>
+          </motion.div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
           {features.map((feature, idx) => (
             <motion.div
               key={idx}
-              initial={{ opacity: 0, scale: 0.95 }}
-              whileInView={{ opacity: 1, scale: 1 }}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: feature.delay }}>
-              <div className="h-full p-12 rounded-[3.5rem] bg-white/5 border border-white/10 backdrop-blur-md hover:bg-white/10 hover:border-white/20 hover:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.4)] transition-all duration-500 group relative overflow-hidden">
-                <div className="w-20 h-20 rounded-[2rem] flex items-center justify-center text-white mb-10 transition-all group-hover:scale-110 group-hover:-rotate-6 shadow-2xl bg-primary-600">
-                  <feature.icon className="w-10 h-10" />
+              transition={{ delay: idx * 0.1 }}
+              className="group">
+              <div className="h-full bg-gradient-to-br from-slate-50 to-white rounded-2xl p-8 border border-slate-200/50 hover:shadow-xl transition-all hover:-translate-y-1 relative overflow-hidden group">
+                {/* Subtle "Data Processing" bar - only visible on hover */}
+                <div className="absolute top-0 left-0 h-1 bg-gradient-to-r from-transparent via-blue-500 to-transparent w-full scale-x-0 group-hover:scale-x-100 transition-transform duration-700" />
+
+                <div
+                  className={cn(
+                    "w-14 h-14 rounded-xl bg-gradient-to-br flex items-center justify-center mb-6 shadow-lg transform group-hover:scale-110 transition-transform",
+                    feature.gradient,
+                  )}>
+                  <feature.icon className="w-7 h-7 text-white" />
                 </div>
-                <h3 className="text-3xl font-black text-white mb-6 tracking-tight group-hover:text-primary-400 transition-colors">
+                <h3 className="text-2xl font-bold text-slate-900 mb-4 group-hover:text-blue-600 transition-colors">
                   {feature.title}
                 </h3>
-                <p className="text-gray-400 leading-relaxed font-semibold text-lg opacity-80">
+                <p className="text-slate-600 leading-relaxed mb-6">
                   {feature.desc}
                 </p>
-
-                <div className="mt-12 flex items-center gap-3 text-primary-400 font-extrabold opacity-60 group-hover:opacity-100 transform translate-x-4 group-hover:translate-x-0 transition-all duration-500">
-                  EXPLORE FEATURE <ArrowRight className="w-5 h-5" />
+                <div className="flex items-center justify-between mt-auto">
+                  <button className="text-blue-600 font-semibold flex items-center gap-2 opacity-60 group-hover:opacity-100 transition-opacity">
+                    Learn more <ArrowRight className="w-4 h-4" />
+                  </button>
+                  {/* Heartbeat pulse icon */}
+                  <motion.div
+                    animate={{ scale: [1, 1.2, 1] }}
+                    transition={{ duration: 1.5, repeat: Infinity }}
+                    className="w-2 h-2 rounded-full bg-blue-400/30 opacity-0 group-hover:opacity-100"
+                  />
                 </div>
-
-                {/* Decorative element background */}
-                <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-white/5 rounded-full blur-3xl group-hover:bg-primary-500/10 transition-colors" />
               </div>
             </motion.div>
           ))}
@@ -483,88 +598,157 @@ const Features = () => {
   );
 };
 
-const Landing = () => {
+const TrustSection = () => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
-  return (
-    <div className="bg-white">
-      <HeroSection />
-      <StatsSection />
-      <HowItWorks />
-      <Features />
 
-      {/* Trust Section */}
-      <section className="py-16 bg-white border-y border-gray-100">
-        <div className="container-custom">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-12">
-            <div className="flex-1 text-center md:text-left">
-              <h3 className="text-3xl font-black text-gray-900 mb-4 tracking-tight">
-                {t("trust.title")}
-              </h3>
-              <p className="text-gray-500 font-medium">{t("trust.security")}</p>
-            </div>
-            <div className="flex flex-wrap justify-center gap-12 opacity-40 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-500">
-              <div className="flex items-center gap-2 font-black text-gray-400">
-                <Shield className="w-8 h-8" />
-                HIPAA
+  return (
+    <section className="py-16 md:py-20 bg-slate-50">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-5xl mx-auto">
+          <div className="bg-white rounded-2xl p-8 md:p-12 shadow-lg border border-slate-200/50">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-8 md:gap-12">
+              <div className="flex-1 text-center md:text-left">
+                <h3 className="text-2xl md:text-3xl font-bold text-slate-900 mb-3">
+                  {t("trust.title")}
+                </h3>
+                <p className="text-slate-600 text-base md:text-lg">
+                  {t("trust.security")}
+                </p>
               </div>
-              <div className="flex items-center gap-2 font-black text-gray-400">
-                <Shield className="w-8 h-8" />
-                ISO 27001
-              </div>
-              <div className="flex items-center gap-2 font-black text-gray-400">
-                <Zap className="w-8 h-8" />
-                HL7
+              <div className="flex items-center gap-6 md:gap-8 flex-wrap justify-center">
+                {[
+                  { icon: Shield, label: "HIPAA", color: "blue" },
+                  { icon: Lock, label: "ISO 27001", color: "green" },
+                  { icon: Zap, label: "HL7 Compliant", color: "purple" },
+                ].map((item, i) => (
+                  <motion.div
+                    key={i}
+                    whileHover={{ scale: 1.05 }}
+                    className="flex flex-col items-center gap-2 group/seal">
+                    <div
+                      className={cn(
+                        "w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg transition-transform group-hover/seal:-translate-y-1",
+                        item.color === "blue" &&
+                          "bg-blue-100 text-blue-600 shadow-blue-100",
+                        item.color === "green" &&
+                          "bg-green-100 text-green-600 shadow-green-100",
+                        item.color === "purple" &&
+                          "bg-purple-100 text-purple-600 shadow-purple-100",
+                      )}>
+                      <item.icon className="w-8 h-8" />
+                    </div>
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest group-hover/seal:text-slate-900 transition-colors">
+                      {item.label}
+                    </span>
+                  </motion.div>
+                ))}
               </div>
             </div>
           </div>
         </div>
-      </section>
+      </div>
+    </section>
+  );
+};
 
-      {/* CTA Section */}
-      <section className="py-24 bg-slate-950 relative overflow-hidden">
-        {/* Immersive Background */}
-        <div className="absolute inset-0 mesh-gradient-dark opacity-80" />
-        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary-500/10 blur-[150px] rounded-full -translate-y-1/2 translate-x-1/3 animate-pulse" />
+const CTASection = () => {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+
+  return (
+    <section className="py-20 md:py-24 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 relative overflow-hidden">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 opacity-10">
         <div
-          className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-indigo-500/10 blur-[150px] rounded-full translate-y-1/2 -translate-x-1/3 animate-pulse"
-          style={{ animationDelay: "3s" }}
+          className="absolute top-0 left-0 w-full h-full"
+          style={{
+            backgroundImage:
+              "radial-gradient(circle at 2px 2px, white 1px, transparent 0)",
+            backgroundSize: "40px 40px",
+          }}
         />
+      </div>
 
-        <div className="container-custom relative z-10 text-center">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div className="max-w-4xl mx-auto text-center">
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8 }}>
-            <motion.p
-              initial={{ opacity: 0, y: 10 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              className="text-primary-400 font-black uppercase tracking-[0.6em] mb-10 text-xs">
-              Take Control of Your Health
-            </motion.p>
-
-            <h2 className="text-4xl md:text-6xl font-black text-white mb-12 max-w-4xl mx-auto leading-[1.1] tracking-tight">
-              Ready to see the{" "}
-              <span className="text-primary-500">invisible?</span>
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}>
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-6 leading-tight px-4">
+              Ready to take control of your health?
             </h2>
+            <p className="text-lg md:text-xl text-blue-100 mb-10 max-w-2xl mx-auto px-4">
+              Join thousands of users who are making informed health decisions
+              with AI-powered insights
+            </p>
 
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-10">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 px-4">
               <Button
                 size="lg"
-                className="w-full sm:w-auto px-16 py-8 text-2xl font-black rounded-[2.5rem] bg-white text-slate-950 border-none shadow-[0_30px_60px_-15px_rgba(255,255,255,0.2)] hover:scale-110 active:scale-95 transition-all duration-300"
+                className="w-full sm:w-auto px-8 py-4 text-lg font-semibold rounded-xl bg-white text-blue-600 hover:bg-slate-50 shadow-xl hover:shadow-2xl transition-all"
                 onClick={() => navigate("/auth")}>
                 {t("cta.button")}
+                <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
               <Link
                 to="/#features"
-                className="text-white/60 text-xl font-bold border-b-2 border-white/10 hover:border-white hover:text-white transition-all py-1 tracking-tight">
+                className="text-white font-medium hover:text-blue-100 transition-colors flex items-center gap-2">
                 {t("cta.link")}
+                <ChevronRight className="w-4 h-4" />
               </Link>
             </div>
           </motion.div>
         </div>
-      </section>
+      </div>
+    </section>
+  );
+};
+
+const Landing = () => {
+  return (
+    <div className="bg-white">
+      <HeroSection />
+
+      <motion.div
+        initial={{ opacity: 0, y: 50 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-100px" }}
+        transition={{ duration: 0.8 }}>
+        <StatsSection />
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 50 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-100px" }}
+        transition={{ duration: 0.8 }}>
+        <HowItWorks />
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 50 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-100px" }}
+        transition={{ duration: 0.8 }}>
+        <Features />
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 50 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-100px" }}
+        transition={{ duration: 0.8 }}>
+        <TrustSection />
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        viewport={{ once: true }}
+        transition={{ duration: 1 }}>
+        <CTASection />
+      </motion.div>
     </div>
   );
 };

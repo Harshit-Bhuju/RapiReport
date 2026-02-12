@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+Devanagari:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800;900&family=Noto+Sans+Devanagari:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -58,20 +58,11 @@
   .container-custom {
     @apply max-w-7xl mx-auto px-6 sm:px-8 lg:px-12;
   }
-
-  .glass-card {
-    @apply bg-white/40 backdrop-blur-2xl border border-white/40;
-    box-shadow: 0 32px 64px -16px rgba(0, 0, 0, 0.1);
-  }
 }
 
 @layer utilities {
   .text-gradient {
     @apply text-primary-600;
-  }
-
-  .glass-morphism {
-    @apply bg-white/70 backdrop-blur-xl border border-white/20 shadow-2xl;
   }
 
   .mesh-gradient {
@@ -83,7 +74,7 @@
   }
 
   .text-glow {
-    text-shadow: 0 0 20px rgba(79, 70, 229, 0.4);
+    text-shadow: 0 0 20px rgba(15, 23, 42, 0.1);
   }
 
   .animate-float {
@@ -97,6 +88,10 @@
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
+  }
+
+  .font-outfit {
+    font-family: 'Outfit', sans-serif;
   }
 
   @keyframes float {

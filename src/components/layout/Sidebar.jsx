@@ -5,8 +5,6 @@ import {
   LayoutDashboard,
   FileText,
   MessageSquare,
-  ShieldAlert,
-  CalendarCheck,
   LogOut,
   X,
   Stethoscope,
@@ -20,10 +18,7 @@ import {
   Activity,
   Utensils,
   Gift,
-  Megaphone,
   History,
-  BellRing,
-  BarChart3,
 } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { cn } from "@/lib/utils";
@@ -66,15 +61,6 @@ const Sidebar = ({ isOpen, onClose }) => {
         },
         { name: t("sidebar.doctors"), path: "/doctors", icon: Stethoscope },
         { name: "Family Health", path: "/family", icon: Users },
-        { name: "Community", path: "/community", icon: BarChart3 },
-        { name: "Alerts", path: "/alerts", icon: BellRing },
-      ],
-    },
-    {
-      title: "Optimization",
-      items: [
-        { name: t("sidebar.risk"), path: "/prevention", icon: ShieldAlert },
-        { name: t("sidebar.planner"), path: "/planner", icon: CalendarCheck },
       ],
     },
     {
@@ -82,7 +68,6 @@ const Sidebar = ({ isOpen, onClose }) => {
       items: [
         { name: "Quest Game", path: "/quest-game", icon: Map },
         { name: "Marketplace", path: "/marketplace", icon: Gift },
-        { name: "Campaigns", path: "/campaigns", icon: Megaphone },
       ],
     },
   ];

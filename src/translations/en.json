@@ -130,13 +130,20 @@
     "recent": "Recent",
     "normal": "Normal",
     "abnormal": "ABNORMAL",
+    "insightExample": "Your adherence this week is 20% higher than last week. Keep up the good work!",
     "thyroidPanel": "Thyroid Panel",
     "viewAnalysis": "View Analysis",
     "uploadFirst": "Upload your first report",
     "uploadReport": "Upload Report",
     "geneticWellness": "Genetic Wellness",
     "geneticDesc": "Based on your family history, we've identified 3 potential prevention strategies.",
-    "viewRisk": "View Risk Analysis"
+    "viewRisk": "View Risk Analysis",
+    "logMeds": "Log Medicine",
+    "logSymptoms": "Log Symptoms",
+    "adherenceTitle": "Medication Adherence",
+    "last7Days": "Last 7 Days",
+    "last30Days": "Last 30 Days",
+    "viewProfile": "View Profile"
   },
   "dashboard": {
     "welcome": "Welcome back",

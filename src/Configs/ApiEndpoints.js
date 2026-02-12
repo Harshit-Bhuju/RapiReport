@@ -58,6 +58,7 @@ const API = {
   CHAT: `${BASE_URL}/api/chat.php`,
   CHAT_HISTORY: `${BASE_URL}/api/get_chat_history.php`,
   REWARDS_LIST: `${BASE_URL}/health/rewards_list.php`,
+  REWARDS_HISTORY: `${BASE_URL}/health/rewards_history.php`,
   REWARDS_REDEEM: `${BASE_URL}/health/rewards_redeem.php`,
   CAMPAIGNS_LIST: `${BASE_URL}/health/campaigns_list.php`,
   CAMPAIGNS_COMPLETE: `${BASE_URL}/health/campaigns_complete.php`,

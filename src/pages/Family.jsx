@@ -148,7 +148,15 @@ const Family = () => {
         const calls = res.data.calls || [];
 
         // Check if the current ringing call was cancelled by the caller
-        if (callInfo && !isInCall && !callInfo.isCaller) {
+        // BUT skip this check if we've already accepted (signal polling is active)
+        // because the backend changes status from 'ringing' to 'active' after accept,
+        // so the call won't appear in the 'ringing' list anymore.
+        if (
+          callInfo &&
+          !isInCall &&
+          !callInfo.isCaller &&
+          !signalPollIntervalRef.current
+        ) {
           const currentCallStillActive = calls.find(
             (c) => c.id === callInfo.callId,
           );

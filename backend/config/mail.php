@@ -76,7 +76,7 @@ function sendOTPEmail($email, $otp, $type = 'signup')
     return sendEmail($email, $config['subject'], $body);
 }
 
-function sendFamilyInvitationEmail($email, $inviterName, $relation, $magicLink)
+function sendFamilyInvitationEmail($email, $inviterName, $relation, $acceptLink, $rejectLink)
 {
     $subject = "Family Invitation from $inviterName on RapiReport";
     $body = "
@@ -85,8 +85,11 @@ function sendFamilyInvitationEmail($email, $inviterName, $relation, $magicLink)
         <style>
             .container { font-family: Arial, sans-serif; line-height: 1.6; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px; }
             .header { color: #4a90e2; font-size: 24px; font-weight: bold; text-align: center; }
-            .content { margin-top: 20px; }
-            .button { display: block; width: 200px; margin: 30px auto; padding: 15px; background-color: #4a90e2; color: #fff; text-decoration: none; text-align: center; border-radius: 5px; font-weight: bold; }
+            .content { margin-top: 20px; text-align: center; }
+            .btn-container { margin: 30px 0; }
+            .button { display: inline-block; padding: 12px 24px; color: #fff; text-decoration: none; border-radius: 5px; font-weight: bold; margin: 0 10px; }
+            .accept { background-color: #28a745; }
+            .reject { background-color: #dc3545; }
             .footer { margin-top: 30px; font-size: 12px; color: #777; text-align: center; }
         </style>
     </head>
@@ -97,8 +100,11 @@ function sendFamilyInvitationEmail($email, $inviterName, $relation, $magicLink)
                 <p>Hello,</p>
                 <p><strong>$inviterName</strong> has invited you to join their family on RapiReport as their <strong>$relation</strong>.</p>
                 <p>By joining, you'll be able to share health reports and keep track of each other's wellness.</p>
-                <a href='$magicLink' class='button'>Accept Invitation</a>
-                <p>This link will automatically sign you in and connect you to $inviterName.</p>
+                
+                <div class='btn-container'>
+                    <a href='$acceptLink' class='button accept'>Accept Invitation</a>
+                    <a href='$rejectLink' class='button reject'>Reject</a>
+                </div>
             </div>
             <div class='footer'>
                 If you didn't expect this invitation, you can safely ignore this email.<br>

@@ -9,6 +9,9 @@ const Modal = ({ isOpen, onClose, title, children, size = "md" }) => {
     md: "max-w-lg",
     lg: "max-w-2xl",
     xl: "max-w-4xl",
+    xxl: "max-w-6xl",
+    // Full-screen style: on mobile take entire viewport, on larger screens keep a nice max width
+    full: "max-w-full h-[100vh] md:max-w-5xl",
   };
 
   return (

@@ -11,12 +11,13 @@ if (!isset($_SESSION['user_id'])) {
 
 $user_id = $_SESSION['user_id'];
 
-// Get inviter name
-$stmt0 = $conn->prepare("SELECT username FROM users WHERE id = ?");
+// Get inviter info
+$stmt0 = $conn->prepare("SELECT username, gender FROM users WHERE id = ?");
 $stmt0->bind_param("i", $user_id);
 $stmt0->execute();
 $inviter = $stmt0->get_result()->fetch_assoc();
 $inviterName = $inviter['username'] ?? 'Family Member';
+$inviterGender = strtolower(trim($inviter['gender'] ?? 'male'));
 
 $rawData = file_get_contents("php://input");
 $data = json_decode($rawData, true) ?: [];
@@ -45,22 +46,41 @@ $target_user_id = null;
 if ($target) {
     $target_user_id = $target['id'];
 } else {
-    // Create a "pending" user if they don't exist
-    // Using a placeholder google_id since it's NOT NULL
-    $placeholder_google_id = "pending_" . bin2hex(random_bytes(8));
-    $placeholder_username = explode('@', $email)[0];
-
-    $stmt_new = $conn->prepare("INSERT INTO users (google_id, email, username, profile_complete) VALUES (?, ?, ?, 0)");
-    $stmt_new->bind_param("sss", $placeholder_google_id, $email, $placeholder_username);
-    if ($stmt_new->execute()) {
-        $target_user_id = $stmt_new->insert_id;
-    } else {
-        echo json_encode(['status' => 'error', 'message' => 'Failed to create guest user']);
-        exit;
-    }
+    // Strictly require the user to exist in the system
+    echo json_encode(['status' => 'error', 'message' => 'User not found with that email. Please ask them to register first.']);
+    exit;
 }
 
-// 2. Check if already linked
+// 2. Determine Inverse Relation
+$inverse_mapping = [
+    'male' => [
+        'Brother' => 'Brother',
+        'Sister' => 'Brother',
+        'Father' => 'Son',
+        'Mother' => 'Son',
+        'Grandfather' => 'Grandson',
+        'Grandmother' => 'Grandson',
+        'Son' => 'Father',
+        'Daughter' => 'Father',
+        'Other' => 'Other'
+    ],
+    'female' => [
+        'Brother' => 'Sister',
+        'Sister' => 'Sister',
+        'Father' => 'Daughter',
+        'Mother' => 'Daughter',
+        'Grandfather' => 'Granddaughter',
+        'Grandmother' => 'Granddaughter',
+        'Son' => 'Mother',
+        'Daughter' => 'Mother',
+        'Other' => 'Other'
+    ]
+];
+
+$gender_key = ($inviterGender === 'female' || $inviterGender === 'f') ? 'female' : 'male';
+$inverseRelation = $inverse_mapping[$gender_key][$relation] ?? 'Other';
+
+// 3. Check if already linked
 $stmt2 = $conn->prepare("SELECT id FROM family_members WHERE user_id = ? AND member_user_id = ?");
 $stmt2->bind_param("ii", $user_id, $target_user_id);
 $stmt2->execute();
@@ -69,13 +89,13 @@ if ($stmt2->get_result()->num_rows > 0) {
     exit;
 }
 
-// 3. Generate invitation token (Magic Link)
+// 4. Generate invitation token
 $token = bin2hex(random_bytes(32));
 $expires = date('Y-m-d H:i:s', strtotime('+7 days'));
 
-// 4. Insert the link with pending status
-$stmt3 = $conn->prepare("INSERT INTO family_members (user_id, member_user_id, relation, status, invitation_token, token_expires) VALUES (?, ?, ?, 'pending', ?, ?)");
-$stmt3->bind_param("iisss", $user_id, $target_user_id, $relation, $token, $expires);
+// 5. Insert the link with pending status
+$stmt3 = $conn->prepare("INSERT INTO family_members (user_id, member_user_id, relation, inverse_relation, status, invitation_token, token_expires) VALUES (?, ?, ?, ?, 'pending', ?, ?)");
+$stmt3->bind_param("iissss", $user_id, $target_user_id, $relation, $inverseRelation, $token, $expires);
 $stmt3->execute();
 
 $invite_id = $stmt3->insert_id;
@@ -83,8 +103,9 @@ $invite_id = $stmt3->insert_id;
 // 5. Send invitation email
 $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? "https" : "http";
 $host = $_SERVER['HTTP_HOST'];
-// Detect if we are on a tunnel by checking headers if needed, but HTTP_HOST usually works
-$magicLink = "$protocol://$host/RapiReport/backend/health/family_accept.php?token=$token";
+
+$acceptLink = "$protocol://$host/RapiReport/backend/health/family_accept.php?token=$token&action=accept";
+$rejectLink = "$protocol://$host/RapiReport/backend/health/family_accept.php?token=$token&action=reject";
 
 // Send response immediately and then send email in the background
 sendResponseAndContinue([
@@ -97,4 +118,4 @@ sendResponseAndContinue([
     ]
 ]);
 
-sendFamilyInvitationEmail($email, $inviterName, $relation, $magicLink);
+sendFamilyInvitationEmail($email, $inviterName, $relation, $acceptLink, $rejectLink);

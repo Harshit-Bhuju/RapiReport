@@ -1,14 +1,28 @@
 import React, { useState, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { Upload, X, FileText, Loader2, ArrowRight, Zap } from "lucide-react";
+import { Upload, X, Loader2, Zap } from "lucide-react";
+import axios from "axios";
 import Button from "@/components/ui/Button";
 import { Card, CardBody } from "@/components/ui/Card";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
+import { useHealthStore } from "@/store/healthStore";
+import API from "@/Configs/ApiEndpoints";
+import toast from "react-hot-toast";
+
+const fileToBase64 = (file) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result.split(",")[1]);
+    reader.onerror = (e) => reject(e);
+  });
+};
 
 const ReportUpload = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { addReport } = useHealthStore();
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null);
   const [isDragOver, setIsDragOver] = useState(false);
@@ -17,23 +31,17 @@ const ReportUpload = () => {
 
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
-    if (selectedFile) {
-      processFile(selectedFile);
-    }
+    if (selectedFile) processFile(selectedFile);
   };
 
   const processFile = (selectedFile) => {
-    // Check if file is an image
     if (!selectedFile.type.startsWith("image/")) {
-      // In a real app, we'd show a toast error here
+      toast.error("Please upload an image (JPG, PNG)");
       return;
     }
-
     setFile(selectedFile);
     const reader = new FileReader();
-    reader.onload = () => {
-      setPreview(reader.result);
-    };
+    reader.onload = () => setPreview(reader.result);
     reader.readAsDataURL(selectedFile);
   };
 
@@ -51,31 +59,57 @@ const ReportUpload = () => {
     e.preventDefault();
     setIsDragOver(false);
     const droppedFile = e.dataTransfer.files[0];
-    if (droppedFile) {
-      processFile(droppedFile);
-    }
+    if (droppedFile) processFile(droppedFile);
   };
 
-  const handleAnalyze = () => {
+  const handleAnalyze = async () => {
     if (!file) return;
 
     setIsAnalyzing(true);
+    try {
+      const base64 = await fileToBase64(file);
+      const res = await axios.post(
+        API.GEMINI_ANALYZE_REPORT,
+        { image: base64, mimeType: file.type },
+        { withCredentials: true }
+      );
 
-    // Simulate API analysis time
-    setTimeout(() => {
+      if (res.data?.status !== "success") {
+        toast.error(res.data?.message || "Analysis failed");
+        return;
+      }
+
+      const data = res.data;
+      const formData = new FormData();
+      formData.append("image", file);
+      formData.append("labName", data.labName || "");
+      formData.append("reportType", data.reportType || "Lab Report");
+      formData.append("reportDate", data.reportDate || "");
+      formData.append("rawText", data.rawText || "");
+      formData.append("aiSummaryEn", data.aiSummaryEn || "");
+      formData.append("aiSummaryNe", data.aiSummaryNe || "");
+      formData.append("overallStatus", data.overallStatus || "normal");
+      formData.append("tests", JSON.stringify(data.tests || []));
+
+      const newId = await addReport(formData);
+      toast.success("Report analyzed and saved!");
+      if (newId) {
+        navigate(`/results/${newId}`);
+      } else {
+        navigate("/reports");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error(err.response?.data?.message || "Failed to analyze report");
+    } finally {
       setIsAnalyzing(false);
-      // Navigate to a mock result ID (e.g., "3" which uses the same mock data structure as "1" but we can customize if needed)
-      // For now, let's just go to "1" to show the populated data, or we could pass state to Results.jsx
-      navigate("/results/analysis-complete");
-    }, 3000);
+    }
   };
 
   const clearFile = () => {
     setFile(null);
     setPreview(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   return (
@@ -94,15 +128,17 @@ const ReportUpload = () => {
         className={cn(
           "border-2 border-dashed transition-all duration-300 overflow-hidden",
           isDragOver
-            ? "border-primary-500 bg-primary-50 Scale-[1.02]"
-            : "border-gray-200 bg-gray-50/50 hover:border-primary-200",
-        )}>
+            ? "border-primary-500 bg-primary-50 scale-[1.02]"
+            : "border-gray-200 bg-gray-50/50 hover:border-primary-200"
+        )}
+      >
         <CardBody
           className="p-10 flex flex-col items-center justify-center min-h-[300px] cursor-pointer"
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
-          onClick={() => fileInputRef.current?.click()}>
+          onClick={() => fileInputRef.current?.click()}
+        >
           <input
             type="file"
             ref={fileInputRef}
@@ -137,7 +173,8 @@ const ReportUpload = () => {
                 onClick={(e) => {
                   e.stopPropagation();
                   clearFile();
-                }}>
+                }}
+              >
                 <X className="w-4 h-4" />
               </Button>
               <img
@@ -158,7 +195,8 @@ const ReportUpload = () => {
           size="lg"
           disabled={!file || isAnalyzing}
           onClick={handleAnalyze}
-          className="min-w-[200px] h-14 text-lg shadow-xl shadow-primary-200">
+          className="min-w-[200px] h-14 text-lg shadow-xl shadow-primary-200"
+        >
           {isAnalyzing ? (
             <>
               <Loader2 className="w-5 h-5 mr-2 animate-spin" />
@@ -179,7 +217,7 @@ const ReportUpload = () => {
             {t("uploadReport.processing") || "Reading document structure..."}
           </p>
           <div className="w-64 h-2 bg-gray-100 rounded-full mx-auto overflow-hidden">
-            <div className="h-full bg-primary-500 animate-progress origin-left" />
+            <div className="h-full bg-primary-500 animate-pulse origin-left w-2/3" />
           </div>
         </div>
       )}

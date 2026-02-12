@@ -4,6 +4,7 @@ require_once __DIR__ . '/../config/session_config.php';
 require_once __DIR__ . '/../config/dbconnect.php';
 
 $token = isset($_GET['token']) ? $_GET['token'] : '';
+$action = isset($_GET['action']) ? $_GET['action'] : ''; // accept or reject
 
 if (empty($token)) {
     die("Invalid or missing invitation token.");
@@ -22,7 +23,7 @@ $stmt->execute();
 $invitation = $stmt->get_result()->fetch_assoc();
 
 if (!$invitation) {
-    die("Invitation not found or already accepted.");
+    die("Invitation not found or already processed.");
 }
 
 // 2. Check expiration
@@ -30,39 +31,52 @@ if (strtotime($invitation['token_expires']) < time()) {
     die("Invitation token has expired.");
 }
 
-// 3. Accept invitation
-$stmt2 = $conn->prepare("UPDATE family_members SET status = 'accepted', invitation_token = NULL, token_expires = NULL WHERE id = ?");
-$stmt2->bind_param("i", $invitation['id']);
-if (!$stmt2->execute()) {
-    die("Error accepting invitation.");
+function showMessage($title, $message, $color = "#4a90e2", $icon = "ℹ️")
+{
+    echo "
+    <html>
+    <head>
+        <meta name='viewport' content='width=device-width, initial-scale=1' />
+        <title>$title</title>
+        <style>
+            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f6f8; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+            .card { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); text-align: center; max-width: 400px; width: 90%; }
+            h1 { color: $color; margin-bottom: 20px; font-size: 24px; }
+            p { font-size: 16px; color: #555; line-height: 1.5; }
+            .icon { font-size: 48px; margin-bottom: 20px; display: block; }
+        </style>
+    </head>
+    <body>
+        <div class='card'>
+            <span class='icon'>$icon</span>
+            <h1>$title</h1>
+            <p>$message</p>
+        </div>
+    </body>
+    </html>";
 }
 
-// 4. Auto-login the member
-// Fetch target user data
-$stmt3 = $conn->prepare("SELECT * FROM users WHERE id = ?");
-$stmt3->bind_param("i", $invitation['member_user_id']);
-$stmt3->execute();
-$user = $stmt3->get_result()->fetch_assoc();
+if ($action === 'accept') {
+    // 3. Accept invitation
+    $stmt2 = $conn->prepare("UPDATE family_members SET status = 'accepted', invitation_token = NULL, token_expires = NULL WHERE id = ?");
+    $stmt2->bind_param("i", $invitation['id']);
 
-if ($user) {
-    $_SESSION['user_id'] = $user['id'];
-    $_SESSION['user_email'] = $user['email'];
-    $_SESSION['logged_in'] = true;
+    if ($stmt2->execute()) {
+        showMessage("Invitation Accepted! 🎉", "You have successfully joined <strong>" . htmlspecialchars($invitation['inviter_name']) . "</strong>'s family on RapiReport.<br><br>You can now close this tab and log in to your account.", "#28a745", "✅");
+    } else {
+        showMessage("Error", "Something went wrong while accepting the invitation.", "#dc3545", "❌");
+    }
+} elseif ($action === 'reject') {
+    // 4. Reject and Delete
+    $stmt3 = $conn->prepare("DELETE FROM family_members WHERE id = ?");
+    $stmt3->bind_param("i", $invitation['id']);
 
-    // Redirect to dashboard or home
-    // Find base URL
-    $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? "https" : "http";
-    $host = $_SERVER['HTTP_HOST'];
-
-    // Redirect to frontend (port 5173 for dev, or same host)
-    // For now, let's redirect to origin
-    $redirect_url = $protocol . "://" . $host . "/RapiReport";
-
-    // If it's a dev environment with vite, we might need a different port
-    // But usually frontend handles root redirect
-    header("Location: $redirect_url/family");
-    echo "<h1>Success!</h1><p>Invitation accepted. Redirecting you to the dashboard...</p>";
-    echo "<script>window.location.href = '/RapiReport/family';</script>";
+    if ($stmt3->execute()) {
+        showMessage("Invitation Declined", "You have declined the invitation from <strong>" . htmlspecialchars($invitation['inviter_name']) . "</strong>.", "#777", "❌");
+    } else {
+        showMessage("Error", "Something went wrong.", "#dc3545", "❌");
+    }
 } else {
-    die("Error retrieving user record.");
+    // No action specified or invalid action
+    showMessage("Invalid Request", "Please use the 'Accept' or 'Reject' links provided in your email.", "#dc3545", "ℹ️");
 }

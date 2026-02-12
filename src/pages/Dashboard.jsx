@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import {
   TrendingUp,
@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/store/authStore";
+import { useHealthStore } from "@/store/healthStore";
 import { useOffline } from "@/hooks/useOffline";
 import Button from "@/components/ui/Button";
 import { Card, CardBody } from "@/components/ui/Card";
@@ -23,12 +24,18 @@ const Dashboard = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuthStore();
-  const { isOffline } = useOffline();
+  const { reports, fetchReports } = useHealthStore();
+
+  useEffect(() => {
+    fetchReports();
+  }, [fetchReports]);
+
+  const latestReport = reports[0];
 
   const stats = [
     {
       label: t("dashboardPage.bloodTests"),
-      value: "12",
+      value: String(reports.length),
       icon: Activity,
       color: "text-primary-600",
       bg: "bg-primary-50",
@@ -65,7 +72,7 @@ const Dashboard = () => {
         </div>
         <Button
           size="lg"
-          onClick={() => navigate("/results/new")}
+          onClick={() => navigate("/reports")}
           className="rounded-2xl shadow-xl shadow-primary-100">
           {t("dashboardPage.analyzeNew")}
         </Button>
@@ -152,22 +159,36 @@ const Dashboard = () => {
             </h2>
             <Card
               className="border-none shadow-sm overflow-hidden group hover:shadow-xl transition-all duration-300 cursor-pointer"
-              onClick={() => navigate("/reports")}>
+              onClick={() => (latestReport ? navigate(`/results/${latestReport.id}`) : navigate("/reports"))}>
               <CardBody className="p-0">
                 <div className="p-6 bg-indigo-50/50">
-                  <Badge variant="error" className="mb-3">
-                    {t("dashboardPage.abnormal")}
-                  </Badge>
-                  <h3 className="text-lg font-black text-gray-900">
-                    {t("dashboardPage.thyroidPanel")}
-                  </h3>
-                  <p className="text-xs font-bold text-gray-400 mt-1 uppercase tracking-wider">
-                    Alka Hospital Lab • Jan 10
-                  </p>
+                  {latestReport ? (
+                    <>
+                      <Badge variant={latestReport.status === "normal" ? "success" : "error"} className="mb-3">
+                        {latestReport.status === "normal" ? t("dashboardPage.normal") || "Normal" : t("dashboardPage.abnormal")}
+                      </Badge>
+                      <h3 className="text-lg font-black text-gray-900">
+                        {latestReport.type || "Lab Report"}
+                      </h3>
+                      <p className="text-xs font-bold text-gray-400 mt-1 uppercase tracking-wider">
+                        {latestReport.lab || "—"} • {latestReport.date ? new Date(latestReport.date).toLocaleDateString("en-GB", { month: "short", day: "numeric" }) : ""}
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <Badge variant="secondary" className="mb-3">No reports yet</Badge>
+                      <h3 className="text-lg font-black text-gray-900">
+                        {t("dashboardPage.thyroidPanel")}
+                      </h3>
+                      <p className="text-xs font-bold text-gray-400 mt-1 uppercase tracking-wider">
+                        {t("dashboardPage.uploadFirst") || "Upload your first report"}
+                      </p>
+                    </>
+                  )}
                 </div>
                 <div className="p-6 bg-white border-t border-gray-50">
                   <div className="flex items-center justify-between text-xs font-black text-indigo-600 uppercase tracking-widest">
-                    <span>{t("dashboardPage.viewAnalysis")}</span>
+                    <span>{latestReport ? t("dashboardPage.viewAnalysis") : t("dashboardPage.uploadReport") || "Upload Report"}</span>
                     <ArrowRight className="w-4 h-4 group-hover:translate-x-2 transition-transform" />
                   </div>
                 </div>

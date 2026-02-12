@@ -1,36 +1,38 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import axios from "axios";
 import {
-  FileText,
   ArrowLeft,
-  Download,
-  Share2,
-  Play,
+  Square,
   AlertCircle,
   CheckCircle2,
-  Activity,
   Calendar,
   Microscope,
   Stethoscope,
   Info,
+  Volume2,
 } from "lucide-react";
 import PageWrapper from "@/components/layout/PageWrapper";
 import Button from "@/components/ui/Button";
-import { Card, CardBody, CardHeader, CardFooter } from "@/components/ui/Card";
+import { Card, CardBody } from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
-import { formatDate, cn } from "@/lib/utils";
+import { formatDate } from "@/lib/utils";
 import ChatInterface from "@/components/features/ChatInterface";
+import API from "@/Configs/ApiEndpoints";
+
+const getReportImageUrl = (imagePath) => {
+  if (!imagePath) return null;
+  if (imagePath.startsWith("http://") || imagePath.startsWith("https://")) {
+    return imagePath;
+  }
+  return imagePath.startsWith("/") ? imagePath : `/${imagePath}`;
+};
 
 const MedicineInsight = React.lazy(
   () => import("@/components/features/MedicineInsight"),
 );
 
-const ReportUpload = React.lazy(
-  () => import("@/components/features/ReportUpload"),
-);
-
-// Simple Loading component for Suspense fallback
 const Loading = () => {
   const { t } = useTranslation();
   return (
@@ -47,273 +49,296 @@ const Results = () => {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
   const [isPlaying, setIsPlaying] = useState(false);
+  const [report, setReport] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [previewImage, setPreviewImage] = useState(null);
 
-  // Handle "New Upload" state
-  if (id === "new") {
+  // Redirect "new" to Reports page (single upload flow)
+  useEffect(() => {
+    if (id === "new") navigate("/reports", { replace: true });
+  }, [id, navigate]);
+
+  // Fetch report by id
+  useEffect(() => {
+    if (!id || id === "new") return;
+    setLoading(true);
+    setError(null);
+    axios
+      .get(`${API.REPORTS_GET}?id=${id}`, { withCredentials: true })
+      .then((res) => {
+        if (res.data?.status === "success" && res.data?.data) {
+          const r = res.data.data;
+          setReport({
+            lab: r.lab,
+            type: r.type,
+            date: r.date || r.createdAt,
+            imageUrl: getReportImageUrl(r.imagePath),
+            tests: (r.tests || []).map((t) => ({
+              name: t.name,
+              result: t.result,
+              unit: t.unit,
+              range: t.range,
+              status: t.status || "normal",
+            })),
+            aiSummary: { en: r.aiSummaryEn || "", ne: r.aiSummaryNe || "" },
+            medicines: [], // No medicines from lab reports; can be extended later
+          });
+        } else {
+          setError("Report not found");
+        }
+      })
+      .catch(() => setError("Failed to load report"))
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  // Cleanup speech on unmount
+  useEffect(() => {
+    return () => window.speechSynthesis?.cancel();
+  }, []);
+
+  if (id === "new") return null;
+
+  // Loading or error state
+  if (loading) {
     return (
       <PageWrapper>
-        <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-8">
-          <Button
-            variant="ghost"
-            onClick={() => navigate("/reports")}
-            className="text-gray-600 hover:text-primary-600 -ml-4">
-            <ArrowLeft className="mr-2 w-5 h-5" />
-            {t("common.back")}
-          </Button>
+        <div className="py-20 text-center">
+          <Loading />
         </div>
-        <ReportUpload />
+      </PageWrapper>
+    );
+  }
+  if (error || !report) {
+    return (
+      <PageWrapper>
+        <div className="py-20 text-center">
+          <p className="text-gray-500 font-bold mb-4">{error || "Report not found"}</p>
+          <Button onClick={() => navigate("/reports")}>Back to Reports</Button>
+        </div>
       </PageWrapper>
     );
   }
 
-  // Mock Data (Updated with Medicine Details)
-  const report = {
-    patient: "Prashant Dahal",
-    age: 28,
-    gender: "Male",
-    date: "2025-01-15",
-    lab: "Kathmandu Diagnostic Center",
-    type: "Comprehensive Blood Analysis",
-    tests: [
-      {
-        name: "Hemoglobin (Hb)",
-        result: 12.5,
-        unit: "g/dL",
-        range: "13.5 - 17.5",
-        status: "low",
-      },
-      {
-        name: "White Blood Cell (WBC)",
-        result: 7200,
-        unit: "cells/mcL",
-        range: "4500 - 11000",
-        status: "normal",
-      },
-      {
-        name: "Platelets",
-        result: 210000,
-        unit: "cells/mcL",
-        range: "150000 - 450000",
-        status: "normal",
-      },
-      {
-        name: "Fasting Blood Sugar",
-        result: 105,
-        unit: "mg/dL",
-        range: "70 - 100",
-        status: "high",
-      },
-    ],
-    aiSummary: {
-      en: "Your results show slightly low hemoglobin and marginally high blood sugar. You may feel tired more often. Increasing iron-rich foods and reducing refined sugar is recommended.",
-      ne: "तपाईंको रिपोर्टमा हेमोग्लोबिन अलि कम र ब्लड सुगर थोरै उच्च देखिएको छ। तपाईंलाई थकान महसुस हुन सक्छ। आइरनयुक्त खाना बढाउन र चिनी कम गर्न सल्लाह दिइन्छ।",
-    },
-    medicines: [
-      {
-        name: "Iron Supplement (Dexorange)",
-        type: "Syrup / Capsule",
-        dosage: "10ml",
-        timingEn: "Twice daily after meals",
-        timingNe: "खाना खाएपछि दिनमा दुई पटक",
-        descEn:
-          "Helps increase red blood cell count and improves hemoglobin levels.",
-        descNe:
-          "यसले रेड ब्लड सेल बढाउन र हेमोग्लोबिनको स्तर सुधार्न मद्दत गर्दछ।",
-        price: "Rs. 185",
-        marketAvailability: "High",
-        alternatives: ["Chemiron", "Ferry-B", "Hemfer"],
-      },
-      {
-        name: "Metformin",
-        type: "Tablet",
-        dosage: "500mg",
-        timingEn: "Once daily with dinner",
-        timingNe: "बेलुकाको खानासँगै दिनमा एक पटक",
-        descEn:
-          "Helps control blood sugar levels by improving body response to insulin.",
-        descNe:
-          "यसले इन्सुलिनको प्रतिक्रिया सुधारेर रगतमा चिनीको मात्रा नियन्त्रण गर्न मद्दत गर्दछ।",
-        price: "Rs. 45 (Strip)",
-        marketAvailability: "High",
-        alternatives: ["Glycomet", "Gluformin", "Riomet"],
-      },
-    ],
+  const getTextToSpeak = () => {
+    const summary = i18n.language === "ne" ? report.aiSummary.ne : report.aiSummary.en;
+    if (!summary) return "";
+    let text = summary;
+    if (report.tests?.length > 0) {
+      text += ". Your test results: ";
+      report.tests.forEach((t) => {
+        text += `${t.name}: ${t.result} ${t.unit || ""}. ${t.status}. `;
+      });
+    }
+    return text;
   };
 
   const toggleVoice = () => {
-    setIsPlaying(!isPlaying);
-    // In real app, trigger text-to-speech API
+    if (isPlaying) {
+      window.speechSynthesis?.cancel();
+      setIsPlaying(false);
+      return;
+    }
+    const text = getTextToSpeak();
+    if (!text) return;
+    if (!window.speechSynthesis) {
+      console.warn("Speech synthesis not supported");
+      return;
+    }
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 0.9;
+    utterance.lang = i18n.language === "ne" ? "hi-NP" : "en-US";
+    utterance.onend = () => setIsPlaying(false);
+    utterance.onerror = () => setIsPlaying(false);
+    window.speechSynthesis.speak(utterance);
+    setIsPlaying(true);
   };
+
+  const aiText = i18n.language === "ne" ? report.aiSummary.ne : report.aiSummary.en;
+  const hasSummary = !!(report.aiSummary?.en || report.aiSummary?.ne);
 
   return (
     <PageWrapper>
-      {/* Header Actions */}
-      <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-8">
+      {/* Compact header */}
+      <div className="flex items-center justify-between gap-4 mb-4 sm:mb-5">
         <Button
           variant="ghost"
-          onClick={() => navigate("/dashboard")}
-          className="text-gray-600 hover:text-primary-600 -ml-4">
-          <ArrowLeft className="mr-2 w-5 h-5" />
-          {t("common.back")}
+          size="sm"
+          onClick={() => navigate("/reports")}
+          className="text-gray-700 hover:text-primary-600 -ml-2">
+          <ArrowLeft className="mr-1.5 w-4 h-4 sm:w-5 sm:h-5" />
+          <span className="text-sm sm:text-base">{t("common.back")}</span>
         </Button>
-        <div className="flex gap-4 w-full md:w-auto">
-          <Button variant="outline" className="flex-1 md:flex-none">
-            <Share2 className="mr-2 w-4 h-4" />
-            {t("results.share")}
-          </Button>
-          <Button variant="secondary" className="flex-1 md:flex-none">
-            <Download className="mr-2 w-4 h-4" />
-            {t("results.download")}
-          </Button>
+        <div className="flex items-center gap-2 text-gray-500 text-xs sm:text-sm">
+          <Calendar className="w-3.5 h-3.5" />
+          {report.date ? formatDate(report.date, "PP") : "—"}
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Report Overview */}
-        <div className="lg:col-span-2 space-y-12">
-          <Card className="border-none shadow-sm overflow-visible relative">
-            <div className="absolute -top-4 -right-4 p-4 rounded-full bg-primary-600 text-white shadow-xl animate-pulse">
-              <Microscope className="w-6 h-6" />
-            </div>
-            <CardHeader className="border-none pt-2">
-              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                <div>
-                  <Badge variant="primary" className="mb-2">
-                    {t("results.officialReport")}
-                  </Badge>
-                  <h1 className="text-2xl font-black text-gray-900">
-                    {report.type}
-                  </h1>
-                  <p className="text-sm font-bold text-gray-500 mt-1">
-                    {report.lab}
-                  </p>
-                </div>
-                <div className="flex items-center gap-3 text-sm text-gray-600 bg-gray-50 px-4 py-2 rounded-xl border border-gray-100 font-bold">
-                  <Calendar className="w-4 h-4 text-primary-600" />
-                  {formatDate(report.date, "PP")}
-                </div>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-5">
+        {/* AI Summary + Listen — prominent, less scroll */}
+        <div className="lg:col-span-5 order-1">
+          <Card className="border-none shadow-lg overflow-hidden bg-[#1e3a5f] text-white">
+            <CardBody className="p-4 sm:p-5">
+              <div className="flex items-center gap-2 mb-3">
+                <Stethoscope className="w-5 h-5 text-amber-300" />
+                <h3 className="font-bold text-white">AI Summary</h3>
               </div>
-            </CardHeader>
-            <CardBody className="py-8">
-              <div className="grid grid-cols-1 gap-4">
-                {report.tests.map((test, idx) => (
-                  <div
-                    key={idx}
-                    className="flex flex-col md:flex-row items-start md:items-center justify-between p-4 rounded-2xl bg-gray-50 border border-gray-100 group hover:border-primary-200 transition-colors">
-                    <div className="flex items-center gap-4">
-                      {test.status === "normal" ? (
-                        <CheckCircle2 className="w-5 h-5 text-success-500" />
-                      ) : (
-                        <AlertCircle className="w-5 h-5 text-error-500" />
-                      )}
-                      <div>
-                        <p className="text-sm font-bold text-gray-900">
-                          {test.name}
-                        </p>
-                        <p className="text-xs font-semibold text-gray-400">
-                          {t("results.refRange")}: {test.range}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-4 mt-2 md:mt-0 w-full md:w-auto justify-between md:justify-end">
-                      <p className="text-lg font-black text-gray-900">
-                        {test.result}{" "}
-                        <span className="text-xs text-gray-400 font-bold uppercase">
-                          {test.unit}
-                        </span>
-                      </p>
-                      <Badge
-                        variant={test.status === "normal" ? "success" : "error"}
-                        className="min-w-[80px] justify-center">
-                        {test.status.toUpperCase()}
-                      </Badge>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <p className="text-white/95 text-sm sm:text-base leading-relaxed mb-4 min-h-[3.5rem]">
+                {aiText || "No summary available."}
+              </p>
+              {/* Responsive Listen button */}
+              <button
+                type="button"
+                onClick={toggleVoice}
+                disabled={!hasSummary}
+                className={`w-full flex items-center justify-center gap-3 sm:gap-4 py-3.5 sm:py-4 rounded-xl font-bold transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed min-h-[48px] ${
+                  isPlaying
+                    ? "bg-amber-400 text-gray-900"
+                    : "bg-white text-[#1e3a5f] hover:bg-amber-50"
+                }`}
+              >
+                <span className="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center shrink-0 bg-black/5">
+                  {isPlaying ? (
+                    <Square className="w-5 h-5 sm:w-6 sm:h-6 fill-current" />
+                  ) : (
+                    <Volume2 className="w-5 h-5 sm:w-6 sm:h-6" />
+                  )}
+                </span>
+                <span className="text-sm sm:text-base">
+                  {isPlaying ? "Stop" : "Listen to Report"}
+                </span>
+              </button>
             </CardBody>
           </Card>
 
-          {/* Medicine Insight Section */}
-          <React.Suspense fallback={<Loading />}>
-            <MedicineInsight medicines={report.medicines} />
-          </React.Suspense>
+          <Card className="border border-emerald-200 bg-emerald-50/80 mt-4 sm:mt-5">
+            <CardBody className="p-3 sm:p-4">
+              <div className="flex items-start gap-2">
+                <Info className="w-4 h-4 text-emerald-700 shrink-0 mt-0.5" />
+                <p className="text-sm text-emerald-900 font-medium leading-relaxed">
+                  {t("results.lifestyleDesc")}
+                </p>
+              </div>
+            </CardBody>
+          </Card>
         </div>
 
-        {/* AI Insight Sidebar */}
-        <div className="lg:col-span-1 space-y-6">
-          <Card className="bg-primary-600 text-white border-none shadow-2xl overflow-hidden relative">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-3xl" />
-            <CardBody className="p-8 relative z-10">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
-                  <Stethoscope className="w-6 h-6" />
-                </div>
-                <h3 className="text-xl font-black">
-                  {t("results.healthAssistant")}
-                </h3>
+        {/* Report + Tests */}
+        <div className="lg:col-span-7 order-2 space-y-4">
+          <Card className="border border-gray-200 shadow-sm overflow-hidden">
+            <div className="bg-gray-800 px-4 py-3 sm:px-5 sm:py-4">
+              <div className="flex items-center gap-2 mb-1">
+                <Microscope className="w-4 h-4 text-amber-400" />
+                <span className="text-amber-300 text-xs font-bold uppercase tracking-wider">Lab Report</span>
               </div>
-
-              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 mb-8 italic text-lg leading-relaxed font-semibold">
-                "
-                {i18n.language === "ne"
-                  ? report.aiSummary.ne
-                  : report.aiSummary.en}
-                "
+              <h1 className="text-lg sm:text-xl font-black text-white">
+                {report.type}
+              </h1>
+              <p className="text-gray-300 text-sm mt-0.5">
+                {report.lab || "—"}
+              </p>
+            </div>
+            <CardBody className="p-3 sm:p-4">
+              {report.imageUrl && (
+                <div className="mb-4">
+                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                    Original Report Image
+                  </p>
+                  <div
+                    className="rounded-lg border border-gray-200 bg-gray-50 overflow-hidden cursor-pointer group"
+                    onClick={() => setPreviewImage(report.imageUrl)}
+                  >
+                    <img
+                      src={report.imageUrl}
+                      alt="Original lab report"
+                      className="w-full max-h-72 object-contain group-hover:opacity-95 transition-opacity"
+                    />
+                  </div>
+                </div>
+              )}
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">
+                Test Results
+              </p>
+              <div className="space-y-2 max-h-[280px] sm:max-h-[320px] overflow-y-auto pr-1">
+                {report.tests?.length === 0 ? (
+                  <p className="text-gray-500 text-sm py-4 text-center">
+                    No structured results. See AI summary.
+                  </p>
+                ) : (
+                  report.tests?.map((test, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center justify-between gap-3 p-3 rounded-lg bg-gray-50 border border-gray-100"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        {test.status === "normal" ? (
+                          <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600 shrink-0" />
+                        ) : (
+                          <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-red-600 shrink-0" />
+                        )}
+                        <div className="min-w-0">
+                          <p className="font-semibold text-gray-900 text-sm truncate">
+                            {test.name}
+                          </p>
+                          <p className="text-xs text-gray-500">Ref: {test.range || "—"}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <p className="text-sm font-bold text-gray-900">
+                          {test.result} <span className="text-gray-500 font-normal text-xs">{test.unit}</span>
+                        </p>
+                        <Badge
+                          variant={test.status === "normal" ? "success" : "error"}
+                          className="text-[10px] px-1.5 py-0"
+                        >
+                          {test.status}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
-
-              <Button
-                variant="secondary"
-                className="w-full py-6 rounded-2xl text-lg font-black text-primary-700 hover:scale-[1.02] bg-white border-none shadow-xl flex items-center justify-center gap-4"
-                onClick={toggleVoice}>
-                <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center">
-                  {isPlaying ? (
-                    <Activity className="w-6 h-6 text-primary-600 animate-pulse" />
-                  ) : (
-                    <Play className="w-6 h-6 text-primary-600 fill-primary-600" />
-                  )}
-                </div>
-                <div className="text-left">
-                  <p className="text-sm font-black leading-none">
-                    {isPlaying ? t("results.explaining") : t("results.audio")}
-                  </p>
-                  <p className="text-[10px] font-bold opacity-60 mt-1 uppercase">
-                    ▶️ {isPlaying ? t("results.stop") : t("results.play")}
-                  </p>
-                </div>
-              </Button>
             </CardBody>
           </Card>
 
           <ChatInterface />
-
-          <Card className="border-none shadow-sm bg-success-50">
-            <CardBody className="p-6">
-              <div className="flex items-center gap-3 mb-4 text-success-700">
-                <Info className="w-5 h-5 shrink-0" />
-                <p className="text-sm font-bold uppercase tracking-wider">
-                  {t("results.lifestyle")}
-                </p>
-              </div>
-              <p className="text-sm text-success-900 font-medium leading-relaxed">
-                {t("results.lifestyleDesc")}
-              </p>
-            </CardBody>
-          </Card>
-
-          {/* Payment Partners */}
-          <div className="p-6 rounded-3xl bg-gray-100 flex flex-col items-center gap-4">
-            <p className="text-[10px] font-black uppercase text-gray-400 tracking-[0.2em]">
-              {t("results.partners")}
-            </p>
-            <div className="flex items-center gap-8 opacity-40 grayscale hover:grayscale-0 transition-all cursor-default">
-              <img src="/esewa-logo.png" alt="eSewa" className="h-4" />
-              <img src="/khalti-logo.png" alt="Khalti" className="h-4" />
-              <img src="/ime-pay-logo.png" alt="IME Pay" className="h-5" />
-            </div>
-          </div>
         </div>
       </div>
+
+      {report.medicines?.length > 0 && (
+        <div className="mt-4">
+          <React.Suspense fallback={<Loading />}>
+            <MedicineInsight medicines={report.medicines} />
+          </React.Suspense>
+        </div>
+      )}
+
+      {previewImage && (
+        <div
+          className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
+          onClick={() => setPreviewImage(null)}
+        >
+          <div
+            className="relative max-w-5xl max-h-full w-full flex items-center justify-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setPreviewImage(null)}
+              className="absolute top-4 right-4 rounded-full bg-black/70 text-white p-2 hover:bg-black focus:outline-none focus:ring-2 focus:ring-white"
+            >
+              ✕
+            </button>
+            <img
+              src={previewImage}
+              alt="Report preview"
+              className="max-h-[90vh] w-auto rounded-xl shadow-2xl object-contain"
+            />
+          </div>
+        </div>
+      )}
     </PageWrapper>
   );
 };

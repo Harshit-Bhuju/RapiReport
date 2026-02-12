@@ -129,9 +129,12 @@
     "graphPlaceholder": "Activity graph visualization placeholder",
     "graphComing": "Integrated charting coming soon...",
     "recent": "Recent",
+    "normal": "Normal",
     "abnormal": "ABNORMAL",
     "thyroidPanel": "Thyroid Panel",
     "viewAnalysis": "View Analysis",
+    "uploadFirst": "Upload your first report",
+    "uploadReport": "Upload Report",
     "geneticWellness": "Genetic Wellness",
     "geneticDesc": "Based on your family history, we've identified 3 potential prevention strategies.",
     "viewRisk": "View Risk Analysis"
@@ -331,6 +334,23 @@
     "emailLabel": "Email Address",
     "emailPlaceholder": "member@example.com",
     "sendInvitation": "Send Invitation",
-    "chatWith": "Chat with {{name}}"
+    "chatWith": "Chat with {{name}}",
+    "incomingCall": "Incoming call from {{name}}",
+    "incomingCallTitle": "Incoming call from {{name}}",
+    "callPermissionError": "We couldn't access your camera/microphone. Please check browser permissions.",
+    "callFailed": "Could not start call with {{name}}. Please try again.",
+    "calling": "Calling {{name}}...",
+    "callConnected": "You are now in a call with {{name}}.",
+    "callEnded": "Call ended.",
+    "you": "You",
+    "familyMember": "Family Member",
+    "accept": "Accept",
+    "decline": "Decline",
+    "hangup": "Hang up",
+    "chatPlaceholder": "Type a message...",
+    "chatSend": "Send",
+    "chatEmpty": "No messages yet. Start the conversation.",
+    "chatSendFailed": "Failed to send message.",
+    "confirmRemove": "Are you sure you want to remove this family member?"
   }
 }

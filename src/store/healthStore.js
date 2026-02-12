@@ -32,6 +32,7 @@ export const useHealthStore = create(
   persist(
     (set, get) => ({
       prescriptions: [],
+      reports: [],
       adherenceLogs: [],
       adherenceReminders: [],
       symptoms: [],
@@ -42,6 +43,10 @@ export const useHealthStore = create(
       fetchPrescriptions: async () => {
         const j = await apiGet(API.PRESCRIPTIONS_LIST);
         if (j?.status === "success") set({ prescriptions: j.data ?? [] });
+      },
+      fetchReports: async () => {
+        const j = await apiGet(API.REPORTS_LIST);
+        if (j?.status === "success") set({ reports: j.data ?? [] });
       },
       fetchAdherenceLogs: async () => {
         const j = await apiGet(API.ADHERENCE_LOGS);
@@ -67,6 +72,7 @@ export const useHealthStore = create(
         const g = get();
         await Promise.all([
           g.fetchPrescriptions(),
+          g.fetchReports(),
           g.fetchAdherenceLogs(),
           g.fetchAdherenceReminders(),
           g.fetchSymptoms(),
@@ -110,6 +116,34 @@ export const useHealthStore = create(
         else
           set((state) => ({
             prescriptions: state.prescriptions.filter((p) => p.id !== id),
+          }));
+      },
+
+      // ---------- Reports ----------
+      addReport: async (report) => {
+        let res;
+        if (report instanceof FormData) {
+          res = await fetch(API.REPORTS_CREATE, {
+            method: "POST",
+            credentials: "include",
+            body: report,
+          });
+        } else {
+          res = await apiPost(API.REPORTS_CREATE, report);
+        }
+        if (res?.ok) {
+          await get().fetchReports();
+          const json = await res.json();
+          return json?.id ?? null;
+        }
+        return null;
+      },
+      removeReport: async (id) => {
+        const res = await apiPost(API.REPORTS_DELETE, { id });
+        if (res?.ok) await get().fetchReports();
+        else
+          set((state) => ({
+            reports: state.reports.filter((r) => r.id !== id),
           }));
       },
 

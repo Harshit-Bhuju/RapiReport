@@ -75,12 +75,24 @@ const API = {
   OCR_HISTORY_DELETE: `${BASE_URL}/health/ocr_history_delete.php`,
   OCR_HISTORY_SAVE: `${BASE_URL}/health/ocr_history_save.php`,
   GEMINI_OCR: `${BASE_URL}/api/gemini_ocr.php`,
+  GEMINI_ANALYZE_REPORT: `${BASE_URL}/api/gemini_analyze_report.php`,
+
+  // Reports (lab/diagnostic)
+  REPORTS_LIST: `${BASE_URL}/health/reports_list.php`,
+  REPORTS_GET: `${BASE_URL}/health/reports_get.php`,
+  REPORTS_CREATE: `${BASE_URL}/health/reports_create.php`,
+  REPORTS_DELETE: `${BASE_URL}/health/reports_delete.php`,
 
   // Family Planner
   FAMILY_LIST: `${BASE_URL}/health/family_list.php`,
   FAMILY_ADD: `${BASE_URL}/health/family_add.php`,
   FAMILY_REMOVE: `${BASE_URL}/health/family_remove.php`,
   FAMILY_SEARCH: `${BASE_URL}/health/family_search.php`,
+  FAMILY_CALL_START: `${BASE_URL}/health/family_call_start.php`,
+  FAMILY_CALL_SIGNAL: `${BASE_URL}/health/family_call_signal.php`,
+  FAMILY_CALL_INCOMING: `${BASE_URL}/health/family_call_incoming.php`,
+  FAMILY_CALL_STATUS: `${BASE_URL}/health/family_call_status.php`,
+  FAMILY_CHAT: `${BASE_URL}/health/family_chat.php`,
 
   // Optional Python OCR microservice (FastAPI/EasyOCR)
   OCR_UPLOAD: OCR_SERVICE_BASE_URL ? `${OCR_SERVICE_BASE_URL}/upload` : null,

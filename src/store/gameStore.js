@@ -1,237 +1,95 @@
 import { create } from "zustand";
+import { getAPIBaseUrl } from "../config";
 
 // Distance in meters between two lat/lng points (Haversine)
-const distanceMeters = (lat1, lng1, lat2, lng2) => {
-  const R = 6371000;
+export const distanceMeters = (lat1, lng1, lat2, lng2) => {
+  const R = 6371000; // Radius of the earth in meters
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
   const dLng = ((lng2 - lng1) * Math.PI) / 180;
   const a =
     Math.sin(dLat / 2) ** 2 +
     Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLng / 2) ** 2;
+    Math.cos((lat2 * Math.PI) / 180) *
+    Math.sin(dLng / 2) ** 2;
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
+  return R * c; // Delta in meters
 };
 
 // Quest pool: place (go to X) and walk (walk Y meters). Tagged by age & health.
 // ageGroup: "any" | "young" (<25) | "adult" (25-55) | "senior" (55+)
 // fitnessLevel: "light" | "moderate" | "active" — affects suggested difficulty & reward
 // healthConsideration: "any" | "heart" | "diabetes" | "bp" | "thyroid" | "general"
+// Relative offsets in degrees (approximate for small distances)
+// 0.00001 degrees is roughly 1.1 meters
 const QUEST_POOL = [
-  // —— Place quests (go to this place) ——
   {
-    id: "p1",
+    id: "q1",
     type: "place",
-    title: "Central Park",
-    description: "Visit the main park for a short stroll",
-    lat: 27.7172,
-    lng: 85.324,
-    radiusMeters: 80,
-    points: 40,
-    icon: "park",
-    ageGroup: "any",
-    fitnessLevel: "light",
-    healthConsideration: "any",
-  },
-  {
-    id: "p2",
-    type: "place",
-    title: "Health Post North",
-    description: "Reach the health post",
-    lat: 27.72,
-    lng: 85.33,
-    radiusMeters: 60,
-    points: 50,
-    icon: "health",
-    ageGroup: "any",
-    fitnessLevel: "light",
-    healthConsideration: "heart",
-  },
-  {
-    id: "p3",
-    type: "place",
-    title: "Community Center",
-    description: "Find the community center",
-    lat: 27.71,
-    lng: 85.31,
-    radiusMeters: 70,
-    points: 45,
-    icon: "community",
+    title: "Reach Objective 1",
+    description: "Complete 20 Pushups at this location",
+    offsetLat: 0.000005, // ~0.5m
+    offsetLng: 0.000005, // ~0.5m
+    radiusMeters: 1,
+    points: 100,
+    icon: "pin",
     ageGroup: "any",
     fitnessLevel: "moderate",
     healthConsideration: "any",
+    videoVerification: true,
+    exercise: "Pushups",
+    targetReps: 20
   },
   {
-    id: "p4",
+    id: "q2",
     type: "place",
-    title: "Temple Square",
-    description: "Walk to the temple square",
-    lat: 27.714,
-    lng: 85.318,
-    radiusMeters: 70,
-    points: 35,
+    title: "Reach Objective 2",
+    description: "Complete 30 Squats at this location",
+    offsetLat: -0.000005,
+    offsetLng: 0.000005,
+    radiusMeters: 1,
+    points: 120,
+    icon: "pin",
+    ageGroup: "any",
+    fitnessLevel: "moderate",
+    healthConsideration: "any",
+    videoVerification: true,
+    exercise: "Squats",
+    targetReps: 30
+  },
+  {
+    id: "q3",
+    type: "place",
+    title: "Reach Objective 3",
+    description: "Complete 15 Lunges at this location",
+    offsetLat: 0.000005,
+    offsetLng: -0.000005,
+    radiusMeters: 1,
+    points: 80,
     icon: "pin",
     ageGroup: "any",
     fitnessLevel: "light",
-    healthConsideration: "general",
-  },
-  {
-    id: "p5",
-    type: "place",
-    title: "Local Clinic",
-    description: "Visit the local clinic area",
-    lat: 27.722,
-    lng: 85.327,
-    radiusMeters: 65,
-    points: 55,
-    icon: "health",
-    ageGroup: "adult",
-    fitnessLevel: "moderate",
     healthConsideration: "any",
+    videoVerification: true,
+    exercise: "Lunges",
+    targetReps: 15
   },
   {
-    id: "p6",
+    id: "q4",
     type: "place",
-    title: "Green Garden",
-    description: "Reach the green garden",
-    lat: 27.719,
-    lng: 85.322,
-    radiusMeters: 75,
-    points: 30,
-    icon: "park",
-    ageGroup: "senior",
-    fitnessLevel: "light",
-    healthConsideration: "diabetes",
-  },
-  {
-    id: "p7",
-    type: "place",
-    title: "Youth Park",
-    description: "Go to the youth park",
-    lat: 27.715,
-    lng: 85.335,
-    radiusMeters: 80,
-    points: 60,
-    icon: "park",
-    ageGroup: "young",
+    title: "Reach Objective 4",
+    description: "Complete 10 Burpees at this location",
+    offsetLat: -0.000005,
+    offsetLng: -0.000005,
+    radiusMeters: 1,
+    points: 150,
+    icon: "pin",
+    ageGroup: "any",
     fitnessLevel: "active",
     healthConsideration: "any",
-  },
-  {
-    id: "p8",
-    type: "place",
-    title: "BP Check Point",
-    description: "Walk to the blood pressure check point",
-    lat: 27.718,
-    lng: 85.329,
-    radiusMeters: 60,
-    points: 50,
-    icon: "health",
-    ageGroup: "adult",
-    fitnessLevel: "light",
-    healthConsideration: "bp",
-  },
-  // —— Walk quests (walk this much) ——
-  {
-    id: "w1",
-    type: "walk",
-    title: "Short stroll",
-    description: "Walk 200 meters",
-    targetMeters: 200,
-    points: 25,
-    ageGroup: "any",
-    fitnessLevel: "light",
-    healthConsideration: "any",
-  },
-  {
-    id: "w2",
-    type: "walk",
-    title: "Gentle walk",
-    description: "Walk 400 meters",
-    targetMeters: 400,
-    points: 40,
-    ageGroup: "any",
-    fitnessLevel: "light",
-    healthConsideration: "heart",
-  },
-  {
-    id: "w3",
-    type: "walk",
-    title: "Park loop",
-    description: "Walk 600 meters",
-    targetMeters: 600,
-    points: 50,
-    ageGroup: "any",
-    fitnessLevel: "moderate",
-    healthConsideration: "any",
-  },
-  {
-    id: "w4",
-    type: "walk",
-    title: "Morning walk",
-    description: "Walk 800 meters",
-    targetMeters: 800,
-    points: 60,
-    ageGroup: "adult",
-    fitnessLevel: "moderate",
-    healthConsideration: "diabetes",
-  },
-  {
-    id: "w5",
-    type: "walk",
-    title: "Healthy distance",
-    description: "Walk 1 km",
-    targetMeters: 1000,
-    points: 75,
-    ageGroup: "adult",
-    fitnessLevel: "moderate",
-    healthConsideration: "any",
-  },
-  {
-    id: "w6",
-    type: "walk",
-    title: "Senior stroll",
-    description: "Walk 300 meters at your pace",
-    targetMeters: 300,
-    points: 35,
-    ageGroup: "senior",
-    fitnessLevel: "light",
-    healthConsideration: "general",
-  },
-  {
-    id: "w7",
-    type: "walk",
-    title: "Active walk",
-    description: "Walk 1.5 km",
-    targetMeters: 1500,
-    points: 90,
-    ageGroup: "young",
-    fitnessLevel: "active",
-    healthConsideration: "any",
-  },
-  {
-    id: "w8",
-    type: "walk",
-    title: "Cardio goal",
-    description: "Walk 2 km",
-    targetMeters: 2000,
-    points: 110,
-    ageGroup: "adult",
-    fitnessLevel: "active",
-    healthConsideration: "heart",
-  },
-  {
-    id: "w9",
-    type: "walk",
-    title: "Quick 500 m",
-    description: "Walk 500 meters",
-    targetMeters: 500,
-    points: 45,
-    ageGroup: "any",
-    fitnessLevel: "light",
-    healthConsideration: "bp",
-  },
+    videoVerification: true,
+    exercise: "Burpees",
+    targetReps: 10
+  }
 ];
 
 function getAgeGroup(age) {
@@ -258,10 +116,18 @@ export const useGameStore = create((set, get) => ({
   user: {
     name: "You",
     pointsToday: 0,
+    weeklyPoints: 0,
     cumulativePoints: 0,
+    dailyEarnings: [], // [{date: '2026-02-12', points: 100}, ...]
     questsCompleted: 0,
+    questsToday: 0,
+    lastRefreshDate: new Date().toISOString().split('T')[0],
   },
-
+  engagedQuest: null,
+  setEngagedQuest: (quest) => set({ engagedQuest: quest }),
+  isAITracking: false,
+  setIsAITracking: (isTracking) => set({ isAITracking: isTracking }),
+  quests: [],
   currentLocation: null,
   pathHistory: [],
   distanceWalkedMeters: 0,
@@ -269,12 +135,10 @@ export const useGameStore = create((set, get) => ({
   // Profile from auth (age, conditions) — used to filter quests
   questProfile: null,
 
-  // Active quests (place + walk) with progress. Derived from pool + profile.
-  quests: QUEST_POOL.filter((q) => questMatchesProfile(q, null)).map((q) => ({
-    ...q,
-    completed: false,
-    progressMeters: q.type === "walk" ? 0 : undefined,
-  })),
+  // Active quests: only show ONE quest at a time (sequential)
+  quests: [], // Will be populated in anchorQuestsToLocation or fetchQuests
+
+  sequenceIndex: 0, // 0 to 9 for the day
 
   leaderboard: [
     { rank: 1, name: "Alpha", points: 2500 },
@@ -321,11 +185,11 @@ export const useGameStore = create((set, get) => ({
       : [newPoint];
     const addedMeters = pathHistory.length >= 1
       ? distanceMeters(
-          pathHistory[pathHistory.length - 1][0],
-          pathHistory[pathHistory.length - 1][1],
-          lat,
-          lng,
-        )
+        pathHistory[pathHistory.length - 1][0],
+        pathHistory[pathHistory.length - 1][1],
+        lat,
+        lng,
+      )
       : 0;
     const totalWalked = distanceWalkedMeters + addedMeters;
 
@@ -376,16 +240,210 @@ export const useGameStore = create((set, get) => ({
   redeemReward: (rewardId) => {
     const { rewards, user } = get();
     const reward = rewards.find((r) => r.id === rewardId);
-    if (reward && user.cumulativePoints >= reward.pointsRequired) {
+    if (reward && (user.weeklyPoints || 0) >= reward.pointsRequired) {
       set((s) => ({
         user: {
           ...s.user,
+          weeklyPoints: s.user.weeklyPoints - reward.pointsRequired,
           cumulativePoints: s.user.cumulativePoints - reward.pointsRequired,
         },
       }));
     }
   },
 
-  fetchLeaderboard: async () => {},
-  fetchUserStats: async () => {},
+  completeQuest: async (questId) => {
+    const { quests, user } = get();
+
+    // Check daily limit
+    const today = new Date().toISOString().split('T')[0];
+    let currentQuestsToday = user.questsToday ?? 0;
+    if (user.lastRefreshDate !== today) {
+      currentQuestsToday = 0;
+    }
+
+    if (currentQuestsToday >= 10) {
+      alert("Daily limit of 10 quests reached! Come back tomorrow.");
+      return false;
+    }
+
+    const quest = quests.find((q) => q.id === questId);
+    if (quest && !quest.completed) {
+      const updatedQuests = quests.map((q) =>
+        q.id === questId ? { ...q, completed: true } : q
+      );
+
+      // Sync with backend
+      try {
+        await fetch(`${getAPIBaseUrl()}/complete_quest.php`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            user_id: 1, // In a real app, this comes from authStore
+            quest_id: questId,
+            points: quest.points
+          })
+        });
+      } catch (e) {
+        console.error("Failed to sync quest:", e);
+      }
+
+      set({
+        quests: updatedQuests,
+        user: {
+          ...user,
+          pointsToday: (user.lastRefreshDate === today ? user.pointsToday : 0) + (quest.points || 0),
+          cumulativePoints: user.cumulativePoints + (quest.points || 0),
+          questsCompleted: (user.questsCompleted || 0) + 1,
+          questsToday: currentQuestsToday + 1,
+          lastRefreshDate: today
+        },
+      });
+      return true;
+    }
+    return false;
+  },
+
+  skipQuest: async (questId) => {
+    const { quests, user } = get();
+
+    // Check daily limit
+    const today = new Date().toISOString().split('T')[0];
+    let currentQuestsToday = user.questsToday ?? 0;
+    if (user.lastRefreshDate !== today) {
+      currentQuestsToday = 0;
+    }
+
+    if (currentQuestsToday >= 10) {
+      alert("Daily limit of 10 quests reached! Come back tomorrow.");
+      return false;
+    }
+
+    const quest = quests.find((q) => q.id === questId);
+    if (quest && !quest.completed) {
+      const updatedQuests = quests.map((q) =>
+        q.id === questId ? { ...q, completed: true, skipped: true } : q
+      );
+
+      // Sync with backend (0 points for skip)
+      try {
+        await fetch(`${getAPIBaseUrl()}/complete_quest.php`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            user_id: 1,
+            quest_id: questId,
+            points: 0,
+            skipped: true
+          })
+        });
+      } catch (e) {
+        console.error("Failed to sync skipped quest:", e);
+      }
+
+      set({
+        quests: updatedQuests,
+        engagedQuest: null, // Close interaction modal
+        anchored: false,    // Force re-anchor for next quest
+        user: {
+          ...user,
+          questsCompleted: (user.questsCompleted || 0), // Don't count as "completed" for stats if we want strictness, or do if we count "attempts"
+          questsToday: currentQuestsToday + 1,
+          lastRefreshDate: today
+        },
+      });
+
+      // Immediately load next quest
+      get().anchorQuestsToLocation(get().currentLocation.lat, get().currentLocation.lng);
+      return true;
+    }
+    return false;
+  },
+
+  selectedQuestId: null,
+
+  setSelectedQuest: (id) => set({ selectedQuestId: id }),
+
+  fetchUserStats: async () => {
+    try {
+      const res = await fetch(`${getAPIBaseUrl()}/get_user_stats.php`);
+      const json = await res.json();
+      if (json.status === "success") {
+        set((s) => ({
+          user: {
+            ...s.user,
+            pointsToday: parseInt(json.data.points_today),
+            weeklyPoints: parseInt(json.data.weekly_points || 0),
+            dailyEarnings: json.data.daily_earnings || [],
+            cumulativePoints: parseInt(json.data.cumulative_points),
+            questsToday: parseInt(json.data.quests_today),
+          }
+        }));
+      }
+    } catch (e) {
+      console.error("Stats fetch error:", e);
+    }
+  },
+
+  fetchLeaderboard: async () => {
+    try {
+      const res = await fetch(`${getAPIBaseUrl()}/get_leaderboard.php`);
+      const json = await res.json();
+      if (json.status === "success") {
+        set({ leaderboard: json.data });
+      }
+    } catch (e) {
+      console.error("Leaderboard fetch error:", e);
+    }
+  },
+
+  anchored: false,
+
+  anchorQuestsToLocation: (lat, lng) => {
+    const { user, anchored } = get();
+    // Re-anchor if not anchored or if we want to refresh for next quest
+    // For now, let's keep it simple: anchor once for the day
+    if (anchored && get().quests.length > 0) return;
+
+    const questIndex = (user.questsToday || 0) % QUEST_POOL.length;
+    const poolItem = QUEST_POOL[questIndex];
+    if (!poolItem) return;
+
+    const finalLat = lat + (poolItem.offsetLat || 0);
+    const finalLng = lng + (poolItem.offsetLng || 0);
+    let finalPath = undefined;
+    if (poolItem.targetPath) {
+      finalPath = poolItem.targetPath.map(([oLat, oLng]) => [lat + oLat, lng + oLng]);
+    }
+
+    const activeQuest = {
+      ...poolItem,
+      lat: finalLat,
+      lng: finalLng,
+      targetPath: finalPath,
+      completed: false,
+      progressMeters: poolItem.type === "walk" ? 0 : undefined
+    };
+
+    set({
+      anchored: true,
+      quests: [activeQuest] // Only one active quest at a time
+    });
+  },
+
+  fetchQuests: async () => {
+    try {
+      const res = await fetch(`${getAPIBaseUrl()}/get_quest_status.php`);
+      const json = await res.json();
+      if (json.status === "success") {
+        const { user, currentLocation } = get();
+        // If we have a location, we can anchor the quest based on how many are completed
+        if (currentLocation) {
+          set({ anchored: false });
+          get().anchorQuestsToLocation(currentLocation.lat, currentLocation.lng);
+        }
+      }
+    } catch (e) {
+      console.error("Quest status fetch error:", e);
+    }
+  },
 }));

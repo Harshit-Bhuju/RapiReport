@@ -1,5 +1,8 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import axios from "axios";
+import api from "@/lib/api";
+import API from "@/Configs/ApiEndpoints";
 
 export const useAuthStore = create(
   persist(
@@ -29,11 +32,24 @@ export const useAuthStore = create(
         });
       },
 
-      updateProfile: (profileData) => {
-        set((state) => ({
-          user: { ...state.user, ...profileData, profileComplete: true },
-          isProfileComplete: true,
-        }));
+      updateProfile: async (profileData) => {
+        try {
+          const response = await api.post(API.UPDATE_PROFILE, profileData);
+
+
+          if (response.data.status === "success") {
+            const userData = response.data.user;
+            set({
+              user: userData,
+              isProfileComplete: !!userData?.profileComplete,
+            });
+            return { success: true };
+          }
+          return { success: false, message: response.data.message };
+        } catch (error) {
+          console.error("Update Profile Error:", error);
+          return { success: false, message: "Network error" };
+        }
       },
 
       updateUser: (userData) =>

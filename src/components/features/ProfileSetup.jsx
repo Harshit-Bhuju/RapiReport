@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuthStore } from "@/store/authStore";
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 import Button from "@/components/ui/Button";
 import { Card, CardBody } from "@/components/ui/Card";
 import Input from "@/components/ui/Input";
@@ -19,6 +20,7 @@ const ProfileSetup = () => {
   const navigate = useNavigate();
   const { updateProfile } = useAuthStore();
   const [step, setStep] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     age: "",
@@ -31,7 +33,14 @@ const ProfileSetup = () => {
   });
 
   useEffect(() => {
-    setFormData((prev) => ({ ...prev, language: i18n.language }));
+    if (useAuthStore.getState().user) {
+      const user = useAuthStore.getState().user;
+      setFormData(prev => ({
+        ...prev,
+        name: user.name || "",
+        language: user.language || i18n.language
+      }));
+    }
   }, [i18n.language]);
 
   const conditions = [
@@ -50,9 +59,20 @@ const ProfileSetup = () => {
     }));
   };
 
-  const handleFinish = () => {
-    updateProfile(formData);
-    navigate("/dashboard");
+  const handleFinish = async () => {
+    setIsLoading(true);
+    const result = await updateProfile(formData);
+    setIsLoading(false);
+
+    if (result.success) {
+      if (formData.language) {
+        i18n.changeLanguage(formData.language);
+      }
+      toast.success(t("profile.setup.success") || "Profile setup complete!");
+      navigate("/dashboard");
+    } else {
+      toast.error(result.message || "Failed to update profile");
+    }
   };
 
   return (

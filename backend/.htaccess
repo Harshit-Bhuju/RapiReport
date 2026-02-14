@@ -2,8 +2,8 @@
 
 # Define environment variables
 SetEnv DB_SERVER localhost
-SetEnv DB_USER root
-SetEnv DB_PASS 
+SetEnv DB_USER rapireport
+SetEnv DB_PASS Manshit$123.rapiReport
 SetEnv DB_NAME rapireport
 SetEnv SMTP_USER rapireport0701@gmail.com
 SetEnv SMTP_PASS hwggkuqxdrenhceu

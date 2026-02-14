@@ -9,8 +9,8 @@ export const distanceMeters = (lat1, lng1, lat2, lng2) => {
   const a =
     Math.sin(dLat / 2) ** 2 +
     Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLng / 2) ** 2;
+    Math.cos((lat2 * Math.PI) / 180) *
+    Math.sin(dLng / 2) ** 2;
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c; // Delta in meters
 };
@@ -313,11 +313,11 @@ export const useGameStore = create((set, get) => ({
     const addedMeters =
       pathHistory.length >= 1
         ? distanceMeters(
-            pathHistory[pathHistory.length - 1][0],
-            pathHistory[pathHistory.length - 1][1],
-            lat,
-            lng,
-          )
+          pathHistory[pathHistory.length - 1][0],
+          pathHistory[pathHistory.length - 1][1],
+          lat,
+          lng,
+        )
         : 0;
     const totalWalked = distanceWalkedMeters + addedMeters;
 

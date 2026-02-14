@@ -10,7 +10,9 @@
     "language": "Language",
     "consultants": "Consultants",
     "myAppointments": "My Appointments",
-    "adminPanel": "Admin Panel"
+    "adminPanel": "Admin Panel",
+    "nepali": "Nepali",
+    "english": "English"
   },
   "sidebar": {
     "dashboard": "Dashboard",
@@ -58,7 +60,10 @@
       "desc": "Keep your loved ones updated with your health status"
     },
     "medicineIntelligence": "Medicine Intelligence",
-    "aiSuggested": "AI Suggested"
+    "aiSuggested": "AI Suggested",
+    "price": "Price",
+    "market": "Marketplace",
+    "alternatives": "Alternatives"
   },
   "cta": {
     "title": "Ready to make diagnostic reports helpful again?",
@@ -91,6 +96,15 @@
     "security": "Military-grade 256-bit encryption for all health data.",
     "hipaa": "HIPAA Compliant",
     "encryption": "End-to-end Encrypted"
+  },
+  "uploadReport": {
+    "title": "Upload Medical Report",
+    "subtitle": "We support JPEG, PNG and PDF files",
+    "clickToUpload": "Click to upload",
+    "dragDrop": "or drag and drop",
+    "analyzing": "Analyzing Report...",
+    "analyzeAction": "Analyze Report",
+    "processing": "Processing..."
   },
   "auth": {
     "login": "Login to Your Account",
@@ -125,7 +139,8 @@
     "welcome": "Welcome {{name}}!",
     "loginFailed": "Login failed",
     "googleLoginError": "Failed to login with Google",
-    "googleLoginFailed": "Google Login Failed"
+    "googleLoginFailed": "Google Login Failed",
+    "setupRequiredFields": "Please fill all required fields."
   },
   "dashboardPage": {
     "greetingMorning": "Good morning, {{name}}!",
@@ -159,7 +174,11 @@
     "viewProfile": "View Profile",
     "consultSpecialist": "Consult a Specialist",
     "consultDesc": "Connect with professional doctors for live video consultations and expert advice.",
-    "findDoctor": "Find a Doctor"
+    "findDoctor": "Find a Doctor",
+    "viewAll": "View All",
+    "statusNormal": "Normal",
+    "statusAttention": "Attention",
+    "viewDetails": "View Details"
   },
   "dashboard": {
     "welcome": "Welcome back",
@@ -173,7 +192,24 @@
     "uploadNew": "Upload New Report",
     "searchPlaceholder": "Search reports by lab or test name...",
     "sortFilter": "Sort / Filter",
-    "noResults": "No reports found matching your search."
+    "noResults": "No reports found matching your search.",
+    "errorImage": "Error processing image.",
+    "errorDrop": "Error uploading file.",
+    "errorAnalysis": "Analysis failed. Please try again.",
+    "uploadSuccess": "Report uploaded successfully!",
+    "errorSave": "Failed to save report.",
+    "dropZone": "Drop files here",
+    "browse": "Browse",
+    "aiAnalysis": "AI Analysis",
+    "aiAnalysisDesc": "Our AI is analyzing your report...",
+    "analyzing": "Analyzing...",
+    "analyzeSave": "Analyze & Save",
+    "totalReports": "Total Reports",
+    "normal": "Normal Results",
+    "needsAttention": "Needs Attention",
+    "removeSuccess": "Report removed.",
+    "noReports": "No Reports Available",
+    "noReportsDesc": "Upload a report to get started."
   },
   "consultation": {
     "title": "AI Health Consultation",
@@ -201,13 +237,19 @@
     "noRisksDesc": "Update your health profile to see personalized prevention analysis.",
     "protectFuture": "Protect Your Future",
     "protectDesc": "Hereditary risks are not destiny. With early intervention and consistent habits, most can be effectively managed.",
-    "bookCheckup": "Book Preventive Checkup"
+    "bookCheckup": "Book Preventive Checkup",
+    "preventionAccuracyEn": "Prevention Accuracy",
+    "preventionAccuracyNe": "Prevention Accuracy (NE)"
   },
   "planner": {
     "title": "Daily Health Planner",
     "subtitle": "AI-optimized routines tailored to your profile and recent reports.",
     "today": "Today",
     "next7": "Next 7 Days",
+    "routine": "Routine",
+    "familyCircle": "Family Circle",
+    "monitor": "Health Monitor",
+    "locationError": "Could not get your location.",
     "morning": "Morning",
     "daytime": "Daytime / All Day",
     "evening": "Evening",
@@ -269,7 +311,8 @@
     "online": "Online Health Support",
     "thinking": "Thinking...",
     "placeholder": "Type your health query...",
-    "disclaimer": "AI generated content can be incorrect. Consult a doctor for medical advice."
+    "disclaimer": "AI generated content can be incorrect. Consult a doctor for medical advice.",
+    "error_ne": "Error connecting to AI."
   },
   "insightCard": {
     "routine": "AI Tailored Routine"
@@ -293,10 +336,15 @@
     "next": "Next",
     "submit": "Submit",
     "close": "Close",
-    "quickSearch": "Quick search..."
+    "quickSearch": "Quick search...",
+    "processing": "Processing...",
+    "male": "Male",
+    "female": "Female",
+    "other": "Other"
   },
   "profile": {
     "setup": {
+      "success": "Profile setup complete!",
       "step1": {
         "title": "Basic Information",
         "subtitle": "Let's start with the basics to personalize your health AI.",
@@ -378,7 +426,12 @@
     "noneListed": "None listed",
     "other": "Other",
     "noSymptoms": "No symptoms logged recently",
-    "noReports": "No reports uploaded recently"
+    "noReports": "No reports uploaded recently",
+    "callMissed": "Missed Call",
+    "callingStatus": "Calling...",
+    "incomingCallStatus": "Incoming Call",
+    "prescriptions": "Prescriptions",
+    "noPrescriptions": "No prescriptions found."
   },
   "consultantsPage": {
     "title": "Our Specialists",
@@ -501,6 +554,7 @@
     "success": "Booking Successful",
     "failed": "Booking Failed",
     "back": "Back to Consultants",
+    "backSpecialists": "Back to Specialists",
     "noDoctor": "No Doctor Selected",
     "noDoctorDesc": "Please select a doctor from the specialists list.",
     "selectAppointment": "Select Appointment",

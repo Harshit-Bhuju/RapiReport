@@ -15,9 +15,11 @@ $data = $_GET['data'] ?? ($_POST['data'] ?? null);
 
 $frontend_url = $_SESSION['frontend_url'] ?? "http://localhost:5173";
 // Fallback
-if (isset($_SERVER['HTTP_HOST']) && strpos($_SERVER['HTTP_HOST'], 'harmanbhuju.com.np') !== false) {
-    if ($frontend_url === "http://localhost:5173") {
+if ($frontend_url === "http://localhost:5173" && isset($_SERVER['HTTP_HOST'])) {
+    if (strpos($_SERVER['HTTP_HOST'], 'harmanbhuju.com.np') !== false) {
         $frontend_url = "https://harmanbhuju.com.np";
+    } elseif (strpos($_SERVER['HTTP_HOST'], 'harshitbhuju.com.np') !== false) {
+        $frontend_url = "https://harshitbhuju.com.np";
     }
 }
 

@@ -100,14 +100,8 @@ $stmt3->execute();
 
 $invite_id = $stmt3->insert_id;
 
-// 5. Send invitation email
-$base_url = "https://api.harmanbhuju.com.np/health";
-
-$acceptLink = "$base_url/family_accept.php?token=$token&action=accept";
-$rejectLink = "$base_url/family_accept.php?token=$token&action=reject";
-
-// Send response immediately and then send email in the background
-sendResponseAndContinue([
+// 6. Return success response
+echo json_encode([
     'status' => 'success',
     'message' => 'Invitation sent to ' . $email,
     'invitation' => [
@@ -116,5 +110,4 @@ sendResponseAndContinue([
         'status' => 'pending'
     ]
 ]);
-
-sendFamilyInvitationEmail($email, $inviterName, $relation, $acceptLink, $rejectLink);
+exit;

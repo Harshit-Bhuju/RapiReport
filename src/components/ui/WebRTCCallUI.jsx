@@ -18,6 +18,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 
 export const WebRTCCallUI = ({
   // Refs
@@ -45,6 +46,8 @@ export const WebRTCCallUI = ({
   showConnectionStatus = true,
   className = "",
 }) => {
+  const { t } = useTranslation();
+
   // Re-attach streams when mounting or switching layout (fixes black screen on maximize)
   useLayoutEffect(() => {
     if (!localVideoRef || !remoteVideoRef) return;
@@ -58,7 +61,7 @@ export const WebRTCCallUI = ({
 
   const otherPartyName = callInfo?.member?.username || callInfo?.member?.email
     || callInfo?.appointment?.patient_name || callInfo?.appointment?.doctor_name
-    || "Calling...";
+    || t("common.calling");
   const otherPartyAvatar = callInfo?.member?.profile_picture
     || callInfo?.appointment?.patient_avatar || callInfo?.appointment?.patient_profile_pic
     || callInfo?.appointment?.doctor_avatar || callInfo?.appointment?.doctor_profile_pic;
@@ -108,13 +111,13 @@ export const WebRTCCallUI = ({
             <button
               onClick={onEnd}
               className="p-2 rounded-full bg-red-500/90 text-white hover:bg-red-500 hover:scale-110 transition-all shadow-lg shadow-red-500/30"
-              title="End call"
+              title={t("family.hangup")}
             >
               <Phone className="w-4 h-4 rotate-[135deg]" />
             </button>
           </div>
           <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded-md bg-black/50 backdrop-blur-sm text-[10px] font-bold text-white/90 uppercase tracking-wider">
-            Live
+            {t("common.live")}
           </div>
         </div>
       </div>
@@ -166,13 +169,13 @@ export const WebRTCCallUI = ({
             {otherPartyName}
           </h3>
           <p className="text-base sm:text-lg md:text-xl font-semibold text-primary-200 mt-2 animate-pulse">
-            {isCaller ? "Calling..." : "Incoming Video Call"}
+            {isCaller ? t("common.calling") : t("common.incomingVideoCall")}
           </p>
           {mode === "consultation" && (
             <div className="flex items-center gap-2 mt-4 px-4 py-2 rounded-full bg-white/5 backdrop-blur-sm border border-white/10">
               <ShieldCheck className="w-4 h-4 text-success-500" />
               <span className="text-xs font-bold text-white/80 uppercase tracking-wider">
-                Secure Consultation
+                {t("common.secureConsultation")}
               </span>
             </div>
           )}
@@ -188,7 +191,7 @@ export const WebRTCCallUI = ({
                   <Phone className="w-7 h-7 sm:w-8 sm:h-8 rotate-[135deg]" />
                 </div>
                 <span className="text-sm font-bold text-gray-300 group-hover:text-white transition-colors">
-                  Decline
+                  {t("common.decline")}
                 </span>
               </button>
               <button
@@ -199,7 +202,7 @@ export const WebRTCCallUI = ({
                   <Phone className="w-7 h-7 sm:w-8 sm:h-8" />
                 </div>
                 <span className="text-sm font-bold text-gray-300 group-hover:text-white transition-colors">
-                  Accept
+                  {t("common.accept")}
                 </span>
               </button>
             </div>
@@ -244,7 +247,7 @@ export const WebRTCCallUI = ({
             </div>
           )}
           <div className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded text-[9px] font-bold text-white/90 bg-black/50 uppercase tracking-wider">
-            You
+            {t("common.you")}
           </div>
         </div>
       )}
@@ -261,7 +264,7 @@ export const WebRTCCallUI = ({
                   ? "bg-white/10 hover:bg-white/20 text-white"
                   : "bg-red-500/90 hover:bg-red-500 text-white shadow-lg shadow-red-500/30"
               )}
-              title={isMicOn ? "Mute" : "Unmute"}
+              title={isMicOn ? t("common.mute") : t("common.unmute")}
             >
               {isMicOn ? <Mic className="w-5 h-5 sm:w-6 sm:h-6" /> : <MicOff className="w-5 h-5 sm:w-6 sm:h-6" />}
             </button>
@@ -274,7 +277,7 @@ export const WebRTCCallUI = ({
                   ? "bg-white/10 hover:bg-white/20 text-white"
                   : "bg-red-500/90 hover:bg-red-500 text-white shadow-lg shadow-red-500/30"
               )}
-              title={isCameraOn ? "Turn off camera" : "Turn on camera"}
+              title={isCameraOn ? t("common.turnOffCamera") : t("common.turnOnCamera")}
             >
               {isCameraOn ? <Video className="w-5 h-5 sm:w-6 sm:h-6" /> : <VideoOff className="w-5 h-5 sm:w-6 sm:h-6" />}
             </button>
@@ -282,7 +285,7 @@ export const WebRTCCallUI = ({
             <button
               onClick={onEnd}
               className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-red-500 hover:bg-red-400 text-white flex items-center justify-center shadow-lg shadow-red-500/40 hover:scale-110 active:scale-95 transition-all duration-200"
-              title="End call"
+              title={t("family.hangup")}
             >
               <Phone className="w-7 h-7 sm:w-8 sm:h-8 rotate-[135deg]" />
             </button>

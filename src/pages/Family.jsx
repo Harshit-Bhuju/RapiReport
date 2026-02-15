@@ -83,10 +83,10 @@ const Family = () => {
   const chatPollIntervalRef = useRef(null);
   const incomingAudioRef = useRef(null);
   const outgoingAudioRef = useRef(null);
-  const iceCandidateBufferRef = useRef([]); // Buffer ICE candidates until remote desc is set
-  const isCallConnectedRef = useRef(false); // Track if connection was ever established
+  const iceCandidateBufferRef = useRef([]);
+  const isCallConnectedRef = useRef(false);
 
-  // Setup simple ringtone audio (you need to place the mp3 files in /public/sounds)
+  // Setup ringtone audio + cleanup media/peer on unmount
   useEffect(() => {
     if (typeof Audio !== "undefined") {
       incomingAudioRef.current = new Audio("/sounds/family_incoming.mp3");
@@ -103,12 +103,14 @@ const Family = () => {
         outgoingAudioRef.current.pause();
         outgoingAudioRef.current = null;
       }
+      cleanupMediaAndPeer();
+      cleanupChatPolling();
     };
   }, []);
 
   const startIncomingRingtone = () => {
     if (incomingAudioRef.current) {
-      incomingAudioRef.current.play().catch(() => {});
+      incomingAudioRef.current.play().catch(() => { });
     }
   };
 
@@ -121,7 +123,7 @@ const Family = () => {
 
   const startOutgoingRingtone = () => {
     if (outgoingAudioRef.current) {
-      outgoingAudioRef.current.play().catch(() => {});
+      outgoingAudioRef.current.play().catch(() => { });
     }
   };
 
@@ -506,17 +508,17 @@ const Family = () => {
         { withCredentials: true },
       );
       if (res.data?.status === "success") {
-        toast.success(`${res.data.member?.username || newMemberEmail} added!`);
+        toast.success(t("family.addSuccess", { email: res.data.member?.username || newMemberEmail }));
         setNewMemberEmail("");
         setNewMemberRelation("");
         setIsAddModalOpen(false);
         fetchMembers();
       } else {
-        toast.error(res.data?.message || "Failed to add member.");
+        toast.error(res.data?.message || t("family.addError"));
       }
     } catch (err) {
       const msg =
-        err.response?.data?.message || "Could not add member. Try again.";
+        err.response?.data?.message || t("family.addError");
       toast.error(msg);
     } finally {
       setIsLoading(false);
@@ -536,16 +538,20 @@ const Family = () => {
       cancelLabel: t("confirm.cancel") || "Cancel",
       variant: "danger",
       onConfirm: async () => {
-        const res = await axios.post(
-          API.FAMILY_REMOVE,
-          { id: linkId },
-          { withCredentials: true },
-        );
-        if (res.data?.status === "success") {
-          toast.success("Member removed.");
-          setMembers((prev) => prev.filter((m) => m.link_id !== linkId));
-        } else {
-          toast.error(res.data?.message || "Remove failed.");
+        try {
+          const res = await axios.post(
+            API.FAMILY_REMOVE,
+            { id: linkId },
+            { withCredentials: true },
+          );
+          if (res.data?.status === "success") {
+            toast.success(t("family.removeSuccess") || "Member removed.");
+            setMembers((prev) => prev.filter((m) => m.link_id !== linkId));
+          } else {
+            toast.error(res.data?.message || t("family.removeError") || "Remove failed.");
+          }
+        } catch (err) {
+          toast.error(t("family.removeError") || "Error removing member.");
         }
       },
     });
@@ -634,7 +640,7 @@ const Family = () => {
       console.error("Failed to send chat message", err);
       setChatMessages((prev) => prev.filter((m) => m.id !== optimisticMsg.id));
       setChatInput(text);
-      toast.error(t("family.chatSendFailed") || "Failed to send message.");
+      toast.error(t("family.chatSendFailed"));
     } finally {
       setChatSending(false);
     }
@@ -643,7 +649,7 @@ const Family = () => {
   const handleCall = async (member) => {
     // Prevent duplicate calls
     if (callInfo || isInCall) {
-      toast.error("Already in a call");
+      toast.error(t("family.alreadyInCall"));
       return;
     }
 
@@ -661,7 +667,7 @@ const Family = () => {
       if (res.data?.status !== "success" || !res.data.call) {
         toast.error(
           res.data?.message ||
-            t("family.callFailed", { name: member.username }),
+          t("family.callFailed", { name: member.username }),
         );
         return;
       }
@@ -767,13 +773,13 @@ const Family = () => {
         { withCredentials: true },
       );
       if (res.data?.status === "success") {
-        toast.success("Invitation accepted!");
+        toast.success(t("family.acceptSuccess"));
         fetchMembers();
       } else {
-        toast.error(res.data?.message || "Failed to accept invitation");
+        toast.error(res.data?.message || t("family.acceptError"));
       }
     } catch (err) {
-      toast.error("Error accepting invitation");
+      toast.error(t("family.acceptFailed"));
     } finally {
       setIsLoading(false);
     }
@@ -781,9 +787,10 @@ const Family = () => {
 
   const handleRejectInvite = (linkId) => {
     openConfirm({
-      title: t("confirm.decline") || "Decline invitation",
+      title: t("confirm.decline") || t("family.confirmRejectTitle") || "Decline invitation",
       message:
         t("confirm.declineInvite") ||
+        t("family.confirmReject") ||
         "Are you sure you want to decline this invitation?",
       confirmLabel: t("confirm.decline") || "Decline",
       cancelLabel: t("confirm.cancel") || "Cancel",
@@ -797,13 +804,13 @@ const Family = () => {
             { withCredentials: true },
           );
           if (res.data?.status === "success") {
-            toast.success("Invitation declined");
+            toast.success(t("family.rejectSuccess") || "Invitation declined");
             fetchMembers();
           } else {
-            toast.error(res.data?.message || "Failed to decline invitation");
+            toast.error(res.data?.message || t("family.rejectError") || "Failed to decline invitation");
           }
         } catch (err) {
-          toast.error("Error declining invitation");
+          toast.error(t("family.rejectError") || "Error declining invitation");
         } finally {
           setIsLoading(false);
         }
@@ -941,11 +948,11 @@ const Family = () => {
       if (res.data?.status === "success") {
         setHistoryAnalysis(res.data.analysis);
       } else {
-        toast.error(res.data?.message || "Analysis failed");
+        toast.error(res.data?.message || t("family.aiError"));
       }
     } catch (err) {
       console.error("Analysis failed", err);
-      toast.error("Failed to connect to AI service");
+      toast.error(t("family.aiConnectError") || "Failed to connect to AI service");
     } finally {
       setIsAnalyzing(false);
     }
@@ -969,7 +976,7 @@ const Family = () => {
     relation: m.relation || "Family",
     alerts:
       m.status === "pending"
-        ? [m.is_recipient ? "Invited you" : "Invitation pending"]
+        ? [m.is_recipient ? t("family.statusPendingReceived") : t("family.statusPendingSent")]
         : [],
     avatar: m.profile_picture || null,
     health: memberHealthData[m.member_id] || null,
@@ -1018,14 +1025,14 @@ const Family = () => {
                       size="sm"
                       className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white"
                       onClick={() => handleAcceptInvite(member.link_id)}>
-                      Accept
+                      {t("common.accept")}
                     </Button>
                     <Button
                       size="sm"
                       variant="outline"
                       className="flex-1 border-red-100 text-red-600 hover:bg-red-50"
                       onClick={() => handleRejectInvite(member.link_id)}>
-                      Decline
+                      {t("common.decline")}
                     </Button>
                   </div>
                 ) : (
@@ -1051,7 +1058,7 @@ const Family = () => {
                     <button
                       onClick={() => handleRemoveMember(member.link_id)}
                       className="p-2 text-gray-400 hover:text-error-600 transition-colors rounded-xl hover:bg-error-50"
-                      title="Remove member">
+                      title={t("family.removeMember")}>
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </>
@@ -1097,7 +1104,7 @@ const Family = () => {
           />
           <div className="space-y-1.5">
             <label className="text-sm font-bold text-gray-700 ml-1">
-              Relation
+              {t("family.relation")}
             </label>
             <select
               className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all font-medium"
@@ -1105,17 +1112,17 @@ const Family = () => {
               required
               onChange={(e) => setNewMemberRelation(e.target.value)}>
               <option value="" disabled>
-                Select relation...
+                {t("family.selectRelation")}
               </option>
-              <option value="Father">Father</option>
-              <option value="Mother">Mother</option>
-              <option value="Brother">Brother</option>
-              <option value="Sister">Sister</option>
-              <option value="Grandfather">Grandfather</option>
-              <option value="Grandmother">Grandmother</option>
-              <option value="Son">Son</option>
-              <option value="Daughter">Daughter</option>
-              <option value="Other">Other</option>
+              <option value="Father">{t("family.relations.father")}</option>
+              <option value="Mother">{t("family.relations.mother")}</option>
+              <option value="Brother">{t("family.relations.brother")}</option>
+              <option value="Sister">{t("family.relations.sister")}</option>
+              <option value="Grandfather">{t("family.relations.grandfather")}</option>
+              <option value="Grandmother">{t("family.relations.grandmother")}</option>
+              <option value="Son">{t("family.relations.son")}</option>
+              <option value="Daughter">{t("family.relations.daughter")}</option>
+              <option value="Other">{t("family.relations.other")}</option>
             </select>
           </div>
           <div className="flex justify-end gap-3 pt-4">
@@ -1140,8 +1147,8 @@ const Family = () => {
         title={
           activeMember
             ? t("family.chatWith", {
-                name: activeMember.username || activeMember.email,
-              })
+              name: activeMember.username || activeMember.email,
+            })
             : t("family.chat")
         }
         size="full">
@@ -1164,9 +1171,9 @@ const Family = () => {
                     m.from_user_id === chatCurrentUserId;
                   const time = m.created_at
                     ? new Date(m.created_at).toLocaleTimeString(undefined, {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })
                     : "";
                   return (
                     <motion.div
@@ -1299,28 +1306,11 @@ const Family = () => {
           setHealthModalMember(null);
         }}
         title={
-          healthModalMember ? (
-            <div className="flex items-center justify-between gap-3 w-full pr-2">
-              <span>
-                {t("family.healthDetails", {
-                  name: healthModalMember.name,
-                }) || `${healthModalMember.name}'s Health`}
-              </span>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleRefreshHealthModal}
-                disabled={isRefreshingHealth}
-                className="shrink-0"
-                title="Refresh health data">
-                <RefreshCw
-                  className={cn("w-4 h-4", isRefreshingHealth && "animate-spin")}
-                />
-              </Button>
-            </div>
-          ) : (
-            t("family.viewHealthDetails")
-          )
+          healthModalMember
+            ? t("family.healthDetails", {
+                name: healthModalMember.name,
+              }) || `${healthModalMember.name}'s Health`
+            : t("family.viewHealthDetails")
         }
         size="lg">
         {healthModalMember && !healthModalMember.health && (
@@ -1416,7 +1406,7 @@ const Family = () => {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-gray-900 font-black">
                   <Brain className="w-4 h-4 text-indigo-500" />
-                  Health Intelligence
+                  {t("family.healthIntelligence")}
                 </div>
                 {!historyAnalysis && !isAnalyzing && (
                   <Button
@@ -1424,7 +1414,7 @@ const Family = () => {
                     onClick={() => handleAnalyzeHistory(healthModalMember.id)}
                     className="h-8 text-[10px] gap-1.5 bg-gradient-to-r from-indigo-600 to-primary-600 shadow-md">
                     <Sparkles className="w-3 h-3" />
-                    AI Analyze History
+                    {t("family.aiAnalyzeAction")}
                   </Button>
                 )}
               </div>
@@ -1434,7 +1424,7 @@ const Family = () => {
                   <div className="bg-gradient-to-r from-indigo-600/10 to-primary-600/10 p-3 flex items-center gap-2 border-b border-indigo-50">
                     <BrainCircuit className="w-4 h-4 text-indigo-600" />
                     <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700">
-                      Gemini Clinical Insight
+                      {t("family.aiClinicalInsight")}
                     </span>
                   </div>
                   <div className="p-4">
@@ -1442,7 +1432,7 @@ const Family = () => {
                       <div className="py-8 flex flex-col items-center justify-center text-center">
                         <Loader2 className="w-8 h-8 text-indigo-600 animate-spin mb-3" />
                         <p className="text-xs font-bold text-gray-900">
-                          Scanning family health history...
+                          {t("family.aiAnalyzing")}
                         </p>
                       </div>
                     ) : (
@@ -1536,7 +1526,7 @@ const Family = () => {
               </div>
 
               {healthModalMember.health.symptoms &&
-              healthModalMember.health.symptoms.length > 0 ? (
+                healthModalMember.health.symptoms.length > 0 ? (
                 <div className="space-y-3">
                   {healthModalMember.health.symptoms.map((s) => (
                     <div
@@ -1556,7 +1546,7 @@ const Family = () => {
                                   ? "bg-warning-50 text-warning-600 border-warning-100"
                                   : "bg-success-50 text-success-600 border-success-100",
                             )}>
-                            {s.severity}
+                            {t(`common.severities.${s.severity}`)}
                           </span>
                           {s.vitals && s.vitals.temp && (
                             <span className="text-[10px] font-bold text-gray-500 flex items-center gap-1">
@@ -1595,7 +1585,7 @@ const Family = () => {
               </div>
 
               {healthModalMember.health.reports &&
-              healthModalMember.health.reports.length > 0 ? (
+                healthModalMember.health.reports.length > 0 ? (
                 <div className="space-y-3">
                   {healthModalMember.health.reports.map((r) => (
                     <div
@@ -1667,7 +1657,7 @@ const Family = () => {
               </div>
 
               {healthModalMember.health.prescriptions &&
-              healthModalMember.health.prescriptions.length > 0 ? (
+                healthModalMember.health.prescriptions.length > 0 ? (
                 <div className="space-y-3">
                   {healthModalMember.health.prescriptions.map((rx) => (
                     <div
@@ -1725,6 +1715,7 @@ const Family = () => {
           </div>
         )}
       </Modal>
+
     </div>
   );
 };

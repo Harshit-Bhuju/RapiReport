@@ -20,16 +20,27 @@ if (!isset($data->user_id) || !isset($data->quest_id)) {
 
 $user_id = $conn->real_escape_string($data->user_id);
 $quest_id = $conn->real_escape_string($data->quest_id);
-$points = isset($data->points) ? intval($data->points) : 0;
+$skipped = !empty($data->skipped);
+$points = $skipped ? 0 : max(0, isset($data->points) ? intval($data->points) : 0);
 $today = date("Y-m-d");
 
-// 1. Log completion for analytics
-$stmt = $conn->prepare("INSERT INTO quest_logs (user_id, quest_id, points_awarded) VALUES (?, ?, ?)");
-$stmt->bind_param("isi", $user_id, $quest_id, $points);
+// 1. Log completion/skip (skipped = no points awarded, no deduction)
+$has_skipped_col = false;
+$cols = $conn->query("SHOW COLUMNS FROM quest_logs LIKE 'skipped'");
+if ($cols && $cols->num_rows > 0) {
+    $has_skipped_col = true;
+}
+if ($has_skipped_col) {
+    $skipped_int = $skipped ? 1 : 0;
+    $stmt = $conn->prepare("INSERT INTO quest_logs (user_id, quest_id, points_awarded, skipped) VALUES (?, ?, ?, ?)");
+    $stmt->bind_param("isii", $user_id, $quest_id, $points, $skipped_int);
+} else {
+    $stmt = $conn->prepare("INSERT INTO quest_logs (user_id, quest_id, points_awarded) VALUES (?, ?, ?)");
+    $stmt->bind_param("isi", $user_id, $quest_id, $points);
+}
 $stmt->execute();
 
-// 2. Update user stats and daily count
-// Check if refresh is needed
+// 2. Update user stats: when skipped, only increment quests_today (no points change)
 $sql_check = "SELECT last_refresh_date, quests_today FROM territory_users WHERE user_id = '$user_id'";
 $res = $conn->query($sql_check);
 $user_data = $res->fetch_assoc();
@@ -37,38 +48,49 @@ $user_data = $res->fetch_assoc();
 if ($user_data) {
     $new_count = ($user_data['last_refresh_date'] !== $today) ? 1 : intval($user_data['quests_today']) + 1;
     $bonus = 0;
+    $total_added_points = $points;
 
-    // Award 500 bonus points on the 10th quest
-    if ($new_count === 10) {
+    if (!$skipped && $new_count === 10) {
         $bonus = 500;
-        // Log the bonus separately in quest_logs for transparency
         $bonus_quest_id = "daily_bonus_10";
-        $stmt_bonus = $conn->prepare("INSERT INTO quest_logs (user_id, quest_id, points_awarded) VALUES (?, ?, ?)");
-        $stmt_bonus->bind_param("isi", $user_id, $bonus_quest_id, $bonus);
+        if ($has_skipped_col) {
+            $z = 0;
+            $stmt_bonus = $conn->prepare("INSERT INTO quest_logs (user_id, quest_id, points_awarded, skipped) VALUES (?, ?, ?, ?)");
+            $stmt_bonus->bind_param("isii", $user_id, $bonus_quest_id, $bonus, $z);
+        } else {
+            $stmt_bonus = $conn->prepare("INSERT INTO quest_logs (user_id, quest_id, points_awarded) VALUES (?, ?, ?)");
+            $stmt_bonus->bind_param("isi", $user_id, $bonus_quest_id, $bonus);
+        }
         $stmt_bonus->execute();
+        $total_added_points += $bonus;
     }
 
-    $total_added_points = $points + $bonus;
-
-    if ($user_data['last_refresh_date'] !== $today) {
-        $sql_update = "UPDATE territory_users SET 
-                      quests_today = 1, 
-                      last_refresh_date = '$today',
-                      cumulative_points = cumulative_points + $total_added_points,
-                      points_today = $total_added_points,
-                      yearly_super_points = yearly_super_points + " . ($new_count === 10 ? 1 : 0) . "
-                      WHERE user_id = '$user_id'";
+    if ($skipped) {
+        // Skip: do NOT increment quests_today (skip does not count as completed)
+        // Only ensure last_refresh_date is set for the day
+        if ($user_data['last_refresh_date'] !== $today) {
+            $conn->query("UPDATE territory_users SET last_refresh_date = '$today' WHERE user_id = '$user_id'");
+        }
     } else {
-        $sql_update = "UPDATE territory_users SET 
-                      quests_today = quests_today + 1, 
-                      cumulative_points = cumulative_points + $total_added_points,
-                      points_today = points_today + $total_added_points,
-                      yearly_super_points = yearly_super_points + " . ($new_count === 10 ? 1 : 0) . "
-                      WHERE user_id = '$user_id'";
+        if ($user_data['last_refresh_date'] !== $today) {
+            $conn->query("UPDATE territory_users SET 
+                quests_today = 1, 
+                last_refresh_date = '$today',
+                cumulative_points = cumulative_points + $total_added_points,
+                points_today = $total_added_points,
+                yearly_super_points = yearly_super_points + " . ($new_count === 10 ? 1 : 0) . "
+                WHERE user_id = '$user_id'");
+        } else {
+            $conn->query("UPDATE territory_users SET 
+                quests_today = quests_today + 1, 
+                cumulative_points = cumulative_points + $total_added_points,
+                points_today = points_today + $total_added_points,
+                yearly_super_points = yearly_super_points + " . ($new_count === 10 ? 1 : 0) . "
+                WHERE user_id = '$user_id'");
+        }
     }
-    $conn->query($sql_update);
 }
 
-$message = ($points < 0) ? "Quest skipped and points deducted" : "Quest logged and points awarded";
+$message = $skipped ? "Quest skipped (no points deducted)" : "Quest completed and points awarded";
 echo json_encode(["status" => "success", "message" => $message]);
 $conn->close();

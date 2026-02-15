@@ -35,10 +35,10 @@ const QUEST_POOL = [
     id: "pushup_2",
     type: "place",
     title: "Checkpoint Pushups",
-    description: "Complete 5 Pushups at the north checkpoint",
+    description: "Complete 5 Pushups at the north checkpoint (within 10m)",
     offsetLat: 0.0009,
     offsetLng: 0,
-    radiusMeters: 100,
+    radiusMeters: 1,
     points: 100,
     icon: "health",
     videoVerification: true,
@@ -61,15 +61,15 @@ const QUEST_POOL = [
     id: "pushup_4",
     type: "place",
     title: "Park Bench Challenge",
-    description: "Complete 10 Pushups at the park area",
+    description: "Complete 5 Pushups at the park area (within 20m)",
     offsetLat: 0.0009,
     offsetLng: 0.0009,
-    radiusMeters: 100,
+    radiusMeters: 1,
     points: 120,
     icon: "park",
     videoVerification: true,
     exercise: "Pushups",
-    targetReps: 10,
+    targetReps: 5,
   },
   {
     id: "walk_5",
@@ -87,15 +87,15 @@ const QUEST_POOL = [
     id: "pushup_6",
     type: "place",
     title: "Community Spot",
-    description: "Complete 12 Pushups at the community hub",
+    description: "Complete 5 Pushups at the community hub (within 30m)",
     offsetLat: 0,
     offsetLng: 0.0009,
-    radiusMeters: 100,
+    radiusMeters: 1,
     points: 150,
     icon: "community",
     videoVerification: true,
     exercise: "Pushups",
-    targetReps: 12,
+    targetReps: 5,
   },
   {
     id: "walk_7",
@@ -113,15 +113,15 @@ const QUEST_POOL = [
     id: "pushup_8",
     type: "place",
     title: "Home Stretch Pushups",
-    description: "Complete 15 Pushups near the finish",
+    description: "Complete 5 Pushups near the finish (within 40m)",
     offsetLat: 0,
     offsetLng: 0,
-    radiusMeters: 100,
+    radiusMeters: 1,
     points: 180,
     icon: "health",
     videoVerification: true,
     exercise: "Pushups",
-    targetReps: 15,
+    targetReps: 5,
   },
   {
     id: "walk_9",
@@ -139,17 +139,20 @@ const QUEST_POOL = [
     id: "pushup_10",
     type: "place",
     title: "Daily Finale",
-    description: "Complete 20 Pushups for the ultimate daily bonus!",
+    description: "Complete 5 Pushups for the ultimate daily bonus! (within 100m)",
     offsetLat: 0.00064,
     offsetLng: 0.00064,
-    radiusMeters: 100,
+    radiusMeters: 1,
     points: 300,
     icon: "health",
     videoVerification: true,
     exercise: "Pushups",
-    targetReps: 20,
+    targetReps: 5,
   },
 ];
+
+// Within this distance (m) user sees "You have reached the destination" and can start live tracking (1m for now)
+export const ARRIVED_RADIUS_METERS = 1;
 
 function getAgeGroup(age) {
   if (age == null || age === "") return "adult";
@@ -422,7 +425,7 @@ export const useGameStore = create((set, get) => ({
         q.id === questId ? { ...q, completed: true, skipped: true } : q,
       );
 
-      // Sync with backend (0 points for skip)
+      // Sync with backend: skip = 0 points, no deduction
       const userId = get().authUserId ?? 1;
       try {
         await fetch(`${getAPIBaseUrl()}/complete_quest.php`, {
@@ -431,7 +434,7 @@ export const useGameStore = create((set, get) => ({
           body: JSON.stringify({
             user_id: userId,
             quest_id: questId,
-            points: -5,
+            points: 0,
             skipped: true,
           }),
         });
@@ -441,13 +444,9 @@ export const useGameStore = create((set, get) => ({
 
       set({
         quests: updatedQuests,
-        engagedQuest: null, // Close interaction modal
+        engagedQuest: null,
         user: {
           ...user,
-          weeklyPoints: Math.max(0, (user.weeklyPoints || 0) - 5),
-          pointsToday: Math.max(0, (user.pointsToday || 0) - 5),
-          cumulativePoints: Math.max(0, (user.cumulativePoints || 0) - 5),
-          questsToday: currentQuestsToday + 1,
           lastRefreshDate: today,
         },
       });
@@ -506,8 +505,8 @@ export const useGameStore = create((set, get) => ({
   anchored: false,
 
   anchorQuestsToLocation: (lat, lng) => {
-    const { anchored } = get();
-    if (anchored && get().quests.length > 0) return;
+    const { anchored, quests } = get();
+    if (anchored && quests.length > 0) return;
 
     // Generate all 10 quests based on the user's location
     const allQuests = QUEST_POOL.map((poolItem, index) => {
@@ -546,20 +545,24 @@ export const useGameStore = create((set, get) => ({
       const res = await fetch(`${getAPIBaseUrl()}/get_quest_status.php?user_id=${encodeURIComponent(userId)}`);
       const json = await res.json();
       if (json.status === "success") {
-        const { user, currentLocation } = get();
-        // If we have a location, we can anchor the quest based on how many are completed
+        const { currentLocation } = get();
+        const completedIds = json.completed_ids || [];
+        const skippedIds = json.skipped_ids || [];
         if (currentLocation) {
           set({ anchored: false });
-          get().anchorQuestsToLocation(
-            currentLocation.lat,
-            currentLocation.lng,
-          );
+          get().anchorQuestsToLocation(currentLocation.lat, currentLocation.lng);
         }
+        set((s) => ({
+          quests: s.quests.map((q) => {
+            if (completedIds.includes(q.id)) return { ...q, completed: true, skipped: false };
+            if (skippedIds.includes(q.id)) return { ...q, completed: true, skipped: true };
+            return q;
+          }),
+        }));
       }
     } catch (e) {
       console.error("Quest status fetch error:", e);
     }
-
   },
 
 

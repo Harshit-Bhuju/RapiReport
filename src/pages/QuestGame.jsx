@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useGameStore, distanceMeters } from "../store/gameStore";
+import { useGameStore, distanceMeters, ARRIVED_RADIUS_METERS } from "../store/gameStore";
 import { useAuthStore } from "../store/authStore";
 import QuestMap from "../components/game/QuestMap";
 import Leaderboard from "../components/game/Leaderboard";
@@ -8,7 +8,6 @@ import AITracker from "../components/game/AITracker";
 import {
   Trophy,
   Gift,
-  MapPin,
   Zap,
   Target,
   CheckCircle2,
@@ -64,7 +63,14 @@ const QuestGame = () => {
     });
   }, [authUser?.id, authUser?.age, authUser?.conditions, setAuthUserId, setQuestProfile]);
 
+  // Show daily objectives immediately (anchor with default center so list is never empty)
+  const DEFAULT_QUEST_LAT = 27.7172;
+  const DEFAULT_QUEST_LNG = 85.324;
+
   useEffect(() => {
+    // Populate quest list right away so user doesn't wait for GPS
+    anchorQuestsToLocation(DEFAULT_QUEST_LAT, DEFAULT_QUEST_LNG);
+
     fetchUserStats();
     fetchLeaderboard();
     fetchRewards();
@@ -76,13 +82,15 @@ const QuestGame = () => {
     }, 30000);
 
     return () => clearInterval(interval);
-  }, [fetchUserStats, fetchQuests, fetchLeaderboard, fetchRewards]);
+  }, [fetchUserStats, fetchQuests, fetchLeaderboard, fetchRewards, anchorQuestsToLocation]);
 
+  // When real location is available, re-anchor quests for correct map positions and re-apply completed/skipped
   useEffect(() => {
-    if (currentLocation && !anchored) {
-      anchorQuestsToLocation(currentLocation.lat, currentLocation.lng);
-    }
-  }, [currentLocation, anchored, anchorQuestsToLocation]);
+    if (!currentLocation) return;
+    useGameStore.setState({ anchored: false });
+    anchorQuestsToLocation(currentLocation.lat, currentLocation.lng);
+    fetchQuests();
+  }, [currentLocation?.lat, currentLocation?.lng, anchorQuestsToLocation, fetchQuests]);
 
   const viewingQuest = quests.find(q => q.id === viewingQuestId);
 
@@ -214,7 +222,7 @@ const QuestGame = () => {
         </div>
       </div>
 
-      {/* ─── Quest Detail Popup (when quest clicked) ─── */}
+      {/* ─── Quest Detail Popup (when quest clicked) – no "reached destination" here; that shows after Start Quest ─── */}
       <AnimatePresence>
         {viewingQuest && !engagedQuest && (
           <motion.div
@@ -229,34 +237,17 @@ const QuestGame = () => {
               exit={{ y: "100%", opacity: 0 }}
               transition={{ type: "spring", damping: 25 }}
               onClick={(e) => e.stopPropagation()}
-              className="w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl p-6 max-h-[85vh] overflow-y-auto">
+              className="w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl p-6">
               <div className="flex justify-between items-start mb-4">
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2 mb-1">
-                    <span className="text-[10px] font-black text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full uppercase">Selected</span>
-                    {currentLocation && viewingQuest.lat && (
-                      <span className="text-[10px] font-black text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full uppercase flex items-center gap-1">
-                        <MapPin className="w-3 h-3 shrink-0" />
-                        {Math.round(distanceMeters(currentLocation.lat, currentLocation.lng, viewingQuest.lat, viewingQuest.lng))}m away
-                      </span>
-                    )}
-                  </div>
-                  <h2 className="text-lg font-black text-gray-900 leading-tight">{viewingQuest.title}</h2>
-                </div>
-                <button onClick={() => setViewingQuestId(null)} className="p-2 hover:bg-gray-100 rounded-full shrink-0">
+                <h2 className="text-lg font-black text-gray-900 leading-tight flex-1 pr-10">{viewingQuest.title}</h2>
+                <button type="button" onClick={() => setViewingQuestId(null)} className="p-2 hover:bg-gray-100 rounded-full shrink-0 -m-2">
                   <X className="w-5 h-5 text-gray-400" />
                 </button>
               </div>
               <p className="text-gray-600 text-sm mb-4">{viewingQuest.description}</p>
-              <div className="grid grid-cols-2 gap-3 mb-4">
-                <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-100">
-                  <p className="text-[9px] font-black text-emerald-600 uppercase">Completion</p>
-                  <p className="font-black text-emerald-700">+{viewingQuest.points} P</p>
-                </div>
-                <div className="p-3 rounded-xl bg-rose-50 border border-rose-100">
-                  <p className="text-[9px] font-black text-rose-600 uppercase">Skip</p>
-                  <p className="font-black text-rose-700">-5 P</p>
-                </div>
+              <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-100 mb-4">
+                <p className="text-[9px] font-black text-emerald-600 uppercase">Completion</p>
+                <p className="font-black text-emerald-700">+{viewingQuest.points} P</p>
               </div>
               <div className="flex gap-2">
                 <button
@@ -268,7 +259,7 @@ const QuestGame = () => {
                   onClick={() => {
                     toast((t) => (
                       <div className="flex flex-col gap-3">
-                        <p className="font-bold text-gray-900">Skip this quest? You&apos;ll lose 5 points.</p>
+                        <p className="font-bold text-gray-900">Skip this quest?</p>
                         <div className="flex gap-2">
                           <button
                             onClick={() => {
@@ -276,7 +267,7 @@ const QuestGame = () => {
                               setViewingQuestId(null);
                               toast.dismiss(t.id);
                             }}
-                            className="px-4 py-2 bg-rose-500 text-white rounded-lg font-bold text-sm">
+                            className="px-4 py-2 bg-gray-600 text-white rounded-lg font-bold text-sm hover:bg-gray-700">
                             Skip
                           </button>
                           <button
@@ -292,7 +283,6 @@ const QuestGame = () => {
                   Skip
                 </button>
               </div>
-              <p className="text-[9px] text-gray-400 font-bold uppercase text-center mt-3">Skip uses one daily slot</p>
             </motion.div>
           </motion.div>
         )}
@@ -346,31 +336,69 @@ const QuestGame = () => {
                 </div>
               </div>
               <button
-                onClick={() => setEngagedQuest(null)}
+                onClick={() => {
+                  setEngagedQuest(null);
+                  setViewingQuestId(null);
+                }}
                 className="p-3 bg-white/10 text-white rounded-full hover:bg-white/20 transition-all">
                 <X size={20} />
               </button>
             </div>
 
             <div className="flex-1 flex flex-col justify-center max-w-lg mx-auto w-full gap-8">
-              {!isAITracking ? (
-                <div className="bg-white rounded-[3rem] p-10 text-center shadow-2xl">
-                  <div className="w-20 h-20 bg-indigo-50 rounded-3xl mx-auto mb-8 flex items-center justify-center text-indigo-600">
+              {!isAITracking ? (() => {
+                const distM = currentLocation && engagedQuest.lat != null
+                  ? distanceMeters(currentLocation.lat, currentLocation.lng, engagedQuest.lat, engagedQuest.lng)
+                  : null;
+                const reachedDestination = distM != null && distM <= ARRIVED_RADIUS_METERS;
+                const zoneMeters = engagedQuest.radiusMeters ?? 1;
+                const distDisplay = distM != null ? (distM < 1 ? distM.toFixed(1) : Math.round(distM)) : "—";
+                if (!reachedDestination) {
+                  return (
+                    <div className="bg-white rounded-[3rem] p-8 sm:p-10 text-center shadow-2xl">
+                      <div className="mb-6 p-5 rounded-2xl bg-slate-50 border-2 border-slate-200 text-left">
+                        <p className="font-bold text-slate-700 text-sm">
+                          {distM != null ? (
+                            <>You are <span className="font-black text-slate-900">{distDisplay}m</span> from the quest point. Reach within {ARRIVED_RADIUS_METERS}m to see &quot;You have reached the destination&quot; and start live tracking.</>
+                          ) : (
+                            "Getting your location..."
+                          )}
+                        </p>
+                        <p className="text-slate-500 text-[10px] font-bold mt-2 uppercase">Quest zone: {zoneMeters}m</p>
+                      </div>
+                      <p className="text-gray-500 text-sm font-semibold">First reach the destination, then you can start the AI tracker.</p>
+                    </div>
+                  );
+                }
+                return (
+                <div className="bg-white rounded-[3rem] p-8 sm:p-10 text-center shadow-2xl">
+                  <div className="mb-6 p-5 rounded-2xl bg-emerald-50 border-2 border-emerald-200 text-left">
+                    <p className="font-black text-emerald-800 text-sm uppercase tracking-wide flex items-center gap-2">
+                      <CheckCircle2 className="w-5 h-5 shrink-0" />
+                      You have reached the destination
+                    </p>
+                    <p className="text-emerald-700 text-xs font-semibold mt-2">
+                      You are within {ARRIVED_RADIUS_METERS}m. Start live tracking below to complete this quest.
+                    </p>
+                    <p className="text-emerald-600 text-[10px] font-bold mt-2 uppercase">Quest zone: {zoneMeters}m · Your distance: {distDisplay}m</p>
+                  </div>
+                  <div className="w-20 h-20 bg-indigo-50 rounded-3xl mx-auto mb-6 flex items-center justify-center text-indigo-600">
                     <Video className="w-10 h-10" />
                   </div>
-                  <h3 className="text-2xl font-black text-gray-900 mb-2 uppercase tracking-tight leading-tight">
+                  <h3 className="text-xl font-black text-gray-900 mb-2 uppercase tracking-tight leading-tight">
                     Start Video Verification
                   </h3>
-                  <p className="text-gray-500 font-bold text-sm mb-10 leading-relaxed">
+                  <p className="text-gray-500 font-bold text-sm mb-8 leading-relaxed">
                     Position your phone where the AI can see your full body. Need {engagedQuest.targetReps} reps!
                   </p>
                   <button
                     onClick={startAITracker}
-                    className="w-full py-6 bg-indigo-600 hover:bg-indigo-700 text-white rounded-[2rem] font-black uppercase tracking-widest shadow-2xl shadow-indigo-200 transition-all text-sm">
-                    Open AI Tracker
+                    className="w-full py-6 rounded-[2rem] font-black uppercase tracking-widest shadow-2xl transition-all text-sm bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-200 ring-2 ring-emerald-300">
+                    Start live tracking
                   </button>
                 </div>
-              ) : (
+                );
+              })() : (
                 <div className="w-full aspect-[9/16] md:aspect-video bg-black rounded-[2.5rem] overflow-hidden border-4 border-indigo-500/30 relative">
                   <AITracker
                     targetReps={engagedQuest.targetReps || 20}
@@ -397,9 +425,14 @@ const QuestGame = () => {
               <h2 className="text-3xl font-black text-gray-900 uppercase tracking-tight mb-2">
                 Objective Cleared!
               </h2>
-              <p className="text-gray-500 font-bold text-sm mb-8 leading-relaxed">
+              <p className="text-gray-500 font-bold text-sm mb-4 leading-relaxed">
                 You've earned <span className="text-indigo-600">+{lastQuestDone.points} Points</span> towards your rewards!
               </p>
+              {lastQuestDone.type === "place" && (
+                <p className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-6">
+                  Quest zone: {lastQuestDone.radiusMeters ?? 10}m
+                </p>
+              )}
               <button
                 onClick={handleNextQuest}
                 className="w-full py-6 bg-indigo-600 hover:bg-indigo-700 text-white rounded-[2rem] font-black uppercase tracking-widest shadow-xl shadow-indigo-100 transition-all">

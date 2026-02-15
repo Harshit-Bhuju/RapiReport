@@ -147,38 +147,6 @@ function sendFamilyInvitationEmail($email, $inviterName, $relation, $acceptLink,
     return sendEmail($email, $subject, $body);
 }
 
-function sendAccountCreatedEmail($email)
-{
-    $subject = 'Your RapiReport Account is Ready!';
-    $body = getAccountCreatedTemplate();
-
-    return sendEmail($email, $subject, $body);
-}
-
-function sendSellerAccountCreatedEmail($email)
-{
-    $subject = 'Your RapiReport Seller Account is Ready!';
-    $body = getSellerAccountCreatedTemplate();
-
-    return sendEmail($email, $subject, $body);
-}
-
-function sendTeacherPendingVerificationEmail($email, $teacher_name)
-{
-    $subject = 'Your RapiReport Teacher Account is Under Review';
-    $body = getTeacherPendingVerificationTemplate($teacher_name);
-
-    return sendEmail($email, $subject, $body);
-}
-
-function sendTeacherVerifiedEmail($email, $teacher_name)
-{
-    $subject = 'Your RapiReport Teacher Account is Verified! 🎉';
-    $body = getTeacherVerifiedTemplate($teacher_name);
-
-    return sendEmail($email, $subject, $body);
-}
-
 function sendAccountDeletedEmail($email)
 {
     date_default_timezone_set('Asia/Kathmandu');
@@ -189,6 +157,8 @@ function sendAccountDeletedEmail($email)
 
     return sendEmail($email, $subject, $body);
 }
+
+// --- TEMPLATES (Retained for future use) ---
 
 function getOTPTemplate($otp, $title, $message)
 {
@@ -746,13 +716,7 @@ function getSellerAccountCreatedTemplate()
 </html>";
 }
 
-function sendTeacherRejectedEmail($email, $teacher_name)
-{
-    $subject = 'RapiReport Teacher Application Update';
-    $body = getTeacherRejectedTemplate($teacher_name);
-
-    return sendEmail($email, $subject, $body);
-}
+// --- TEACHER TEMPLATE ---
 
 function getTeacherRejectedTemplate($teacher_name)
 {

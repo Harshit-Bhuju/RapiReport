@@ -2,6 +2,9 @@ import React, { useRef, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { X, Activity, Maximize2, Minimize2, CheckCircle2 } from 'lucide-react';
 
+// Lighter smoothing so fast reps are detected (0.5 = responsive, still reduces jitter)
+const SMOOTH_ALPHA = 0.5;
+
 const AITracker = ({ targetReps, onRepCount, onTargetReached, onClose }) => {
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
@@ -15,6 +18,7 @@ const AITracker = ({ targetReps, onRepCount, onTargetReached, onClose }) => {
     const animationFrameRef = useRef(null);
     const poseRef = useRef(null);
     const lastRepTime = useRef(0);
+    const smoothedAngleRef = useRef(90);
 
     const repsRef = useRef(0);
     const directionRef = useRef(0);
@@ -97,7 +101,11 @@ const AITracker = ({ targetReps, onRepCount, onTargetReached, onClose }) => {
                 // Calculate arm angles (ESSENTIAL)
                 const rightArmAngle = calculateAngle(rShoulder, rElbow, rWrist);
                 const leftArmAngle = calculateAngle(lShoulder, lElbow, lWrist);
-                const avgArmAngle = (rightArmAngle + leftArmAngle) / 2;
+                const rawAvgAngle = (rightArmAngle + leftArmAngle) / 2;
+                // Smoothed angle for stable rep detection (reduces jitter)
+                const prev = smoothedAngleRef.current;
+                smoothedAngleRef.current = prev + SMOOTH_ALPHA * (rawAvgAngle - prev);
+                const avgArmAngle = smoothedAngleRef.current;
 
                 // Calculate body angle ONLY if hips are visible (OPTIONAL)
                 let avgBodyAngle = 170;
@@ -154,11 +162,13 @@ const AITracker = ({ targetReps, onRepCount, onTargetReached, onClose }) => {
                 drawAngle(ctx, rElbow, rightArmAngle);
                 drawAngle(ctx, lElbow, leftArmAngle);
 
-                // PUSHUP DETECTION (faster: 400ms cooldown, complete immediately)
+                // PUSHUP DETECTION: short cooldown + wider angles so fast reps count
                 const now = Date.now();
                 const currentDirection = directionRef.current;
                 const currentReps = repsRef.current;
-                const repCooldownMs = 400;
+                const repCooldownMs = 250;
+                const angleDown = 100;  // Count "down" when arms bend past this (catches fast motion)
+                const angleUp = 150;   // Count "up" when arms extend past this
 
                 let feedback = '';
 
@@ -167,7 +177,7 @@ const AITracker = ({ targetReps, onRepCount, onTargetReached, onClose }) => {
                     feedback = '⚠️ Keep body straighter!';
                     setFormFeedback(feedback);
                 } else {
-                    if (avgArmAngle < 90 &&
+                    if (avgArmAngle < angleDown &&
                         currentDirection === 0 &&
                         now - lastRepTime.current > repCooldownMs) {
 
@@ -176,7 +186,7 @@ const AITracker = ({ targetReps, onRepCount, onTargetReached, onClose }) => {
                         feedback = '✓ Going down...';
                         setFormFeedback(feedback);
                     }
-                    else if (avgArmAngle > 160 &&
+                    else if (avgArmAngle > angleUp &&
                         currentDirection === 1 &&
                         now - lastRepTime.current > repCooldownMs &&
                         currentReps < targetReps) {
@@ -207,7 +217,7 @@ const AITracker = ({ targetReps, onRepCount, onTargetReached, onClose }) => {
                         feedback = '↑ Push up!';
                         setFormFeedback(feedback);
                     } else {
-                        feedback = '✓ Ready - Bend arms to start';
+                        feedback = 'Arms in view – lower chest to start';
                         setFormFeedback(feedback);
                     }
                 }
@@ -263,8 +273,8 @@ const AITracker = ({ targetReps, onRepCount, onTargetReached, onClose }) => {
                         smoothLandmarks: true,
                         enableSegmentation: false,
                         smoothSegmentation: false,
-                        minDetectionConfidence: 0.5,
-                        minTrackingConfidence: 0.6
+                        minDetectionConfidence: 0.45,
+                        minTrackingConfidence: 0.55
                     });
 
                     pose.onResults(onResults);
@@ -430,47 +440,65 @@ const AITracker = ({ targetReps, onRepCount, onTargetReached, onClose }) => {
     };
 
     const drawUI = (ctx, width, height) => {
+        // Minimal canvas UI; main HUD is React overlay for better UX
         const currentReps = repsRef.current;
         const currentDirection = directionRef.current;
+        const progress = Math.min(1, currentReps / targetReps);
 
-        ctx.fillStyle = 'rgba(40, 40, 40, 0.95)';
-        ctx.fillRect(0, 0, width, 70);
-        ctx.fillRect(0, height - 80, width, 80);
+        // Subtle top bar
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+        ctx.fillRect(0, 0, width, 56);
 
-        ctx.fillStyle = '#00D9FF';
-        ctx.font = 'bold 56px Arial';
+        // Direction hint bottom strip
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+        ctx.fillRect(0, height - 52, width, 52);
+        ctx.fillStyle = currentDirection === 1 ? 'rgba(34, 197, 94, 0.9)' : 'rgba(250, 204, 21, 0.9)';
+        ctx.font = '600 14px system-ui, sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText(currentReps, width / 2 - 60, height - 25);
-
-        ctx.fillStyle = '#FFFFFF';
-        ctx.font = 'bold 28px Arial';
-        ctx.fillText('REPS', width / 2 + 60, height - 25);
-
-        ctx.font = 'bold 22px Arial';
-        ctx.textAlign = 'left';
-        ctx.fillText(`Target: ${targetReps}`, 20, 45);
-
-        ctx.textAlign = 'right';
-        ctx.fillStyle = currentDirection === 1 ? '#00FF00' : '#FFD700';
-        ctx.fillText(currentDirection === 1 ? '↓ DOWN' : '↑ UP', width - 20, 45);
+        ctx.fillText(currentDirection === 1 ? '↓ Lower chest' : '↑ Push up', width / 2, height - 22);
     };
 
+    // Use requestVideoFrameCallback when available for smoother sync with camera (WebRTC-style)
     useEffect(() => {
         if (!poseRef.current || !videoRef.current || isLoading) return;
 
-        const sendFrame = async () => {
-            if (videoRef.current && videoRef.current.readyState === 4) {
-                await poseRef.current.send({ image: videoRef.current });
+        const video = videoRef.current;
+        let cancelled = false;
+        let vfcHandle = null;
+
+        const processFrame = () => {
+            if (cancelled) return;
+            if (video && video.readyState >= 2) {
+                poseRef.current?.send({ image: video }).then(() => {
+                    if (!cancelled) animationFrameRef.current = requestAnimationFrame(processFrame);
+                }).catch(() => {
+                    if (!cancelled) animationFrameRef.current = requestAnimationFrame(processFrame);
+                });
+            } else {
+                animationFrameRef.current = requestAnimationFrame(processFrame);
             }
-            animationFrameRef.current = requestAnimationFrame(sendFrame);
         };
 
-        sendFrame();
+        if (typeof video.requestVideoFrameCallback === 'function') {
+            const callback = () => {
+                if (cancelled) return;
+                poseRef.current?.send({ image: video }).then(() => {
+                    if (!cancelled) vfcHandle = video.requestVideoFrameCallback(callback);
+                }).catch(() => {
+                    if (!cancelled) processFrame();
+                });
+            };
+            vfcHandle = video.requestVideoFrameCallback(callback);
+        } else {
+            processFrame();
+        }
 
         return () => {
-            if (animationFrameRef.current) {
-                cancelAnimationFrame(animationFrameRef.current);
+            cancelled = true;
+            if (typeof video.cancelVideoFrameCallback === 'function' && vfcHandle != null) {
+                video.cancelVideoFrameCallback(vfcHandle);
             }
+            if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
         };
     }, [isLoading]);
 
@@ -520,48 +548,91 @@ const AITracker = ({ targetReps, onRepCount, onTargetReached, onClose }) => {
                 className="absolute inset-0 w-full h-full object-cover"
             />
 
-            {/* Control buttons */}
-            <div className="absolute top-4 right-4 z-30 flex gap-2">
-                <button
-                    onClick={toggleMaximize}
-                    className="p-3 bg-cyan-500 rounded-full text-white hover:bg-cyan-600 transition-all shadow-lg"
-                    title={isMaximized ? "Minimize" : "Maximize"}
-                >
-                    {isMaximized ? <Minimize2 className="w-6 h-6" /> : <Maximize2 className="w-6 h-6" />}
-                </button>
-                <button
-                    onClick={onClose}
-                    className="p-3 bg-red-500 rounded-full text-white hover:bg-red-600 transition-all shadow-lg"
-                    title="Close"
-                >
-                    <X className="w-6 h-6" />
-                </button>
+            {/* Top bar: LIVE + controls */}
+            <div className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between px-3 py-2 bg-black/40 backdrop-blur-md">
+                <div className="flex items-center gap-2">
+                    <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/90 text-white text-[10px] font-bold uppercase tracking-widest">
+                        <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                        Live
+                    </span>
+                    <span className="text-white/80 text-xs font-semibold">Push-ups</span>
+                </div>
+                <div className="flex gap-1.5">
+                    <button
+                        type="button"
+                        onClick={toggleMaximize}
+                        className="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all"
+                        title={isMaximized ? "Minimize" : "Maximize"}
+                    >
+                        <Maximize2 className="w-5 h-5" />
+                    </button>
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="p-2.5 rounded-xl bg-red-500/80 hover:bg-red-500 text-white transition-all"
+                        title="Close"
+                    >
+                        <X className="w-5 h-5" />
+                    </button>
+                </div>
             </div>
 
-            {/* Rep counter */}
-            <div className="absolute top-4 left-4 z-30 bg-black/90 px-5 py-3 rounded-xl border-2 border-cyan-400">
-                <p className="text-white font-black text-lg sm:text-xl md:text-2xl">
-                    {reps} / {targetReps}
-                </p>
-                <p className="text-cyan-400 text-xs sm:text-sm font-bold uppercase tracking-wider">Pushups</p>
+            {/* Circular progress + rep count */}
+            <div className="absolute top-14 left-4 z-30 flex items-center gap-3">
+                <div className="relative w-16 h-16 sm:w-20 sm:h-20">
+                    <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
+                        <path
+                            className="text-white/20"
+                            stroke="currentColor"
+                            strokeWidth="2.5"
+                            fill="none"
+                            d="M18 2.5 a 15.5 15.5 0 0 1 0 31 a 15.5 15.5 0 0 1 0 -31"
+                        />
+                        <path
+                            className="text-cyan-400 transition-all duration-300 ease-out"
+                            stroke="currentColor"
+                            strokeWidth="2.5"
+                            strokeLinecap="round"
+                            fill="none"
+                            strokeDasharray={`${(reps / targetReps) * 97.4} 97.4`}
+                            d="M18 2.5 a 15.5 15.5 0 0 1 0 31 a 15.5 15.5 0 0 1 0 -31"
+                        />
+                    </svg>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                        <span className="text-white font-black text-lg sm:text-xl leading-none">{reps}</span>
+                        <span className="text-white/60 text-[10px] font-bold">/ {targetReps}</span>
+                    </div>
+                </div>
+                <div className="bg-black/40 backdrop-blur-md rounded-xl px-3 py-2 border border-white/10">
+                    <p className="text-white/90 text-[10px] font-bold uppercase tracking-wider">Target</p>
+                    <p className="text-cyan-300 font-black text-sm">{targetReps} reps</p>
+                </div>
             </div>
 
-            {/* Form Feedback - RESPONSIVE */}
+            {/* Form feedback - glass card */}
             {formFeedback && !isCompleted && (
-                <div className="absolute top-20 sm:top-24 left-1/2 transform -translate-x-1/2 z-30 bg-black/90 px-4 sm:px-6 py-2 sm:py-3 rounded-xl border-2 border-cyan-400 max-w-[90%] sm:max-w-md">
-                    <p className="text-white font-bold text-sm sm:text-base md:text-lg text-center whitespace-nowrap overflow-hidden text-ellipsis">
-                        {formFeedback}
-                    </p>
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 w-[90%] max-w-sm">
+                    <div className="bg-black/50 backdrop-blur-xl border border-white/20 rounded-2xl px-5 py-4 shadow-2xl">
+                        <p className="text-white font-semibold text-center text-sm sm:text-base">
+                            {formFeedback}
+                        </p>
+                    </div>
                 </div>
             )}
 
-            {/* Success Overlay */}
+            {/* Success overlay */}
             {isCompleted && (
-                <div className="absolute inset-0 z-40 bg-indigo-600/90 backdrop-blur-md flex items-center justify-center animate-in fade-in zoom-in duration-500">
-                    <div className="text-center p-8 bg-white rounded-[3rem] shadow-2xl transform animate-bounce">
-                        <CheckCircle2 className="w-20 h-20 text-emerald-500 mx-auto mb-4" />
-                        <h2 className="text-4xl font-black text-gray-900 mb-2 uppercase tracking-tight">Completed!</h2>
-                        <p className="text-gray-600 font-bold">Target of {targetReps} reps reached!</p>
+                <div className="absolute inset-0 z-40 flex items-center justify-center bg-gradient-to-br from-indigo-600/95 to-cyan-600/95 backdrop-blur-xl">
+                    <div className="text-center p-8 sm:p-10 bg-white/95 backdrop-blur rounded-[2rem] shadow-2xl mx-4 max-w-sm animate-in zoom-in-95 duration-300">
+                        <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-6">
+                            <CheckCircle2 className="w-10 h-10 sm:w-12 sm:h-12 text-emerald-600" />
+                        </div>
+                        <h2 className="text-2xl sm:text-3xl font-black text-gray-900 uppercase tracking-tight mb-2">
+                            Completed
+                        </h2>
+                        <p className="text-gray-600 font-semibold text-sm sm:text-base">
+                            {targetReps} push-ups verified
+                        </p>
                     </div>
                 </div>
             )}

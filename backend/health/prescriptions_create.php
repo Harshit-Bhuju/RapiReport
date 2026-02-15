@@ -72,41 +72,23 @@ if ($is_form_data) {
     $meds = $input['meds'] ?? [];
 }
 
-// Check if image_path column exists (for older DB schemas)
-$hasImagePath = false;
-$cols = $conn->query("SHOW COLUMNS FROM prescriptions LIKE 'image_path'");
-if ($cols && $cols->num_rows > 0) {
-    $hasImagePath = true;
-}
+// Save to ocr_history instead of legacy prescriptions table
 
-if ($hasImagePath) {
-    $stmt = $conn->prepare("INSERT INTO prescriptions (user_id, note, raw_text, image_path) VALUES (?, ?, ?, ?)");
-    $img_val = $image_path ?? '';
-    $stmt->bind_param('isss', $user_id, $note, $raw_text, $img_val);
-} else {
-    $stmt = $conn->prepare("INSERT INTO prescriptions (user_id, note, raw_text) VALUES (?, ?, ?)");
-    $stmt->bind_param('iss', $user_id, $note, $raw_text);
-}
+// Save to ocr_history instead of prescriptions
+$meds_json = json_encode($meds);
+$sql = "INSERT INTO ocr_history (user_id, image_path, note, raw_text, refined_json) VALUES (?, ?, ?, ?, ?)";
+$stmt = $conn->prepare($sql);
+$img_val = $image_path ?? '';
+$stmt->bind_param('issss', $user_id, $img_val, $note, $raw_text, $meds_json);
+
 if (!$stmt->execute()) {
     $stmt->close();
     $conn->close();
-    echo json_encode(['status' => 'error', 'message' => 'Failed to save']);
+    echo json_encode(['status' => 'error', 'message' => 'Failed to save to ocr_history: ' . $conn->error]);
     exit;
 }
-$prescription_id = (int) $conn->insert_id;
+$history_id = (int) $conn->insert_id;
 $stmt->close();
 
-foreach ($meds as $m) {
-    $name = $m['name'] ?? '';
-    $dose = $m['dose'] ?? null;
-    $frequency = $m['frequency'] ?? null;
-    $duration = $m['duration'] ?? null;
-    $raw_line = $m['raw'] ?? $m['raw_line'] ?? null;
-    $ins = $conn->prepare("INSERT INTO prescription_medicines (prescription_id, name, dose, frequency, duration, raw_line) VALUES (?, ?, ?, ?, ?, ?)");
-    $ins->bind_param('isssss', $prescription_id, $name, $dose, $frequency, $duration, $raw_line);
-    $ins->execute();
-    $ins->close();
-}
-
 $conn->close();
-echo json_encode(['status' => 'success', 'id' => $prescription_id, 'image_path' => $image_path]);
+echo json_encode(['status' => 'success', 'id' => $history_id, 'image_path' => $image_path]);

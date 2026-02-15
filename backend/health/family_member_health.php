@@ -134,36 +134,35 @@ try {
         }
     }
 
-    // 4. Recent prescriptions (last 10)
+    // 4. Recent prescriptions (last 10) - fetched from ocr_history
     $prescriptions = [];
-    $hasImagePath = false;
-    $rxCols = $conn->query("SHOW COLUMNS FROM prescriptions LIKE 'image_path'");
-    if ($rxCols && $rxCols->num_rows > 0) $hasImagePath = true;
-    $rxColsStr = $hasImagePath ? "id, note, raw_text, image_path, created_at" : "id, note, raw_text, created_at";
-    $rxStmt = $conn->prepare("SELECT $rxColsStr FROM prescriptions WHERE user_id = ? ORDER BY created_at DESC LIMIT 10");
+    $rxStmt = $conn->prepare("SELECT id, note, raw_text, refined_json, image_path, created_at FROM ocr_history WHERE user_id = ? ORDER BY created_at DESC LIMIT 10");
     if ($rxStmt) {
         $rxStmt->bind_param('i', $member_id);
         $rxStmt->execute();
         $rxRes = $rxStmt->get_result();
         while ($row = $rxRes->fetch_assoc()) {
-            $rxId = (int) $row['id'];
-            // Fetch medicines for this prescription
             $meds = [];
-            $medsStmt = $conn->prepare("SELECT name, dose, frequency, duration FROM prescription_medicines WHERE prescription_id = ?");
-            if ($medsStmt) {
-                $medsStmt->bind_param('i', $rxId);
-                $medsStmt->execute();
-                $medsRes = $medsStmt->get_result();
-                while ($m = $medsRes->fetch_assoc()) {
-                    $meds[] = $m;
+            if (!empty($row['refined_json'])) {
+                $meds_data = json_decode($row['refined_json'], true);
+                if (is_array($meds_data)) {
+                    foreach ($meds_data as $m) {
+                        $meds[] = [
+                            'name' => $m['name'] ?? '',
+                            'dose' => $m['dose'] ?? '',
+                            'frequency' => $m['frequency'] ?? '',
+                            'duration' => $m['duration'] ?? '',
+                            'raw' => $m['raw'] ?? $m['raw_line'] ?? ''
+                        ];
+                    }
                 }
-                $medsStmt->close();
             }
+
             $prescriptions[] = [
-                'id' => (string) $rxId,
+                'id' => (string) $row['id'],
                 'note' => $row['note'],
                 'rawText' => $row['raw_text'],
-                'imagePath' => ($hasImagePath && isset($row['image_path'])) ? $row['image_path'] : null,
+                'imagePath' => $row['image_path'] ?: null,
                 'createdAt' => $row['created_at'],
                 'meds' => $meds,
             ];

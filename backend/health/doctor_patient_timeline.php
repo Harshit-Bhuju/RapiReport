@@ -31,20 +31,20 @@ if ($role !== 'doctor') {
 
 $timeline = [];
 
-$rx = $conn->prepare("SELECT id, note, raw_text, created_at FROM prescriptions WHERE user_id = ? ORDER BY created_at DESC LIMIT 10");
+$rx = $conn->prepare("SELECT id, note, raw_text, refined_json, created_at FROM ocr_history WHERE user_id = ? ORDER BY created_at DESC LIMIT 10");
 $rx->bind_param('i', $patient_id);
 $rx->execute();
 $rxr = $rx->get_result();
 while ($r = $rxr->fetch_assoc()) {
-    $medsStmt = $conn->prepare("SELECT name FROM prescription_medicines WHERE prescription_id = ?");
-    $medsStmt->bind_param('i', $r['id']);
-    $medsStmt->execute();
-    $medsRes = $medsStmt->get_result();
     $meds = [];
-    while ($m = $medsRes->fetch_assoc()) {
-        $meds[] = $m['name'];
+    if (!empty($r['refined_json'])) {
+        $meds_data = json_decode($r['refined_json'], true);
+        if (is_array($meds_data)) {
+            foreach ($meds_data as $m) {
+                $meds[] = $m['name'] ?? '';
+            }
+        }
     }
-    $medsStmt->close();
     $timeline[] = [
         'type' => 'rx',
         'at' => $r['created_at'],
@@ -82,7 +82,7 @@ while ($a = $adhr->fetch_assoc()) {
 }
 $adh->close();
 
-usort($timeline, function($a, $b) {
+usort($timeline, function ($a, $b) {
     return strtotime($b['at']) - strtotime($a['at']);
 });
 

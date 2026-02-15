@@ -171,8 +171,9 @@ if (!is_array($parsed)) {
             $image_path = $filename;
         }
     }
-    $stmt = $conn->prepare("INSERT INTO ocr_history (user_id, image_path, raw_text) VALUES (?, ?, ?)");
-    $stmt->bind_param("iss", $user_id, $image_path, $text);
+    $meds_json = json_encode([]);
+    $stmt = $conn->prepare("INSERT INTO ocr_history (user_id, image_path, raw_text, refined_json) VALUES (?, ?, ?, ?)");
+    $stmt->bind_param("isss", $user_id, $image_path, $text, $meds_json);
     $stmt->execute();
     echo json_encode([
         'status' => 'success',
@@ -203,10 +204,11 @@ if ($decoded !== false && strlen($decoded) > 0) {
     }
 }
 
-// Save to OCR history with image path
-$sql = "INSERT INTO ocr_history (user_id, image_path, raw_text) VALUES (?, ?, ?)";
+// Save to OCR history with image path and refined meds JSON
+$meds_json = json_encode($meds);
+$sql = "INSERT INTO ocr_history (user_id, image_path, raw_text, refined_json) VALUES (?, ?, ?, ?)";
 $stmt = $conn->prepare($sql);
-$stmt->bind_param("iss", $user_id, $image_path, $rawText);
+$stmt->bind_param("isss", $user_id, $image_path, $rawText, $meds_json);
 $stmt->execute();
 
 echo json_encode([

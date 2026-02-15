@@ -86,11 +86,11 @@ const QuestMap = () => {
     ? L.latLng(currentLocation.lat, currentLocation.lng).distanceTo(L.latLng(selectedQuest.lat, selectedQuest.lng))
     : 1000;
 
-  // Helper to check if user is near a quest (radius in meters, default 1m)
+  // Helper to check if user is near a quest (radius in meters, default 100m)
   const isNear = (q) => {
     if (!currentLocation || !q.lat || !q.lng) return false;
     const distM = L.latLng(currentLocation.lat, currentLocation.lng).distanceTo(L.latLng(q.lat, q.lng));
-    return distM <= (q.radiusMeters ?? 1);
+    return distM <= (q.radiusMeters ?? 100);
   };
 
   const currentAvailableQuest = quests.find(q => q.type === "place" && !q.completed && isNear(q));
@@ -106,7 +106,7 @@ const QuestMap = () => {
         setError(null);
       },
       (err) => setError(err.message),
-      { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
     );
     return () => navigator.geolocation.clearWatch(watchId);
   }, [updateLocation]);

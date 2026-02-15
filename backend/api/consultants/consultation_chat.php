@@ -3,7 +3,7 @@
  * consultation_chat.php
  * Doctor <-> Patient chat. Supports appointment_id for per-appointment chat threads.
  * Chat history is saved and viewable. New chat starts per appointment.
- * Run migration: add_appointment_id_to_consultation_messages.sql
+ * Schema: See backend/rapireport.sql (consultation_messages has appointment_id)
  */
 require_once __DIR__ . '/../../config/header.php';
 

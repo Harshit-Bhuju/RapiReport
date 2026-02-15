@@ -15,20 +15,23 @@ if (!$user_id) {
     exit;
 }
 
-// Handle both JSON and FormData
+// Handle both JSON and FormData (same pattern as reports_create.php)
 $note = '';
 $raw_text = '';
 $meds = [];
 $image_path = null;
 
-// Check if this is multipart/form-data (with image upload)
-if (isset($_POST['note']) || isset($_POST['rawText'])) {
+$is_form_data = (isset($_POST['note']) || isset($_POST['rawText']) || isset($_POST['meds']))
+    || (isset($_FILES['image']) && $_FILES['image']['error'] !== UPLOAD_ERR_NO_FILE);
+
+if ($is_form_data) {
     // FormData submission
     $note = trim($_POST['note'] ?? '');
     $raw_text = trim($_POST['rawText'] ?? $_POST['raw_text'] ?? '');
-    $meds = isset($_POST['meds']) ? json_decode($_POST['meds'], true) : [];
+    $meds_raw = $_POST['meds'] ?? '[]';
+    $meds = is_array($meds_raw) ? $meds_raw : (json_decode($meds_raw, true) ?: []);
 
-    // Handle image upload
+    // Handle image upload (same as reports)
     if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
         $upload_dir = __DIR__ . '/../uploads/prescriptions/';
 
@@ -52,14 +55,13 @@ if (isset($_POST['note']) || isset($_POST['rawText'])) {
             exit;
         }
 
-        // Generate unique filename
-        $extension = pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION);
-        $filename = uniqid('rx_', true) . '.' . $extension;
+        // Generate unique filename (stored path: filename only for API serve)
+        $ext = pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION);
+        $filename = uniqid('rx_', true) . '.' . strtolower($ext);
         $full_path = $upload_dir . $filename;
 
-        // Move uploaded file
         if (move_uploaded_file($_FILES['image']['tmp_name'], $full_path)) {
-            $image_path = 'backend/uploads/prescriptions/' . $filename;
+            $image_path = $filename; // Store filename; serve script uses it
         }
     }
 } else {
@@ -79,7 +81,8 @@ if ($cols && $cols->num_rows > 0) {
 
 if ($hasImagePath) {
     $stmt = $conn->prepare("INSERT INTO prescriptions (user_id, note, raw_text, image_path) VALUES (?, ?, ?, ?)");
-    $stmt->bind_param('isss', $user_id, $note, $raw_text, $image_path);
+    $img_val = $image_path ?? '';
+    $stmt->bind_param('isss', $user_id, $note, $raw_text, $img_val);
 } else {
     $stmt = $conn->prepare("INSERT INTO prescriptions (user_id, note, raw_text) VALUES (?, ?, ?)");
     $stmt->bind_param('iss', $user_id, $note, $raw_text);

@@ -20,6 +20,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
+import toast from "react-hot-toast";
 
 import { getAIBaseUrl } from "../config";
 
@@ -261,10 +262,27 @@ const QuestGame = () => {
                 </button>
                 <button
                   onClick={() => {
-                    if (window.confirm("Skip this quest? You will lose 5 points.")) {
-                      skipQuest(viewingQuest.id);
-                      setViewingQuestId(null);
-                    }
+                    toast((t) => (
+                      <div className="flex flex-col gap-3">
+                        <p className="font-bold text-gray-900">Skip this quest? You&apos;ll lose 5 points.</p>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => {
+                              skipQuest(viewingQuest.id);
+                              setViewingQuestId(null);
+                              toast.dismiss(t.id);
+                            }}
+                            className="px-4 py-2 bg-rose-500 text-white rounded-lg font-bold text-sm">
+                            Skip
+                          </button>
+                          <button
+                            onClick={() => toast.dismiss(t.id)}
+                            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-bold text-sm">
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ), { duration: Infinity });
                   }}
                   className="px-4 py-3.5 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-xl font-bold text-xs uppercase">
                   Skip

@@ -21,13 +21,6 @@ import { formatDate } from "@/lib/utils";
 import ChatInterface from "@/components/features/ChatInterface";
 import API from "@/Configs/ApiEndpoints";
 
-const getReportImageUrl = (imagePath) => {
-  if (!imagePath) return null;
-  if (imagePath.startsWith("http://") || imagePath.startsWith("https://")) {
-    return imagePath;
-  }
-  return imagePath.startsWith("/") ? imagePath : `/${imagePath}`;
-};
 
 const MedicineInsight = React.lazy(
   () => import("@/components/features/MedicineInsight"),
@@ -73,7 +66,7 @@ const Results = () => {
             lab: r.lab,
             type: r.type,
             date: r.date || r.createdAt,
-            imageUrl: getReportImageUrl(r.imagePath),
+            imageUrl: r.imagePath ? API.REPORT_IMAGE(r.imagePath) : null,
             tests: (r.tests || []).map((t) => ({
               name: t.name,
               result: t.result,
@@ -254,6 +247,7 @@ const Results = () => {
                       src={report.imageUrl}
                       alt="Original lab report"
                       className="w-full max-h-72 object-contain group-hover:opacity-95 transition-opacity"
+                      crossOrigin="use-credentials"
                     />
                   </div>
                 </div>
@@ -335,6 +329,7 @@ const Results = () => {
               src={previewImage}
               alt="Report preview"
               className="max-h-[90vh] w-auto rounded-xl shadow-2xl object-contain"
+              crossOrigin="use-credentials"
             />
           </div>
         </div>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import toast from "react-hot-toast";
 import {
   Stethoscope,
   Lightbulb,
@@ -124,11 +125,11 @@ const ActivityItem = ({ act, currentLang, onVerify }) => {
         (error) => {
           console.error("Error getting location:", error);
           setIsVerifying(false);
-          alert(t("planner.locationError") || "Location access required");
+          toast.error(t("planner.locationError") || "Location access required");
         },
       );
     } else {
-      alert("Geolocation is not supported by this browser.");
+      toast.error("Geolocation is not supported by this browser.");
       setIsVerifying(false);
     }
   };

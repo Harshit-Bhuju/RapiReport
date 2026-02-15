@@ -62,7 +62,7 @@ const API = {
   PRESCRIPTIONS_DELETE: `${BASE_URL}/health/prescriptions_delete.php`,
   PRESCRIPTION_IMAGE: (imagePath) => {
     if (!imagePath) return null;
-    const filename = imagePath.split('/').pop();
+    const filename = imagePath.split("/").pop();
     return `${BASE_URL}/health/get_prescription_image.php?file=${encodeURIComponent(filename)}`;
   },
   SYMPTOMS_LIST: `${BASE_URL}/health/symptoms_list.php`,
@@ -92,6 +92,11 @@ const API = {
   // Reports (lab/diagnostic)
   REPORTS_LIST: `${BASE_URL}/health/reports_list.php`,
   REPORTS_GET: `${BASE_URL}/health/reports_get.php`,
+  REPORT_IMAGE: (imagePath) => {
+    if (!imagePath) return null;
+    const filename = imagePath.split("/").pop();
+    return `${BASE_URL}/health/get_report_image.php?file=${encodeURIComponent(filename)}`;
+  },
   REPORTS_CREATE: `${BASE_URL}/health/reports_create.php`,
   REPORTS_DELETE: `${BASE_URL}/health/reports_delete.php`,
 

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
+import toast from "react-hot-toast";
 import {
   Stethoscope,
   Phone,
@@ -65,7 +66,7 @@ const DoctorConsultation = () => {
       setShowPaymentModal(true);
     } else {
       // Proceed to consultation (mock)
-      alert(`Connecting with ${doctor.name}...`);
+      toast.success(`Connecting with ${doctor.name}...`);
     }
   };
 
@@ -74,7 +75,7 @@ const DoctorConsultation = () => {
     setTimeout(() => {
       setCredits((prev) => prev + 1000);
       setShowPaymentModal(false);
-      alert("Credits added successfully!");
+      toast.success("Credits added successfully!");
     }, 1000);
   };
 

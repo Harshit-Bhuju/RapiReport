@@ -35,13 +35,6 @@ const fileToBase64 = (file) => {
   });
 };
 
-const getReportImageUrl = (imagePath) => {
-  if (!imagePath) return null;
-  if (imagePath.startsWith("http://") || imagePath.startsWith("https://")) {
-    return imagePath;
-  }
-  return imagePath.startsWith("/") ? imagePath : `/${imagePath}`;
-};
 
 const Reports = () => {
   const { t } = useTranslation();
@@ -311,7 +304,7 @@ const Reports = () => {
       <div className="grid grid-cols-1 gap-4">
         {filteredReports.length > 0 ? (
           filteredReports.map((report) => {
-            const imageUrl = getReportImageUrl(report.imagePath);
+            const imageUrl = report.imagePath ? API.REPORT_IMAGE(report.imagePath) : null;
             return (
               <Card
                 key={report.id}
@@ -326,6 +319,7 @@ const Reports = () => {
                           src={imageUrl}
                           alt="Report"
                           className="w-full h-full object-cover cursor-pointer"
+                          crossOrigin="use-credentials"
                           onClick={(e) => {
                             e.stopPropagation();
                             setPreviewImage(imageUrl);

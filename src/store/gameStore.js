@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import toast from "react-hot-toast";
 import { getAPIBaseUrl } from "../config";
 
 // Distance in meters between two lat/lng points (Haversine)
@@ -15,146 +16,138 @@ export const distanceMeters = (lat1, lng1, lat2, lng2) => {
   return R * c; // Delta in meters
 };
 
-// Quest pool: Only PUSHUP exercises for simplicity
-// All 10 daily quests will be pushups at different locations
-// Relative offsets in degrees (approximate for small distances)
-// 0.00001 degrees is roughly 1.1 meters
-// Quest pool: Daily progression from 1 to 10
+// Quest pool: 100m range per quest. 0.0009 degrees ≈ 100m at mid-latitudes.
+// Mix of walk and place quests with a nice path.
 const QUEST_POOL = [
   {
-    id: "pushup_1",
-    type: "place",
-    title: "Pushup Challenge 1",
-    description: "Complete 5 Pushups to start your day!",
-    offsetLat: 0.00001,
-    offsetLng: 0.00001,
-    radiusMeters: 1,
-    points: 100,
-    icon: "pin",
-    videoVerification: true,
-    exercise: "Pushups",
-    targetReps: 5
-  },
-  {
-    id: "walk_2",
+    id: "walk_1",
     type: "walk",
-    title: "Morning Stroll",
-    description: "Walk 2 meters to verify tracking (Testing Mode)",
-    targetMeters: 2,
-    points: 100,
-    icon: "walk"
+    title: "Warm-up Walk North",
+    description: "Walk 100m north to start your health journey",
+    targetMeters: 100,
+    offsetLat: 0.0009,
+    offsetLng: 0,
+    targetPath: [[0, 0], [0.0003, 0], [0.0006, 0], [0.0009, 0]],
+    points: 80,
+    icon: "pin",
   },
   {
-    id: "pushup_3",
+    id: "pushup_2",
     type: "place",
-    title: "Pushup Challenge 3",
-    description: "Complete 10 Pushups",
-    offsetLat: 0.00001,
-    offsetLng: -0.00001,
-    radiusMeters: 1,
+    title: "Checkpoint Pushups",
+    description: "Complete 5 Pushups at the north checkpoint",
+    offsetLat: 0.0009,
+    offsetLng: 0,
+    radiusMeters: 100,
     points: 100,
-    icon: "pin",
+    icon: "health",
     videoVerification: true,
     exercise: "Pushups",
-    targetReps: 10
+    targetReps: 5,
+  },
+  {
+    id: "walk_3",
+    type: "walk",
+    title: "Walk to East",
+    description: "Walk 100m east along the path",
+    targetMeters: 100,
+    offsetLat: 0.0009,
+    offsetLng: 0.0009,
+    targetPath: [[0.0009, 0], [0.0009, 0.0003], [0.0009, 0.0006], [0.0009, 0.0009]],
+    points: 80,
+    icon: "pin",
   },
   {
     id: "pushup_4",
     type: "place",
-    title: "Pushup Challenge 4",
-    description: "Complete 12 Pushups",
-    offsetLat: -0.00001,
-    offsetLng: -0.00001,
-    radiusMeters: 1,
-    points: 100,
-    icon: "pin",
+    title: "Park Bench Challenge",
+    description: "Complete 10 Pushups at the park area",
+    offsetLat: 0.0009,
+    offsetLng: 0.0009,
+    radiusMeters: 100,
+    points: 120,
+    icon: "park",
     videoVerification: true,
     exercise: "Pushups",
-    targetReps: 12
+    targetReps: 10,
   },
   {
-    id: "pushup_5",
-    type: "place",
-    title: "Pushup Challenge 5",
-    description: "Complete 15 Pushups",
-    offsetLat: 0.000015,
-    offsetLng: 0,
-    radiusMeters: 1,
-    points: 150,
+    id: "walk_5",
+    type: "walk",
+    title: "Southbound Stroll",
+    description: "Walk 100m south to the next zone",
+    targetMeters: 100,
+    offsetLat: 0,
+    offsetLng: 0.0009,
+    targetPath: [[0.0009, 0.0009], [0.0006, 0.0009], [0.0003, 0.0009], [0, 0.0009]],
+    points: 80,
     icon: "pin",
-    videoVerification: true,
-    exercise: "Pushups",
-    targetReps: 15
   },
   {
     id: "pushup_6",
     type: "place",
-    title: "Pushup Challenge 6",
-    description: "Complete 18 Pushups",
-    offsetLat: -0.000015,
-    offsetLng: 0,
-    radiusMeters: 1,
+    title: "Community Spot",
+    description: "Complete 12 Pushups at the community hub",
+    offsetLat: 0,
+    offsetLng: 0.0009,
+    radiusMeters: 100,
     points: 150,
-    icon: "pin",
+    icon: "community",
     videoVerification: true,
     exercise: "Pushups",
-    targetReps: 18
+    targetReps: 12,
   },
   {
-    id: "pushup_7",
-    type: "place",
-    title: "Pushup Challenge 7",
-    description: "Complete 20 Pushups",
+    id: "walk_7",
+    type: "walk",
+    title: "Westward Path",
+    description: "Walk 100m west to complete the loop",
+    targetMeters: 100,
     offsetLat: 0,
-    offsetLng: 0.000015,
-    radiusMeters: 1,
-    points: 200,
+    offsetLng: 0,
+    targetPath: [[0, 0.0009], [0, 0.0006], [0, 0.0003], [0, 0]],
+    points: 80,
     icon: "pin",
-    videoVerification: true,
-    exercise: "Pushups",
-    targetReps: 20
   },
   {
     id: "pushup_8",
     type: "place",
-    title: "Pushup Challenge 8",
-    description: "Complete 22 Pushups",
+    title: "Home Stretch Pushups",
+    description: "Complete 15 Pushups near the finish",
     offsetLat: 0,
-    offsetLng: -0.000015,
-    radiusMeters: 1,
-    points: 200,
-    icon: "pin",
+    offsetLng: 0,
+    radiusMeters: 100,
+    points: 180,
+    icon: "health",
     videoVerification: true,
     exercise: "Pushups",
-    targetReps: 22
+    targetReps: 15,
   },
   {
-    id: "pushup_9",
-    type: "place",
-    title: "Pushup Challenge 9",
-    description: "Complete 25 Pushups",
-    offsetLat: 0.00002,
-    offsetLng: 0.00002,
-    radiusMeters: 1,
-    points: 250,
+    id: "walk_9",
+    type: "walk",
+    title: "Diagonal Dash",
+    description: "Walk 100m northeast to the bonus zone",
+    targetMeters: 100,
+    offsetLat: 0.00064,
+    offsetLng: 0.00064,
+    targetPath: [[0, 0], [0.00021, 0.00021], [0.00043, 0.00043], [0.00064, 0.00064]],
+    points: 100,
     icon: "pin",
-    videoVerification: true,
-    exercise: "Pushups",
-    targetReps: 25
   },
   {
     id: "pushup_10",
     type: "place",
     title: "Daily Finale",
-    description: "Complete 30 Pushups for the ultimate daily bonus!",
-    offsetLat: -0.00002,
-    offsetLng: -0.00002,
-    radiusMeters: 1,
+    description: "Complete 20 Pushups for the ultimate daily bonus!",
+    offsetLat: 0.00064,
+    offsetLng: 0.00064,
+    radiusMeters: 100,
     points: 300,
-    icon: "pin",
+    icon: "health",
     videoVerification: true,
     exercise: "Pushups",
-    targetReps: 30
+    targetReps: 20,
   },
 ];
 
@@ -360,7 +353,7 @@ export const useGameStore = create((set, get) => ({
     }
 
     if (currentQuestsToday >= 10) {
-      alert("Daily limit of 10 quests reached! Come back tomorrow.");
+      toast.error("Daily limit of 10 quests reached! Come back tomorrow.");
       return false;
     }
 
@@ -414,7 +407,7 @@ export const useGameStore = create((set, get) => ({
     }
 
     if (currentQuestsToday >= 10) {
-      alert("Daily limit of 10 quests reached! Come back tomorrow.");
+      toast.error("Daily limit of 10 quests reached! Come back tomorrow.");
       return false;
     }
 

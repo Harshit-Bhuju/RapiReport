@@ -1474,6 +1474,7 @@ const Family = () => {
                               src={API.PRESCRIPTION_IMAGE(rx.imagePath)}
                               alt="Prescription"
                               className="w-full h-full object-cover"
+                              crossOrigin="use-credentials"
                             />
                           </a>
                         )}

@@ -1,4 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
 import { X, Activity, Maximize2, Minimize2, CheckCircle2 } from 'lucide-react';
 
 const AITracker = ({ targetReps, onRepCount, onTargetReached, onClose }) => {
@@ -279,7 +280,9 @@ const AITracker = ({ targetReps, onRepCount, onTargetReached, onClose }) => {
                 }
             } catch (err) {
                 console.error('Error loading MediaPipe:', err);
-                setError('Failed to load AI tracker. Please refresh and try again.');
+                const msg = 'Failed to load AI tracker. Please refresh and try again.';
+                setError(msg);
+                toast.error(msg);
                 setIsLoading(false);
             }
         };
@@ -318,7 +321,9 @@ const AITracker = ({ targetReps, onRepCount, onTargetReached, onClose }) => {
                 }
             } catch (err) {
                 console.error('Error accessing camera:', err);
-                setError('Cannot access camera. Please grant permission.');
+                const msg = 'Video could not start. Please check camera permissions.';
+                setError(msg);
+                toast.error(msg);
             }
         };
 

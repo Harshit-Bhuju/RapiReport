@@ -18,7 +18,7 @@ if (!$user_id) {
 // Check if reports table exists
 $tableCheck = $conn->query("SHOW TABLES LIKE 'reports'");
 if (!$tableCheck || $tableCheck->num_rows === 0) {
-    echo json_encode(['status' => 'error', 'message' => 'Reports table not found. Run migration: backend/database/migrations/add_reports_tables.sql']);
+    echo json_encode(['status' => 'error', 'message' => 'Reports table not found. Import backend/rapireport.sql']);
     exit;
 }
 

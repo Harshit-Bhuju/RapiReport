@@ -1,7 +1,6 @@
 <?php
 /**
- * Serves prescription images. Requires auth. Path must be in uploads/prescriptions/.
- * Same pattern as get_report_image.php.
+ * Serves report images. Requires auth. Mirrors get_prescription_image.php.
  */
 require_once __DIR__ . '/../config/session_config.php';
 require_once __DIR__ . '/../config/dbconnect.php';
@@ -20,12 +19,12 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 $file = isset($_GET['file']) ? basename($_GET['file']) : '';
-if (!preg_match('/^rx_[a-zA-Z0-9_.-]+\.(jpg|jpeg|png)$/i', $file)) {
+if (!preg_match('/^rpt_[a-zA-Z0-9_.-]+\.(jpg|jpeg|png)$/i', $file)) {
     http_response_code(400);
     exit;
 }
 
-$path = __DIR__ . '/../uploads/prescriptions/' . $file;
+$path = __DIR__ . '/../uploads/reports/' . $file;
 if (!file_exists($path) || !is_file($path)) {
     http_response_code(404);
     exit;

@@ -38,7 +38,11 @@ if ($has_skipped_col) {
     $stmt = $conn->prepare("INSERT INTO quest_logs (user_id, quest_id, points_awarded) VALUES (?, ?, ?)");
     $stmt->bind_param("isi", $user_id, $quest_id, $points);
 }
-$stmt->execute();
+if (!$stmt->execute()) {
+    error_log("Quest completion failed: " . $stmt->error);
+    echo json_encode(["status" => "error", "message" => "Database error: " . $stmt->error]);
+    exit();
+}
 
 // 2. Update user stats: when skipped, only increment quests_today (no points change)
 $sql_check = "SELECT last_refresh_date, quests_today FROM territory_users WHERE user_id = '$user_id'";

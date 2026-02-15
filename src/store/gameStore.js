@@ -378,10 +378,10 @@ export const useGameStore = create((set, get) => ({
         q.id === questId ? { ...q, completed: true } : q,
       );
 
-      // Sync with backend
+      // Sync with backend - WAIT for response before updating state to ensure persistence
       const userId = get().authUserId ?? 1;
       try {
-        await fetch(`${getAPIBaseUrl()}/complete_quest.php`, {
+        const res = await fetch(`${getAPIBaseUrl()}/complete_quest.php`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -390,8 +390,15 @@ export const useGameStore = create((set, get) => ({
             points: quest.points,
           }),
         });
+        const json = await res.json();
+
+        if (json.status !== "success") {
+          console.error("Backend failed:", json.message);
+          return false;
+        }
       } catch (e) {
         console.error("Failed to sync quest:", e);
+        return false;
       }
 
       set({
@@ -433,10 +440,10 @@ export const useGameStore = create((set, get) => ({
         q.id === questId ? { ...q, completed: true, skipped: true } : q,
       );
 
-      // Sync with backend: skip = 0 points, no deduction
+      // Sync with backend - WAIT for response
       const userId = get().authUserId ?? 1;
       try {
-        await fetch(`${getAPIBaseUrl()}/complete_quest.php`, {
+        const res = await fetch(`${getAPIBaseUrl()}/complete_quest.php`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -446,8 +453,15 @@ export const useGameStore = create((set, get) => ({
             skipped: true,
           }),
         });
+        const json = await res.json();
+
+        if (json.status !== "success") {
+          console.error("Backend skip failed:", json.message);
+          return false;
+        }
       } catch (e) {
         console.error("Failed to sync skipped quest:", e);
+        return false;
       }
 
       set({

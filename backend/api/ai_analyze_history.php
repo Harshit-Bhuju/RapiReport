@@ -54,33 +54,29 @@ $stmt->execute();
 $userProfile = $stmt->get_result()->fetch_assoc();
 $stmt->close();
 
-// 2. Fetch Past Prescriptions (OCR and Saved)
-// OCR History - full text, no truncation
-$stmt = $conn->prepare("SELECT raw_text, refined_text, created_at FROM ocr_history WHERE user_id = ? ORDER BY created_at DESC LIMIT 50");
+// 2. Fetch Past Scans & Prescriptions (Unified in ocr_history)
+$stmt = $conn->prepare("SELECT id, note, raw_text, refined_json, created_at FROM ocr_history WHERE user_id = ? ORDER BY created_at DESC LIMIT 50");
 $stmt->bind_param("i", $target_user_id);
 $stmt->execute();
-$ocrHistory = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+$historyRows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 $stmt->close();
 
-// Saved Prescriptions with medicines from prescription_medicines
-$stmt = $conn->prepare("SELECT id, note, raw_text, created_at FROM prescriptions WHERE user_id = ? ORDER BY created_at DESC LIMIT 50");
-$stmt->bind_param("i", $target_user_id);
-$stmt->execute();
-$prescriptionRows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
-$stmt->close();
-$savedPrescriptions = [];
-foreach ($prescriptionRows as $p) {
-    $medsStmt = $conn->prepare("SELECT name, dose, frequency, duration FROM prescription_medicines WHERE prescription_id = ?");
-    $medsStmt->bind_param("i", $p['id']);
-    $medsStmt->execute();
-    $meds = $medsStmt->get_result()->fetch_all(MYSQLI_ASSOC);
-    $medsStmt->close();
-    $medsStr = implode(", ", array_map(fn($m) => ($m['name'] ?? '') . ($m['dose'] ? " ({$m['dose']})" : ''), $meds));
-    $savedPrescriptions[] = [
-        'note' => $p['note'],
-        'raw_text' => $p['raw_text'],
+$pastRecords = [];
+foreach ($historyRows as $row) {
+    $medsArr = [];
+    if (!empty($row['refined_json'])) {
+        $parsed = json_decode($row['refined_json'], true);
+        if (is_array($parsed)) $medsArr = $parsed;
+    }
+    // Format meds for the AI prompt
+    $medsStr = implode(", ", array_map(fn($m) => ($m['name'] ?? '') . (isset($m['dose']) && $m['dose'] ? " ({$m['dose']})" : ''), $medsArr));
+
+    $pastRecords[] = [
+        'id' => $row['id'],
+        'note' => $row['note'],
+        'raw_text' => $row['raw_text'],
         'meds' => $medsStr,
-        'created_at' => $p['created_at'],
+        'created_at' => $row['created_at'],
     ];
 }
 
@@ -119,17 +115,14 @@ $historyContext .= "- Existing Conditions: " . ($userProfile['conditions'] ?? 'N
 $historyContext .= "- Other/Custom: " . ($userProfile['custom_conditions'] ?? 'None') . "\n";
 $historyContext .= "- Family History: " . ($userProfile['parental_history'] ?? 'None') . "\n\n";
 
-$historyContext .= "Saved Prescriptions (with parsed medicines):\n";
-foreach ($savedPrescriptions as $p) {
-    $note = $p['note'] ?? $p['raw_text'] ?? 'No notes';
-    $meds = $p['meds'] ?? 'No meds listed';
-    $historyContext .= "- [" . $p['created_at'] . "] Note: " . $note . " | Medicines: " . $meds . "\n";
-}
-
-$historyContext .= "\nScanned Documents (OCR - full text):\n";
-foreach ($ocrHistory as $o) {
-    $text = $o['refined_text'] ?? $o['raw_text'] ?? 'No text';
-    $historyContext .= "--- [Date: " . $o['created_at'] . "] ---\n" . $text . "\n\n";
+$historyContext .= "Prescription & Scan History (Full Context):\n";
+foreach ($pastRecords as $p) {
+    $note = (isset($p['note']) && $p['note']) ? $p['note'] : (isset($p['raw_text']) ? substr($p['raw_text'], 0, 100) . "..." : 'No details');
+    $meds = $p['meds'] ?? 'No meds categorized';
+    $historyContext .= "- [" . $p['created_at'] . "] Info: " . $note . " | Meds: " . $meds . "\n";
+    if (isset($p['raw_text'])) {
+        $historyContext .= "  Full Content: " . substr($p['raw_text'], 0, 500) . "...\n";
+    }
 }
 
 $historyContext .= "\nLab/Diagnostic Reports:\n";

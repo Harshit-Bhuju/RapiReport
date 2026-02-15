@@ -57,7 +57,7 @@ const QuestGame = () => {
   const [aiReps, setAiReps] = useState(0);
 
   useEffect(() => {
-    setAuthUserId(authUser?.id ?? null);
+    setAuthUserId(authUser?.user_id ?? authUser?.id ?? null);
     setQuestProfile({
       age: authUser?.age,
       conditions: authUser?.conditions,
@@ -130,6 +130,9 @@ const QuestGame = () => {
         fetchUserStats();
         fetchLeaderboard();
         fetchQuests();
+      } else {
+        toast.error("Quest completion failed. Please try again.");
+        setIsAITracking(false); // Close the tracker so user isn't stuck
       }
     }
   };
@@ -269,7 +272,14 @@ const QuestGame = () => {
               exit={{ y: "100%", opacity: 0 }}
               transition={{ type: "spring", damping: 25 }}
               onClick={(e) => e.stopPropagation()}
-              className="w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl p-6">
+              className="relative w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl p-6">
+              {/* Manual Close Button for Quest Detail */}
+              <button
+                onClick={() => setViewingQuestId(null)}
+                className="absolute top-4 right-4 p-2 rounded-full bg-gray-50 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors z-10"
+              >
+                <X className="w-5 h-5" />
+              </button>
               <div className="flex justify-between items-start mb-4">
                 <h2 className="text-lg font-black text-gray-900 leading-tight flex-1 pr-10">{viewingQuest.title}</h2>
                 <button type="button" onClick={() => setViewingQuestId(null)} className="p-2 hover:bg-gray-100 rounded-full shrink-0 -m-2">

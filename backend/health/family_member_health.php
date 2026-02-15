@@ -40,10 +40,10 @@ if ($checkRes->num_rows === 0) {
 $check->close();
 
 try {
-    // 1. Get profile info
+    // 1. Get profile info (users table has conditions, custom_conditions, parental_history - no allergies column)
     $profileStmt = $conn->prepare("
         SELECT username, email, age, dob, gender, blood_group,
-               conditions, allergies, parental_history, custom_parental_history,
+               conditions, custom_conditions, parental_history, custom_parental_history,
                profile_pic
         FROM users WHERE id = ?
     ");
@@ -63,7 +63,7 @@ try {
             'gender' => $profileRow['gender'],
             'bloodGroup' => $profileRow['blood_group'],
             'conditions' => $profileRow['conditions'],
-            'allergies' => $profileRow['allergies'],
+            'allergies' => null,
             'parentalHistory' => json_decode($profileRow['parental_history'] ?? '[]', true),
             'customParentalHistory' => $profileRow['custom_parental_history'],
             'profilePic' => $profileRow['profile_pic'],

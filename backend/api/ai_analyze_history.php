@@ -48,7 +48,7 @@ if (isset($input['member_id']) && (int)$input['member_id'] > 0) {
 }
 
 // 1. Fetch User Profile (Conditions, Allergies, etc.)
-$stmt = $conn->prepare("SELECT username, dob, gender, blood_group, conditions, allergies, parental_history FROM users WHERE id = ?");
+$stmt = $conn->prepare("SELECT username, dob, gender, blood_group, conditions, custom_conditions, parental_history FROM users WHERE id = ?");
 $stmt->bind_param("i", $target_user_id);
 $stmt->execute();
 $userProfile = $stmt->get_result()->fetch_assoc();
@@ -85,7 +85,7 @@ $historyContext = "User Profile:\n";
 $historyContext .= "- Gender: " . ($userProfile['gender'] ?? 'Not specified') . "\n";
 $historyContext .= "- Blood Group: " . ($userProfile['blood_group'] ?? 'Not specified') . "\n";
 $historyContext .= "- Existing Conditions: " . ($userProfile['conditions'] ?? 'None') . "\n";
-$historyContext .= "- Allergies: " . ($userProfile['allergies'] ?? 'None') . "\n";
+$historyContext .= "- Other/Custom: " . ($userProfile['custom_conditions'] ?? 'None') . "\n";
 $historyContext .= "- Family History: " . ($userProfile['parental_history'] ?? 'None') . "\n\n";
 
 $historyContext .= "Recent Prescriptions (Saved):\n";

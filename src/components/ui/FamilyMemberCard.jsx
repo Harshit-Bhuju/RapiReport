@@ -201,13 +201,14 @@ export const FamilyMemberCard = ({
             </div>
           )}
 
-          {/* View Health Details Button */}
-          {hasHealthData && onViewHealth && (
+          {/* View Health Details Button — always show for accepted members so user can open full modal */}
+          {onViewHealth && (
             <button
               onClick={() => onViewHealth(member)}
-              className="w-full flex items-center justify-center gap-2 py-2 mt-1 rounded-xl bg-primary-50 hover:bg-primary-100 text-primary-600 text-xs font-bold transition-colors">
-              {t("family.viewHealthDetails") || "View Health Details"}
-              <ChevronRight className="w-3.5 h-3.5" />
+              className="w-full flex items-center justify-center gap-2 py-2.5 mt-2 rounded-xl bg-primary-100 hover:bg-primary-200 text-primary-700 text-sm font-bold transition-colors border border-primary-200">
+              <Heart className="w-4 h-4" />
+              {t("family.viewHealthDetails") || "View Full Health History"}
+              <ChevronRight className="w-4 h-4" />
             </button>
           )}
         </div>

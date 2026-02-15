@@ -5,478 +5,238 @@ import {
   Zap,
   Shield,
   Users,
-  ChevronRight,
   FileText,
   LineChart,
   Brain,
   UploadCloud,
   ArrowRight,
-  Sparkles,
-  Activity,
   Lock,
-  TrendingUp,
-  Clock,
+  Quote,
+  ChevronRight,
 } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import Button from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/store/authStore";
 
+// ——— 1. SPLIT HERO (dark, left text / right abstract visual) ———
 const HeroSection = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
   return (
-    <section className="relative pt-28 pb-24 md:pt-36 md:pb-32 overflow-hidden bg-[#fafbfc]">
-      {/* Subtle grid + single accent glow */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div
-          className="absolute inset-0 opacity-[0.4]"
-          style={{
-            backgroundImage: `linear-gradient(rgba(15,23,42,0.03) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(15,23,42,0.03) 1px, transparent 1px)`,
-            backgroundSize: "64px 64px",
-          }}
-        />
-        <div className="absolute top-1/3 -left-32 w-96 h-96 bg-primary-500/8 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 -right-32 w-[480px] h-[480px] bg-slate-300/20 rounded-full blur-3xl" />
+    <section className="min-h-[90vh] flex flex-col lg:flex-row bg-zinc-950 text-white overflow-hidden">
+      {/* Left: copy */}
+      <div className="flex-1 flex flex-col justify-center px-6 sm:px-10 lg:px-16 xl:px-24 py-20 lg:py-0 order-2 lg:order-1">
+        <motion.div
+          initial={{ opacity: 0, x: -32 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.7 }}>
+          <h1 className="font-heading text-4xl sm:text-5xl lg:text-6xl font-bold leading-[1.1] tracking-tight">
+            {t("hero.title").split(" ").slice(0, 2).join(" ")}
+            <br />
+            <span className="text-amber-400">
+              {t("hero.title").split(" ").slice(2).join(" ")}
+            </span>
+          </h1>
+          <p className="mt-6 text-zinc-400 text-lg max-w-md">
+            {t("hero.subtitle")}
+          </p>
+          <div className="mt-10 flex flex-wrap items-center gap-4">
+            <button
+              type="button"
+              onClick={() => navigate("/auth")}
+              className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-white text-zinc-900 font-semibold hover:bg-zinc-100 transition-colors">
+              {t("hero.cta")}
+              <ArrowRight className="w-4 h-4" />
+            </button>
+            <span className="text-zinc-500 text-sm">
+              Trusted by <span className="text-zinc-300 font-medium">10,000+</span> users
+            </span>
+          </div>
+        </motion.div>
       </div>
 
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-14">
-            <motion.div
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}>
-              <p className="font-heading text-xs font-semibold tracking-[0.2em] text-slate-400 uppercase mb-6">
-                01 — Overview
-              </p>
-              <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900 text-white text-xs font-medium mb-8">
-                <Sparkles className="w-3.5 h-3.5" />
-                {t("hero.badge")}
-              </span>
-
-              <h1 className="font-heading text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold text-slate-900 mb-6 leading-[1.08] tracking-tight">
-                {t("hero.title").split(" ").slice(0, 2).join(" ")}
-                <br />
-                <span className="text-primary-600">
-                  {t("hero.title").split(" ").slice(2).join(" ")}
-                </span>
-              </h1>
-
-              <p className="text-lg sm:text-xl text-slate-600 mb-10 max-w-xl mx-auto leading-relaxed font-medium">
-                {t("hero.subtitle")}
-              </p>
-
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
-                <Button
-                  size="lg"
-                  className="font-heading px-8 py-3.5 text-base font-semibold rounded-lg bg-slate-900 text-white hover:bg-slate-800 shadow-lg shadow-slate-900/20 hover:shadow-xl transition-all"
-                  onClick={() => navigate("/auth")}>
-                  {t("hero.cta")}
-                  <ArrowRight className="ml-2 w-4 h-4" />
-                </Button>
-                <span className="text-sm text-slate-500">
-                  Trusted by <strong className="text-slate-700">10,000+</strong> users
-                </span>
-              </div>
-            </motion.div>
+      {/* Right: abstract visual (no browser mockup) */}
+      <div className="flex-1 relative min-h-[50vh] lg:min-h-[90vh] order-1 lg:order-2 flex items-center justify-center p-8">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_70%_50%,rgba(251,191,36,0.12),transparent)]" />
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 1, delay: 0.2 }}
+          className="relative w-full max-w-lg aspect-square">
+          {/* Abstract: rings + bars */}
+          <div className="absolute inset-0 flex items-center justify-center">
+            {[1, 2, 3].map((i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 0.15 + i * 0.1, scale: 1 }}
+                transition={{ duration: 1.2, delay: 0.3 + i * 0.15 }}
+                className="absolute rounded-full border border-amber-400/40"
+                style={{
+                  width: `${40 + i * 25}%`,
+                  height: `${40 + i * 25}%`,
+                }}
+              />
+            ))}
           </div>
-
-          {/* Hero Image/Mockup */}
+          <div className="absolute inset-0 flex items-end justify-center gap-1 sm:gap-2 pb-20">
+            {[40, 65, 45, 80, 55, 70, 50].map((h, i) => (
+              <motion.div
+                key={i}
+                initial={{ height: 0 }}
+                animate={{ height: `${h}%` }}
+                transition={{ duration: 0.8, delay: 0.5 + i * 0.08 }}
+                className="w-2 sm:w-3 rounded-t-full bg-amber-400/80"
+              />
+            ))}
+          </div>
           <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="relative max-w-6xl mx-auto px-4">
-            <div className="relative rounded-xl overflow-hidden shadow-xl border border-slate-200/80 bg-white">
-              {/* Browser Chrome */}
-              <div className="bg-slate-50 px-4 py-3 flex items-center gap-2 border-b border-slate-200/80">
-                <div className="flex gap-2">
-                  <div className="w-3 h-3 rounded-full bg-red-400" />
-                  <div className="w-3 h-3 rounded-full bg-yellow-400" />
-                  <div className="w-3 h-3 rounded-full bg-green-400" />
-                </div>
-                <div className="flex-1 mx-4 bg-white rounded-md px-3 py-1.5 text-xs text-slate-500 hidden sm:block">
-                  {t("hero.mockTitle")}
-                </div>
-              </div>
-
-              {/* Dashboard Content */}
-              <div className="p-4 sm:p-6 md:p-8 bg-white">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
-                  {[
-                    {
-                      icon: FileText,
-                      label: "Reports",
-                      value: "24",
-                      color: "blue",
-                    },
-                    {
-                      icon: TrendingUp,
-                      label: "Insights",
-                      value: "156",
-                      color: "green",
-                    },
-                    {
-                      icon: Clock,
-                      label: "Last Upload",
-                      value: "2h ago",
-                      color: "purple",
-                    },
-                  ].map((item, i) => (
-                    <motion.div
-                      key={i}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.4 + i * 0.1 }}
-                      className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-slate-200/50 hover:shadow-md transition-shadow">
-                      <div
-                        className={cn(
-                          "w-10 h-10 rounded-lg flex items-center justify-center mb-3",
-                          item.color === "blue" && "bg-blue-100 text-blue-600",
-                          item.color === "green" &&
-                          "bg-green-100 text-green-600",
-                          item.color === "purple" &&
-                          "bg-purple-100 text-purple-600",
-                        )}>
-                        <item.icon className="w-5 h-5" />
-                      </div>
-                      <p className="text-xl sm:text-2xl font-bold text-slate-900 mb-1">
-                        {item.value}
-                      </p>
-                      <p className="text-sm text-slate-600">{item.label}</p>
-                    </motion.div>
-                  ))}
-                </div>
-
-                {/* Animated Chart Area */}
-                <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-slate-200/50 relative overflow-hidden group/chart">
-                  <div className="flex items-center justify-between mb-6">
-                    <div>
-                      <h4 className="text-sm font-bold text-slate-900">
-                        Health Trend Analysis
-                      </h4>
-                      <p className="text-[10px] text-slate-500">
-                        Real-time biometric tracking
-                      </p>
-                    </div>
-                    <div className="flex gap-2">
-                      <div className="px-2 py-1 rounded-md bg-blue-50 text-blue-600 text-[8px] font-bold uppercase tracking-wider">
-                        Weekly
-                      </div>
-                      <div className="px-2 py-1 rounded-md bg-slate-50 text-slate-400 text-[8px] font-bold uppercase tracking-wider">
-                        Monthly
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="h-32 sm:h-48 relative">
-                    <svg viewBox="0 0 400 150" className="w-full h-full">
-                      {/* Grid Lines */}
-                      {[0, 1, 2, 3].map((i) => (
-                        <line
-                          key={i}
-                          x1="0"
-                          y1={i * 50}
-                          x2="400"
-                          y2={i * 50}
-                          stroke="#f1f5f9"
-                          strokeWidth="1"
-                        />
-                      ))}
-
-                      {/* Animated Area Chart */}
-                      <motion.path
-                        initial={{ pathLength: 0, opacity: 0 }}
-                        animate={{ pathLength: 1, opacity: 1 }}
-                        transition={{ duration: 2, ease: "easeInOut" }}
-                        d="M0,120 Q50,80 100,100 T200,40 T300,70 T400,20 V150 H0 Z"
-                        fill="url(#gradient-blue)"
-                        className="opacity-20"
-                      />
-                      <motion.path
-                        initial={{ pathLength: 0 }}
-                        animate={{ pathLength: 1 }}
-                        transition={{ duration: 2, ease: "easeInOut" }}
-                        d="M0,120 Q50,80 100,100 T200,40 T300,70 T400,20"
-                        fill="none"
-                        stroke="#3b82f6"
-                        strokeWidth="3"
-                        strokeLinecap="round"
-                      />
-
-                      {/* Pulsing Dots */}
-                      <motion.circle
-                        animate={{ r: [3, 5, 3], opacity: [0.5, 1, 0.5] }}
-                        transition={{ duration: 2, repeat: Infinity }}
-                        cx="200"
-                        cy="40"
-                        r="4"
-                        fill="#3b82f6"
-                      />
-
-                      <defs>
-                        <linearGradient
-                          id="gradient-blue"
-                          x1="0%"
-                          y1="0%"
-                          x2="0%"
-                          y2="100%">
-                          <stop offset="0%" stopColor="#3b82f6" />
-                          <stop
-                            offset="100%"
-                            stopColor="#3b82f6"
-                            stopOpacity="0"
-                          />
-                        </linearGradient>
-                      </defs>
-                    </svg>
-
-                    {/* Scan Line Animation */}
-                    <motion.div
-                      animate={{ top: ["0%", "100%", "0%"] }}
-                      transition={{
-                        duration: 4,
-                        repeat: Infinity,
-                        ease: "linear",
-                      }}
-                      className="absolute left-0 right-0 h-px bg-gradient-to-r from-transparent via-blue-400 to-transparent z-10 opacity-50"
-                    />
-                  </div>
-
-                  {/* Floating Tooltip Mock */}
-                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-slate-900 text-white p-3 rounded-lg shadow-2xl scale-0 group-hover/chart:scale-100 transition-transform origin-bottom z-20">
-                    <p className="text-[10px] font-bold text-blue-400 mb-1">
-                      Peak Vitality
-                    </p>
-                    <p className="text-sm font-black italic">98.2%</p>
-                  </div>
-                </div>
-                {/* Recent Reports List Mockup */}
-                <div className="mt-8 pt-8 border-t border-slate-200/50">
-                  <div className="flex items-center justify-between mb-4">
-                    <h4 className="text-sm font-bold text-slate-900">
-                      Recent Reports
-                    </h4>
-                    <button className="text-[10px] font-bold text-blue-600 hover:underline">
-                      View All
-                    </button>
-                  </div>
-                  <div className="space-y-3">
-                    {[
-                      {
-                        name: "Blood Panel X-24",
-                        date: "Today, 14:20",
-                        status: "Analyzed",
-                        color: "blue",
-                      },
-                      {
-                        name: "MRI Scan Analysis",
-                        date: "Yesterday",
-                        status: "Pending",
-                        color: "orange",
-                      },
-                    ].map((report, i) => (
-                      <motion.div
-                        key={i}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.8 + i * 0.1 }}
-                        className="flex items-center justify-between p-3 rounded-xl bg-white border border-slate-100 hover:border-blue-200 transition-colors cursor-pointer group/item">
-                        <div className="flex items-center gap-3">
-                          <div
-                            className={cn(
-                              "w-8 h-8 rounded-lg flex items-center justify-center",
-                              report.color === "blue"
-                                ? "bg-blue-50 text-blue-600"
-                                : "bg-orange-50 text-orange-600",
-                            )}>
-                            <FileText className="w-4 h-4" />
-                          </div>
-                          <div>
-                            <p className="text-xs font-bold text-slate-900 group-hover/item:text-blue-600 transition-colors">
-                              {report.name}
-                            </p>
-                            <p className="text-[10px] text-slate-500">
-                              {report.date}
-                            </p>
-                          </div>
-                        </div>
-                        <span
-                          className={cn(
-                            "px-2 py-1 rounded-full text-[8px] font-bold uppercase tracking-wider",
-                            report.status === "Analyzed"
-                              ? "bg-green-100 text-green-700"
-                              : "bg-slate-100 text-slate-600",
-                          )}>
-                          {report.status}
-                        </span>
-                      </motion.div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Floating Visuals with higher depth */}
-            <motion.div
-              animate={{ y: [0, -8, 0] }}
-              transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-              className="absolute -top-4 -left-4 bg-white rounded-xl p-3 shadow-lg border border-slate-200/80 hidden lg:block z-30">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-emerald-500 flex items-center justify-center">
-                  <Activity className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">
-                    Live Vitals
-                  </p>
-                  <p className="font-black text-slate-900 text-lg tabular-nums">
-                    72{" "}
-                    <span className="text-xs font-medium text-slate-400">
-                      BPM
-                    </span>
-                  </p>
-                </div>
-              </div>
-            </motion.div>
-
-            <motion.div
-              animate={{ y: [0, 8, 0] }}
-              transition={{
-                duration: 5,
-                repeat: Infinity,
-                ease: "easeInOut",
-                delay: 0.5,
-              }}
-              className="absolute -bottom-4 -right-4 sm:-bottom-6 sm:-right-6 bg-white rounded-xl p-3 sm:p-4 shadow-lg border border-slate-200/80 hidden lg:block">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-primary-100 flex items-center justify-center">
-                  <Brain className="w-5 h-5 text-primary-600" />
-                </div>
-                <div>
-                  <p className="text-xs text-slate-500">AI Analysis</p>
-                  <p className="font-semibold text-slate-900 text-sm">
-                    98% Accurate
-                  </p>
-                </div>
-              </div>
-            </motion.div>
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1 }}
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 rounded-2xl bg-amber-400/20 backdrop-blur-sm border border-amber-400/30 flex items-center justify-center">
+            <Brain className="w-12 h-12 text-amber-400" />
           </motion.div>
-        </div>
+        </motion.div>
       </div>
     </section>
   );
 };
 
-const StatsSection = () => {
+// ——— 2. MARQUEE-STYLE STATS STRIP ———
+const StatsStrip = () => {
   const { t } = useTranslation();
-
-  const stats = [
-    { label: t("stats.reportsProcessed"), value: "10K+", icon: FileText },
-    { label: t("stats.partnerLabs"), value: "50+", icon: Users },
-    { label: t("stats.userRating"), value: "4.9/5", icon: Sparkles },
+  const items = [
+    { value: "10K+", label: t("stats.reportsProcessed") },
+    { value: "50+", label: t("stats.partnerLabs") },
+    { value: "4.9/5", label: t("stats.userRating") },
   ];
 
   return (
-    <section className="py-20 md:py-28 bg-white border-t border-slate-200/80">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="max-w-5xl mx-auto">
-          <p className="font-heading text-xs font-semibold tracking-[0.2em] text-slate-400 uppercase mb-10 text-center">
-            02 — By the numbers
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-slate-200/80">
-            {stats.map((stat, idx) => (
-              <motion.div
-                key={idx}
-                initial={{ opacity: 0, y: 16 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: idx * 0.1 }}
-                className="text-center py-8 sm:py-10 px-6">
-                <p className="font-heading text-4xl sm:text-5xl font-bold text-slate-900 mb-2 tracking-tight">
-                  {stat.value}
-                </p>
-                <p className="text-sm text-slate-600 font-medium">{stat.label}</p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
+    <section className="bg-zinc-900 border-y border-zinc-800 py-6">
+      <div className="container mx-auto px-4 overflow-hidden">
+        <motion.div
+          className="flex gap-16 sm:gap-24 justify-center items-baseline flex-wrap"
+          initial={{ opacity: 0, y: 10 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}>
+          {items.map((item, i) => (
+            <div key={i} className="flex flex-col items-center sm:flex-row sm:gap-3">
+              <span className="font-heading text-3xl sm:text-4xl font-bold text-white tabular-nums">
+                {item.value}
+              </span>
+              <span className="text-zinc-500 text-sm whitespace-nowrap">
+                {item.label}
+              </span>
+            </div>
+          ))}
+        </motion.div>
       </div>
     </section>
   );
 };
 
-const HowItWorks = () => {
+// ——— 3. BENTO GRID (replaces how it works + features) ———
+const BentoSection = () => {
   const { t } = useTranslation();
 
-  const steps = [
+  const cells = [
     {
       title: t("howItWorks.step1.title"),
       desc: t("howItWorks.step1.desc"),
       icon: UploadCloud,
-      color: "blue",
+      size: "large",
+      className: "bg-violet-500/10 border-violet-500/20 text-violet-700 dark:text-violet-300",
+      iconBg: "bg-violet-500",
     },
     {
       title: t("howItWorks.step2.title"),
       desc: t("howItWorks.step2.desc"),
       icon: Brain,
-      color: "indigo",
+      size: "small",
+      className: "bg-amber-500/10 border-amber-500/20 text-amber-700 dark:text-amber-300",
+      iconBg: "bg-amber-500",
     },
     {
       title: t("howItWorks.step3.title"),
       desc: t("howItWorks.step3.desc"),
       icon: LineChart,
-      color: "purple",
+      size: "small",
+      className: "bg-emerald-500/10 border-emerald-500/20 text-emerald-700 dark:text-emerald-300",
+      iconBg: "bg-emerald-500",
+    },
+    {
+      title: t("features.feature1.title"),
+      desc: t("features.feature1.desc"),
+      icon: Zap,
+      size: "small",
+      className: "bg-sky-500/10 border-sky-500/20 text-sky-700 dark:text-sky-300",
+      iconBg: "bg-sky-500",
+    },
+    {
+      title: t("features.feature2.title"),
+      desc: t("features.feature2.desc"),
+      icon: LineChart,
+      size: "small",
+      className: "bg-rose-500/10 border-rose-500/20 text-rose-700 dark:text-rose-300",
+      iconBg: "bg-rose-500",
+    },
+    {
+      title: t("trust.title"),
+      desc: t("trust.security"),
+      icon: Shield,
+      size: "wide",
+      className: "bg-zinc-100 border-zinc-200 text-zinc-800 dark:bg-zinc-800/50 dark:border-zinc-700 dark:text-zinc-200",
+      iconBg: "bg-zinc-600",
     },
   ];
 
   return (
-    <section className="py-24 md:py-32 bg-[#f8fafc]">
+    <section id="features" className="py-20 sm:py-28 bg-white">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-20 max-w-2xl mx-auto">
-          <p className="font-heading text-xs font-semibold tracking-[0.2em] text-slate-400 uppercase mb-4">
-            {t("howItWorks.subtitle")}
-          </p>
-          <h2 className="font-heading text-3xl md:text-4xl lg:text-5xl font-bold text-slate-900 mb-4 tracking-tight">
-            {t("howItWorks.title")}
-          </h2>
-          <p className="text-slate-600">
-            Simple, secure, and scientifically accurate
-          </p>
-        </div>
+        <div className="max-w-6xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-14">
+            <h2 className="font-heading text-3xl sm:text-4xl font-bold text-zinc-900 tracking-tight">
+              {t("howItWorks.title")}
+            </h2>
+            <p className="mt-3 text-zinc-600 max-w-xl mx-auto">
+              {t("features.title")} — simple, secure, and built for clarity.
+            </p>
+          </motion.div>
 
-        <div className="max-w-5xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-8 relative">
-            {/* Vertical line on desktop */}
-            <div className="hidden md:block absolute left-1/2 top-0 bottom-0 w-px bg-slate-200/80 -translate-x-px" />
-
-            {steps.map((step, idx) => (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 auto-rows-fr">
+            {cells.map((cell, idx) => (
               <motion.div
                 key={idx}
                 initial={{ opacity: 0, y: 24 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ delay: idx * 0.15 }}
-                className="relative flex flex-col items-center text-center">
-                <div className="w-14 h-14 rounded-full bg-slate-900 text-white flex items-center justify-center font-heading text-lg font-bold mb-6 relative z-10">
-                  {String(idx + 1).padStart(2, "0")}
-                </div>
+                transition={{ delay: idx * 0.06 }}
+                className={cn(
+                  "rounded-2xl border p-6 sm:p-8 flex flex-col",
+                  cell.size === "large" && "sm:col-span-2 sm:row-span-2",
+                  cell.size === "wide" && "sm:col-span-2",
+                  cell.className,
+                )}>
                 <div
                   className={cn(
                     "w-12 h-12 rounded-xl flex items-center justify-center mb-4",
-                    step.color === "blue" && "bg-primary-100 text-primary-600",
-                    step.color === "indigo" && "bg-indigo-100 text-indigo-600",
-                    step.color === "purple" && "bg-purple-100 text-purple-600",
+                    cell.iconBg,
+                    "text-white",
                   )}>
-                  <step.icon className="w-6 h-6" />
+                  <cell.icon className="w-6 h-6" />
                 </div>
-                <h3 className="font-heading text-xl font-bold text-slate-900 mb-2">
-                  {step.title}
+                <h3 className="font-heading text-lg font-bold mb-2">
+                  {cell.title}
                 </h3>
-                <p className="text-slate-600 leading-relaxed text-sm">
-                  {step.desc}
+                <p className="text-sm opacity-90 leading-relaxed mt-auto">
+                  {cell.desc}
                 </p>
               </motion.div>
             ))}
@@ -487,67 +247,48 @@ const HowItWorks = () => {
   );
 };
 
-const Features = () => {
-  const { t } = useTranslation();
+// ——— 4. QUOTE BLOCK ———
+const QuoteSection = () => {
+  return (
+    <section className="py-20 sm:py-28 bg-zinc-100">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="max-w-3xl mx-auto text-center">
+          <Quote className="w-12 h-12 text-zinc-300 mx-auto mb-6" />
+          <blockquote className="font-heading text-2xl sm:text-3xl font-semibold text-zinc-800 leading-snug">
+            Finally, my lab results in one place with insights I can actually use.
+          </blockquote>
+          <p className="mt-6 text-zinc-500 text-sm">
+            — Sarah K., RapiReport user
+          </p>
+        </motion.div>
+      </div>
+    </section>
+  );
+};
 
-  const features = [
-    {
-      title: t("features.feature1.title"),
-      desc: t("features.feature1.desc"),
-      icon: Zap,
-      gradient: "from-yellow-400 to-orange-500",
-    },
-    {
-      title: t("features.feature2.title"),
-      desc: t("features.feature2.desc"),
-      icon: LineChart,
-      gradient: "from-green-400 to-emerald-500",
-    },
-    {
-      title: t("features.feature3.title"),
-      desc: t("features.feature3.desc"),
-      icon: Users,
-      gradient: "from-blue-400 to-indigo-500",
-    },
+// ——— 5. TRUST LINE (single row) ———
+const TrustLine = () => {
+  const items = [
+    { icon: Shield, label: "HIPAA" },
+    { icon: Lock, label: "ISO 27001" },
+    { icon: Zap, label: "HL7 Compliant" },
   ];
 
   return (
-    <section id="features" className="py-24 md:py-32 bg-white border-t border-slate-200/80">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16 max-w-2xl mx-auto">
-          <p className="font-heading text-xs font-semibold tracking-[0.2em] text-slate-400 uppercase mb-4">
-            {t("features.subtitle")}
-          </p>
-          <h2 className="font-heading text-3xl md:text-4xl lg:text-5xl font-bold text-slate-900 tracking-tight">
-            {t("features.title")}
-          </h2>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
-          {features.map((feature, idx) => (
-            <motion.div
-              key={idx}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: idx * 0.1 }}
-              className="group">
-              <div className="h-full rounded-xl p-8 border border-slate-200/80 bg-white hover:border-slate-300 hover:shadow-lg transition-all duration-300">
-                <div
-                  className={cn(
-                    "w-12 h-12 rounded-lg flex items-center justify-center mb-6",
-                    feature.gradient,
-                  )}>
-                  <feature.icon className="w-6 h-6 text-white" />
-                </div>
-                <h3 className="font-heading text-xl font-bold text-slate-900 mb-3 group-hover:text-primary-600 transition-colors">
-                  {feature.title}
-                </h3>
-                <p className="text-slate-600 leading-relaxed text-sm">
-                  {feature.desc}
-                </p>
-              </div>
-            </motion.div>
+    <section className="py-12 border-t border-zinc-200 bg-white">
+      <div className="container mx-auto px-4">
+        <div className="flex flex-wrap items-center justify-center gap-10 sm:gap-16">
+          {items.map((item, i) => (
+            <div
+              key={i}
+              className="flex items-center gap-2 text-zinc-500 hover:text-zinc-800 transition-colors">
+              <item.icon className="w-5 h-5" />
+              <span className="text-sm font-medium">{item.label}</span>
+            </div>
           ))}
         </div>
       </div>
@@ -555,101 +296,48 @@ const Features = () => {
   );
 };
 
-const TrustSection = () => {
-  const { t } = useTranslation();
-
-  const seals = [
-    { icon: Shield, label: "HIPAA" },
-    { icon: Lock, label: "ISO 27001" },
-    { icon: Zap, label: "HL7 Compliant" },
-  ];
-
-  return (
-    <section className="py-20 md:py-24 bg-[#f8fafc] border-t border-slate-200/80">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between gap-10 md:gap-16">
-          <div className="text-center md:text-left">
-            <h3 className="font-heading text-2xl md:text-3xl font-bold text-slate-900 mb-2 tracking-tight">
-              {t("trust.title")}
-            </h3>
-            <p className="text-slate-600">
-              {t("trust.security")}
-            </p>
-          </div>
-          <div className="flex items-center gap-8 md:gap-12">
-            {seals.map((item, i) => (
-              <motion.div
-                key={i}
-                whileHover={{ scale: 1.03 }}
-                className="flex flex-col items-center gap-2">
-                <div className="w-12 h-12 rounded-xl bg-white border border-slate-200/80 flex items-center justify-center shadow-sm">
-                  <item.icon className="w-6 h-6 text-slate-600" />
-                </div>
-                <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
-                  {item.label}
-                </span>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-};
-
+// ——— 6. CTA (full width, diagonal or bold) ———
 const CTASection = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
   return (
-    <section className="py-20 md:py-28 bg-slate-900 relative overflow-hidden">
-      {/* Subtle grid */}
-      <div
-        className="absolute inset-0 opacity-[0.06]"
-        style={{
-          backgroundImage: `linear-gradient(rgba(255,255,255,0.08) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(255,255,255,0.08) 1px, transparent 1px)`,
-          backgroundSize: "48px 48px",
-        }}
-      />
-
+    <section className="relative py-24 sm:py-32 bg-zinc-950 overflow-hidden">
+      <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(251,191,36,0.08)_0%,transparent_50%)]" />
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="max-w-2xl mx-auto text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}>
-            <h2 className="font-heading text-3xl md:text-4xl font-bold text-white mb-4 leading-tight tracking-tight">
-              Ready to take control of your health?
-            </h2>
-            <p className="text-slate-400 mb-10 text-sm md:text-base">
-              Join thousands making informed health decisions with AI-powered insights.
-            </p>
-
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Button
-                size="lg"
-                className="font-heading w-full sm:w-auto px-6 py-3 text-base font-semibold rounded-lg bg-white text-slate-900 hover:bg-slate-100 transition-all"
-                onClick={() => navigate("/auth")}>
-                {t("cta.button")}
-                <ArrowRight className="ml-2 w-4 h-4" />
-              </Button>
-              <Link
-                to="/#features"
-                className="text-slate-400 text-sm font-medium hover:text-white transition-colors flex items-center gap-1">
-                {t("cta.link")}
-                <ChevronRight className="w-4 h-4" />
-              </Link>
-            </div>
-          </motion.div>
-        </div>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="max-w-2xl mx-auto text-center">
+          <h2 className="font-heading text-3xl sm:text-4xl font-bold text-white tracking-tight">
+            Ready to take control of your health?
+          </h2>
+          <p className="mt-4 text-zinc-400">
+            Join thousands making informed decisions with AI-powered insights.
+          </p>
+          <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
+            <button
+              type="button"
+              onClick={() => navigate("/auth")}
+              className="inline-flex items-center gap-2 px-8 py-4 rounded-full bg-amber-400 text-zinc-900 font-semibold hover:bg-amber-300 transition-colors">
+              {t("cta.button")}
+              <ArrowRight className="w-4 h-4" />
+            </button>
+            <Link
+              to="/#features"
+              className="text-zinc-500 hover:text-white transition-colors flex items-center gap-1 text-sm">
+              {t("cta.link")}
+              <ChevronRight className="w-4 h-4" />
+            </Link>
+          </div>
+        </motion.div>
       </div>
     </section>
   );
 };
 
-import { useAuthStore } from "@/store/authStore";
-
+// ——— PAGE ———
 const Landing = () => {
   const { isAuthenticated, user, isProfileComplete } = useAuthStore();
   const navigate = useNavigate();
@@ -669,48 +357,13 @@ const Landing = () => {
   }, [isAuthenticated, user, isProfileComplete, navigate]);
 
   return (
-    <div className="bg-white">
+    <div className="min-h-screen bg-white">
       <HeroSection />
-
-      <motion.div
-        initial={{ opacity: 0, y: 50 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: "-100px" }}
-        transition={{ duration: 0.8 }}>
-        <StatsSection />
-      </motion.div>
-
-      <motion.div
-        initial={{ opacity: 0, y: 50 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: "-100px" }}
-        transition={{ duration: 0.8 }}>
-        <HowItWorks />
-      </motion.div>
-
-      <motion.div
-        initial={{ opacity: 0, y: 50 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: "-100px" }}
-        transition={{ duration: 0.8 }}>
-        <Features />
-      </motion.div>
-
-      <motion.div
-        initial={{ opacity: 0, y: 50 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: "-100px" }}
-        transition={{ duration: 0.8 }}>
-        <TrustSection />
-      </motion.div>
-
-      <motion.div
-        initial={{ opacity: 0 }}
-        whileInView={{ opacity: 1 }}
-        viewport={{ once: true }}
-        transition={{ duration: 1 }}>
-        <CTASection />
-      </motion.div>
+      <StatsStrip />
+      <BentoSection />
+      <QuoteSection />
+      <TrustLine />
+      <CTASection />
     </div>
   );
 };

@@ -34,6 +34,7 @@ export default {
       },
       fontFamily: {
         sans: ["Inter", "Noto Sans Devanagari", "system-ui", "sans-serif"],
+        heading: ["Outfit", "Inter", "system-ui", "sans-serif"],
         nepali: ["Noto Sans Devanagari", "sans-serif"],
       },
       boxShadow: {

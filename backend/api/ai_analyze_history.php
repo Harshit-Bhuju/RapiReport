@@ -105,7 +105,10 @@ $apiKey = getenv("GEMINI_API_KEY") ?: "REPLACE_WITH_YOUR_BACKEND_API_KEY";
 $modelId = getenv("GEMINI_MODEL") ?: "gemini-2.5-flash";
 $url = "https://generativelanguage.googleapis.com/v1beta/models/{$modelId}:generateContent?key={$apiKey}";
 
-$historyContext = "User Profile:\n";
+$patientName = $userProfile['username'] ?? $userProfile['email'] ?? 'Patient';
+$historyContext = "IMPORTANT: The patient's name is: " . $patientName . ". Always use this exact name in your analysis. Do NOT invent or use any other names.\n\n";
+$historyContext .= "User Profile:\n";
+$historyContext .= "- Name: " . $patientName . "\n";
 $historyContext .= "- Gender: " . ($userProfile['gender'] ?? 'Not specified') . "\n";
 $historyContext .= "- Blood Group: " . ($userProfile['blood_group'] ?? 'Not specified') . "\n";
 $historyContext .= "- Existing Conditions: " . ($userProfile['conditions'] ?? 'None') . "\n";
@@ -155,6 +158,7 @@ Analyze the following patient history and provide a comprehensive clinical summa
 - Use **Markdown** for clarity.
 - Use # and ## for headers.
 - Keep the tone professional but empathetic.
+- CRITICAL: Use the patient's actual name ({$patientName}) throughout. Never invent or substitute names.
 - Include the standard medical disclaimer:
   \"Note: This is an AI-generated health insight based on your history. Please consult a qualified doctor for clinical diagnosis.\"
 ";

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * gemini_analyze_report.php — Uses Gemini Vision to analyze lab/diagnostic report images.
  * Extracts raw text, parses tests (name, result, unit, range, status), and generates AI summary.
@@ -29,7 +30,7 @@ if (empty($imageBase64)) {
     exit;
 }
 
-$apiKey = getenv("GEMINI_API_KEY") ?: $_ENV["GEMINI_API_KEY"] ?? $_SERVER["GEMINI_API_KEY"] ?? "";
+$apiKey = getenv("GEMINI_API_KEY") ?: $_ENV["GEMINI_API_KEY"] ?? $_SERVER["GEMINI_API_KEY"] ?? "AIzaSyDk_oCdPeE4P3BWtsjNChp6uZL98fzS-9Q";
 
 if (empty($apiKey)) {
     echo json_encode(['status' => 'error', 'message' => 'Gemini API key not configured']);

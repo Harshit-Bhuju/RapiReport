@@ -13,7 +13,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     }
 
     // Fetch user with potential doctor profile details
-    $query = "SELECT u.*, dp.specialty, dp.experience_years, dp.consultation_rate, dp.bio, dp.languages as profile_languages, dp.qualifications, dp.display_name
+    $query = "SELECT u.*, dp.specialty, dp.experience_years, dp.consultation_rate, dp.bio, dp.languages as profile_languages, dp.qualifications, dp.display_name, dp.availability_json
               FROM users u 
               LEFT JOIN doctor_profiles dp ON u.id = dp.user_id 
               WHERE u.id = ?";
@@ -68,7 +68,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                 "rate" => $user['consultation_rate'],
                 "bio" => $user['bio'],
                 "languages" => $user['profile_languages'],
-                "qualifications" => $user['qualifications']
+                "qualifications" => $user['qualifications'],
+                "availability_json" => json_decode($user['availability_json'] ?? '[]', true)
             ] : null
         ]
     ]);

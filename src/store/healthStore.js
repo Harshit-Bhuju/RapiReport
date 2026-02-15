@@ -49,14 +49,6 @@ export const useHealthStore = create(
         const j = await apiGet(API.REPORTS_LIST);
         if (j?.status === "success") set({ reports: j.data ?? [] });
       },
-      fetchAdherenceLogs: async () => {
-        const j = await apiGet(API.ADHERENCE_LOGS);
-        if (j?.status === "success") set({ adherenceLogs: j.data ?? [] });
-      },
-      fetchAdherenceReminders: async () => {
-        const j = await apiGet(API.ADHERENCE_REMINDERS);
-        if (j?.status === "success") set({ adherenceReminders: j.data ?? [] });
-      },
       fetchSymptoms: async () => {
         const j = await apiGet(API.SYMPTOMS_LIST);
         if (j?.status === "success") set({ symptoms: j.data ?? [] });
@@ -79,6 +71,8 @@ export const useHealthStore = create(
           set({ historyAnalysis: json.analysis });
           return json.analysis;
         }
+
+        console.error("Health Analysis Error Detail:", json);
         throw new Error(json?.message || "Analysis failed");
       },
       fetchHealthData: async () => {
@@ -158,76 +152,6 @@ export const useHealthStore = create(
         else
           set((state) => ({
             reports: state.reports.filter((r) => r.id !== id),
-          }));
-      },
-
-      // ---------- Adherence ----------
-      addAdherenceLog: async (entry) => {
-        const res = await apiPost(API.ADHERENCE_LOGS, {
-          date: entry.date ?? todayKey(),
-          medicineName: entry.medicineName ?? entry.medicine_name,
-          slot: entry.slot ?? "morning",
-          taken: !!entry.taken,
-        });
-        if (res?.ok) await get().fetchAdherenceLogs();
-        else
-          set((state) => ({
-            adherenceLogs: [
-              { id: crypto.randomUUID(), date: todayKey(), ...entry },
-              ...state.adherenceLogs,
-            ],
-          }));
-      },
-      setAdherenceTaken: async (logId, taken) => {
-        const res = await apiPost(API.ADHERENCE_LOGS, {
-          update_id: parseInt(logId, 10),
-          taken,
-        });
-        if (res?.ok) await get().fetchAdherenceLogs();
-        else
-          set((state) => ({
-            adherenceLogs: state.adherenceLogs.map((l) =>
-              l.id === logId ? { ...l, taken } : l,
-            ),
-          }));
-      },
-      addReminder: async (reminder) => {
-        const res = await apiPost(API.ADHERENCE_REMINDERS, {
-          medicineName: reminder.medicineName ?? reminder.medicine_name,
-          slot: reminder.slot ?? "morning",
-          time: reminder.time ?? "08:00",
-        });
-        if (res?.ok) await get().fetchAdherenceReminders();
-        else
-          set((state) => ({
-            adherenceReminders: [
-              ...state.adherenceReminders,
-              { id: crypto.randomUUID(), enabled: true, ...reminder },
-            ],
-          }));
-      },
-      toggleReminder: async (id) => {
-        const res = await apiPost(API.ADHERENCE_REMINDERS, {
-          toggle_id: parseInt(id, 10),
-        });
-        if (res?.ok) await get().fetchAdherenceReminders();
-        else
-          set((state) => ({
-            adherenceReminders: state.adherenceReminders.map((r) =>
-              r.id === id ? { ...r, enabled: !r.enabled } : r,
-            ),
-          }));
-      },
-      removeReminder: async (id) => {
-        const res = await apiPost(API.ADHERENCE_REMINDERS, {
-          delete_id: parseInt(id, 10),
-        });
-        if (res?.ok) await get().fetchAdherenceReminders();
-        else
-          set((state) => ({
-            adherenceReminders: state.adherenceReminders.filter(
-              (r) => r.id !== id,
-            ),
           }));
       },
 

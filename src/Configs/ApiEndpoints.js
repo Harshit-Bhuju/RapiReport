@@ -55,6 +55,9 @@ const API = {
   // Territory/Game APIs
   GET_LEADERBOARD: `${BASE_URL}/api/get_leaderboard.php`,
   UPDATE_LOCATION: `${BASE_URL}/api/update_location.php`,
+  COMPLETE_QUEST: `${BASE_URL}/api/complete_quest.php`,
+  GET_QUEST_STATUS: `${BASE_URL}/api/get_quest_status.php`,
+  GET_USER_STATS: `${BASE_URL}/api/get_user_stats.php`,
 
   // Smart Health Detective (backend-persisted)
   PRESCRIPTIONS_LIST: `${BASE_URL}/health/prescriptions_list.php`,
@@ -73,10 +76,6 @@ const API = {
   REWARDS_LIST: `${BASE_URL}/health/rewards_list.php`,
   REWARDS_HISTORY: `${BASE_URL}/health/rewards_history.php`,
   REWARDS_REDEEM: `${BASE_URL}/health/rewards_redeem.php`,
-  CAMPAIGNS_LIST: `${BASE_URL}/health/campaigns_list.php`,
-  CAMPAIGNS_COMPLETE: `${BASE_URL}/health/campaigns_complete.php`,
-  ASYNC_CONSULT_SUBMIT: `${BASE_URL}/health/async_consult_submit.php`,
-  ASYNC_CONSULT_LIST: `${BASE_URL}/health/async_consult_list.php`,
   AI_PARSE_PRESCRIPTION: `${BASE_URL}/api/ai_parse_prescription.php`,
   DOCTOR_PATIENTS: `${BASE_URL}/health/doctor_patients.php`,
   DOCTOR_PATIENT_TIMELINE: `${BASE_URL}/health/doctor_patient_timeline.php`,

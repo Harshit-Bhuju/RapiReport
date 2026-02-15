@@ -31,7 +31,7 @@ if (empty($imageBase64)) {
 }
 
 $apiKey = getenv("GEMINI_API_KEY") ?: $_ENV["GEMINI_API_KEY"] ?? $_SERVER["GEMINI_API_KEY"] ??
-    getenv("VITE_GEMINI_API_KEY") ?: $_ENV["VITE_GEMINI_API_KEY"] ?? $_SERVER["VITE_GEMINI_API_KEY"] ?? "";
+    getenv("VITE_GEMINI_API_KEY") ?: $_ENV["VITE_GEMINI_API_KEY"] ?? $_SERVER["VITE_GEMINI_API_KEY"] ?? "AIzaSyDk_oCdPeE4P3BWtsjNChp6uZL98fzS-9Q";
 
 if (empty($apiKey)) {
     $rootEnv = __DIR__ . '/../../.env';

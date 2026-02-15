@@ -1,101 +1,122 @@
-import React, { useRef } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import React from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { BrainCircuit, FileDown, Printer, ShieldAlert, ChevronLeft, Sparkles, Brain } from "lucide-react";
+import Button from "@/components/ui/Button";
+import { Card, CardBody } from "@/components/ui/Card";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import {
-  BrainCircuit,
-  FileDown,
-  ArrowLeft,
-  Sparkles,
-} from "lucide-react";
-import Button from "@/components/ui/Button";
+import { useAuthStore } from "@/store/authStore";
 import { useHealthStore } from "@/store/healthStore";
 
 const HistoryAnalyze = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const printRef = useRef(null);
-  const historyAnalysis = useHealthStore((s) => s.historyAnalysis);
+    const { state } = useLocation();
+    const navigate = useNavigate();
+    const { user } = useAuthStore();
+    const historyAnalysis = useHealthStore((s) => s.historyAnalysis);
 
-  // Get analysis from location state, store, or fallback
-  const analysis =
-    location.state?.analysis ||
-    location.state?.historyAnalysis ||
-    historyAnalysis ||
-    "No analysis available. Please run \"Analyze All History\" from the Medical History page.";
+    const analysis = state?.analysis || historyAnalysis;
 
-  const handlePrintPdf = () => {
-    window.print();
-  };
+    const handlePrint = () => {
+        window.print();
+    };
 
-  return (
-    <div className="space-y-6 pb-10">
-      {/* Header - hidden when printing */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 print:hidden">
-        <div className="flex items-center gap-3">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate("/medical-history")}
-            className="gap-2">
-            <ArrowLeft className="w-4 h-4" />
-            Back to Medical History
-          </Button>
-        </div>
-        <Button
-          onClick={handlePrintPdf}
-          className="gap-2 bg-gradient-to-r from-primary-600 to-indigo-600 print:hidden">
-          <FileDown className="w-4 h-4" />
-          Print / Save as PDF
-        </Button>
-      </div>
-
-      {/* Report content - print-friendly */}
-      <div
-        ref={printRef}
-        className="bg-white rounded-2xl border border-gray-100 shadow-xl overflow-hidden print:shadow-none print:border-0">
-        {/* Report header */}
-        <div className="bg-gradient-to-r from-indigo-600 to-primary-600 p-6 sm:p-8 text-white print:bg-gray-900">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
-              <BrainCircuit className="w-7 h-7 text-white" />
+    if (!analysis) {
+        return (
+            <div className="min-h-[60vh] flex flex-col items-center justify-center space-y-4">
+                <ShieldAlert className="w-16 h-16 text-gray-200" />
+                <p className="text-gray-500 font-bold uppercase tracking-widest text-sm">No analysis found</p>
+                <Button onClick={() => navigate("/medical-history")} variant="outline">
+                    Go Back
+                </Button>
             </div>
-            <div>
-              <h1 className="text-2xl font-black">Health Intelligence Report</h1>
-              <p className="text-white/80 text-sm font-medium uppercase tracking-widest mt-0.5">
-                Comprehensive AI Clinical Summary
-              </p>
-              <p className="text-white/70 text-xs mt-2">
-                Generated on {new Date().toLocaleDateString()} at{" "}
-                {new Date().toLocaleTimeString()}
-              </p>
+        );
+    }
+
+    return (
+        <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
+            {/* Navigation & Actions */}
+            <div className="flex items-center justify-between no-print">
+                <Button
+                    variant="ghost"
+                    onClick={() => navigate("/medical-history")}
+                    className="gap-2 text-gray-500 hover:text-primary-600 font-bold"
+                >
+                    <ChevronLeft className="w-4 h-4" />
+                    Back to History
+                </Button>
+                <Button
+                    onClick={handlePrint}
+                    className="gap-2 bg-primary-600 shadow-lg shadow-primary-200"
+                >
+                    <FileDown className="w-4 h-4" />
+                    Save as PDF
+                </Button>
             </div>
-          </div>
-        </div>
 
-        {/* Report body */}
-        <div className="p-6 sm:p-8 print:p-8">
-          <div className="prose prose-sm sm:prose-base prose-primary max-w-none prose-headings:font-black prose-headings:text-gray-900 prose-p:text-gray-700 prose-p:leading-relaxed prose-strong:text-indigo-600 prose-ul:text-gray-700 prose-li:text-gray-700">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>
-              {analysis}
-            </ReactMarkdown>
-          </div>
-        </div>
+            {/* Main Analysis Card */}
+            <Card className="border-none shadow-2xl shadow-primary-100 overflow-hidden print:shadow-none print:border-none">
+                <CardBody className="p-0">
+                    <div className="bg-gradient-to-r from-primary-600 to-indigo-600 p-8 text-white">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                                <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md">
+                                    <BrainCircuit className="w-8 h-8 text-white" />
+                                </div>
+                                <div>
+                                    <h1 className="text-2xl font-black tracking-tight uppercase">Clinical Intelligence Report</h1>
+                                    <p className="text-white/80 text-xs font-black tracking-[0.2em] uppercase mt-1">
+                                        Powered by RapiReport Gemini
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="text-right hidden sm:block">
+                                <p className="text-white/60 text-[10px] font-black uppercase tracking-widest leading-none">Date Generated</p>
+                                <p className="text-sm font-bold mt-1">{new Date().toLocaleDateString()}</p>
+                            </div>
+                        </div>
+                    </div>
 
-        {/* Footer disclaimer */}
-        <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 print:bg-gray-50">
-          <div className="flex items-start gap-2 text-primary-600">
-            <Sparkles className="w-4 h-4 shrink-0 mt-0.5" />
-            <p className="text-xs font-bold leading-relaxed">
-              AI Insights are for guidance only. This report does not constitute
-              medical advice. Please consult a qualified doctor for clinical
-              diagnosis and treatment.
-            </p>
-          </div>
+                    <div className="p-8 sm:p-12">
+                        <div className="prose prose-sm sm:prose-base prose-primary max-w-none 
+              prose-headings:font-black prose-headings:text-gray-900 
+              prose-p:text-gray-700 prose-p:leading-relaxed 
+              prose-strong:text-primary-700 prose-li:text-gray-700">
+                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                {analysis}
+                            </ReactMarkdown>
+                        </div>
+
+                        <div className="mt-12 pt-8 border-t border-gray-100 space-y-6">
+                            <div className="bg-gray-50 p-6 rounded-3xl flex items-start gap-4 border border-gray-100 italic">
+                                <ShieldAlert className="w-6 h-6 text-primary-600 shrink-0 mt-0.5" />
+                                <p className="text-xs text-gray-500 leading-relaxed font-medium">
+                                    <strong>Medical Disclaimer:</strong> This health analysis is generated using Artificial Intelligence based on your
+                                    provided medical records and history. It is intended for educational and informational purposes only. It is NOT
+                                    a clinical diagnosis. Please consult with a licensed healthcare professional before making any medical decisions.
+                                </p>
+                            </div>
+
+                            <div className="flex flex-col items-center justify-center text-center space-y-2 opacity-30">
+                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Locked & Verified Clinical Record</p>
+                                <p className="text-[10px] font-bold text-gray-300 uppercase">Authenticated For: {user?.name || user?.username || "Authorized User"}</p>
+                            </div>
+                        </div>
+                    </div>
+                </CardBody>
+            </Card>
+
+            {/* Hidden high-quality print template */}
+            <style dangerouslySetInnerHTML={{
+                __html: `
+        @media print {
+          .no-print { display: none !important; }
+          body { background: white !important; }
+          .card { border: none !important; box-shadow: none !important; }
+          .prose { font-size: 12pt !important; }
+        }
+      `}} />
         </div>
-      </div>
-    </div>
-  );
+    );
 };
 
 export default HistoryAnalyze;

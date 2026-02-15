@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . "/../../config/header.php";
+require_once __DIR__ . "/../config/header.php";
 
 $user_id = $_SESSION['user_id'] ?? null;
 

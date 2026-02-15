@@ -20,7 +20,10 @@ import {
   Users,
   ChevronDown,
   ChevronUp,
+  FileDown,
+  Printer,
 } from "lucide-react";
+import Modal from "@/components/ui/Modal";
 import Badge from "@/components/ui/Badge";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -55,6 +58,8 @@ const MedicalHistory = () => {
   const [familyHealthData, setFamilyHealthData] = useState({});
   const [isFetchingFamily, setIsFetchingFamily] = useState(false);
   const [expandedMember, setExpandedMember] = useState(null);
+  const [isAnalysisModalOpen, setIsAnalysisModalOpen] = useState(false);
+  const [currentAnalysis, setCurrentAnalysis] = useState("");
 
   useEffect(() => {
     fetchHealthData();
@@ -93,14 +98,18 @@ const MedicalHistory = () => {
   const handleAnalyzeHistory = async () => {
     setIsAnalyzing(true);
     try {
-      const analysis = await fetchHistoryAnalysis();
-      navigate("/medical-history/analyze", { state: { analysis } });
+      const data = await fetchHistoryAnalysis();
+      navigate("/medical-history/analyze", { state: { analysis: data } });
     } catch (err) {
       console.error("Analysis failed", err);
       toast.error(err?.message || "Analysis failed. Please try again.");
     } finally {
       setIsAnalyzing(false);
     }
+  };
+
+  const handlePrintPdf = () => {
+    window.print();
   };
 
   const conditions = useMemo(() => {
@@ -167,64 +176,27 @@ const MedicalHistory = () => {
             Past prescriptions, conditions, and family history.
           </p>
         </div>
-        <Button
-          onClick={handleAnalyzeHistory}
-          loading={isAnalyzing}
-          className="gap-2 bg-gradient-to-r from-primary-600 to-indigo-600 shadow-lg shadow-primary-200">
-          <Brain className="w-4 h-4" />
-          Analyze All History
-        </Button>
+        <div className="flex flex-wrap gap-3">
+          {historyAnalysis && (
+            <Button
+              variant="outline"
+              onClick={() => {
+                navigate("/medical-history/analyze", { state: { analysis: historyAnalysis } });
+              }}
+              className="gap-2 border-indigo-200 text-indigo-600 hover:bg-indigo-50">
+              <Sparkles className="w-4 h-4" />
+              View Last Results
+            </Button>
+          )}
+          <Button
+            onClick={handleAnalyzeHistory}
+            loading={isAnalyzing}
+            className="gap-2 bg-gradient-to-r from-primary-600 to-indigo-600 shadow-lg shadow-primary-200">
+            <Brain className="w-4 h-4" />
+            Analyze All History
+          </Button>
+        </div>
       </div>
-
-      {/* AI Analysis Result Section */}
-      {(historyAnalysis || isAnalyzing) && (
-        <Card className="border-none shadow-2xl shadow-indigo-100 overflow-hidden bg-white border border-indigo-50 ring-1 ring-indigo-50">
-          <CardBody className="p-0">
-            <div className="bg-gradient-to-r from-indigo-600 to-primary-600 p-6 text-white">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
-                  <BrainCircuit className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <h2 className="text-xl font-black">Health Intelligence</h2>
-                  <p className="text-white/80 text-xs font-medium uppercase tracking-widest mt-0.5">
-                    Gemini Clinical Summary
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div className="p-6 sm:p-8">
-              {isAnalyzing ? (
-                <div className="py-12 flex flex-col items-center justify-center text-center">
-                  <Loader2 className="w-10 h-10 text-primary-600 animate-spin mb-4" />
-                  <p className="text-lg font-bold text-gray-900">
-                    Scanning your health history...
-                  </p>
-                  <p className="text-sm text-gray-500 mt-2">
-                    Compiling prescriptions, symptoms, and medical background
-                  </p>
-                </div>
-              ) : (
-                <div className="prose prose-sm prose-primary max-w-none prose-headings:font-black prose-headings:text-gray-900 prose-p:text-gray-600 prose-p:leading-relaxed prose-strong:text-indigo-600">
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                    {historyAnalysis}
-                  </ReactMarkdown>
-                </div>
-              )}
-            </div>
-            {!isAnalyzing && (
-              <div className="px-6 py-4 bg-gray-50 border-t border-gray-100">
-                <div className="flex items-center gap-2 text-primary-600">
-                  <Sparkles className="w-4 h-4" />
-                  <span className="text-xs font-black uppercase tracking-widest">
-                    AI Insights are for guidance only.
-                  </span>
-                </div>
-              </div>
-            )}
-          </CardBody>
-        </Card>
-      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="border-none shadow-xl shadow-gray-100/50">
@@ -568,6 +540,101 @@ const MedicalHistory = () => {
           )}
         </CardBody>
       </Card>
+
+      {/* AI Analysis Floating Modal */}
+      <Modal
+        isOpen={isAnalysisModalOpen}
+        onClose={() => setIsAnalysisModalOpen(false)}
+        title="Health Intelligence Summary"
+        size="lg"
+      >
+        <div className="space-y-6">
+          <div className="flex items-center justify-between bg-primary-50 p-4 rounded-2xl border border-primary-100">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-primary-600 rounded-xl flex items-center justify-center text-white">
+                <BrainCircuit className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="text-[10px] font-black text-primary-600 uppercase tracking-widest">Clinical Analysis</p>
+                <h3 className="text-sm font-black text-gray-900 leading-none mt-0.5">Gemini Diagnostic Summary</h3>
+              </div>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handlePrintPdf}
+              className="h-8 text-[10px] gap-1.5 border-primary-200 text-primary-600 hover:bg-primary-50 font-black uppercase tracking-widest">
+              <FileDown className="w-3 h-3" />
+              Save PDF
+            </Button>
+          </div>
+
+          <div className="prose prose-sm prose-primary max-w-none text-gray-700 leading-relaxed font-normal p-2">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              {currentAnalysis || historyAnalysis}
+            </ReactMarkdown>
+          </div>
+
+          <div className="p-4 bg-gray-50 rounded-2xl flex items-start gap-3">
+            <ShieldAlert className="w-5 h-5 text-gray-400 shrink-0 mt-0.5" />
+            <p className="text-[10px] font-medium text-gray-500 leading-relaxed">
+              Note: This AI-generated insight is for reference only. It uses your consolidated medical history to provide health patterns and risk assessments. Please verify all clinical findings with a professional doctor.
+            </p>
+          </div>
+        </div>
+
+        {/* Print-only template hidden in normal view */}
+        <div className="hidden print:block fixed inset-0 bg-white z-[9999] p-10 overflow-auto">
+          <div className="max-w-4xl mx-auto space-y-8">
+            <div className="flex items-center justify-between border-b-2 border-primary-100 pb-6">
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 bg-primary-600 rounded-2xl flex items-center justify-center">
+                  <BrainCircuit className="w-10 h-10 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-black text-gray-900 uppercase tracking-tighter">Personal Health Report</h1>
+                  <p className="text-sm font-bold text-primary-600 uppercase tracking-widest">RapiReport Clinical Intelligence</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Generated On</p>
+                <p className="text-sm font-bold text-gray-900">{new Date().toLocaleDateString()} • {new Date().toLocaleTimeString()}</p>
+              </div>
+            </div>
+
+            <div className="bg-gray-50 p-6 rounded-3xl border border-gray-100">
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Authenticated For</p>
+              <p className="font-bold text-lg text-gray-900">{user?.name || user?.username}</p>
+              <p className="text-xs text-gray-500">{user?.email}</p>
+            </div>
+
+            <div className="space-y-4">
+              <h2 className="text-lg font-black text-gray-900 uppercase tracking-tight flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-indigo-500" />
+                Comprehensive Analysis Results
+              </h2>
+              <div className="prose prose-sm max-w-none text-gray-800 leading-relaxed">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {currentAnalysis || historyAnalysis || ""}
+                </ReactMarkdown>
+              </div>
+            </div>
+
+            <div className="border-t border-gray-100 pt-6 mt-10">
+              <div className="flex items-start gap-3 bg-gray-50 p-4 rounded-2xl">
+                <ShieldAlert className="w-5 h-5 text-primary-600 shrink-0 mt-0.5" />
+                <p className="text-[11px] font-medium text-gray-500 leading-relaxed">
+                  DISCLAIMER: This AI-generated clinical insight is based on your personal health records in RapiReport.
+                  It is intended for guidance only and does NOT substitute professional medical advice.
+                </p>
+              </div>
+              <p className="text-[10px] font-black text-gray-300 text-center mt-8 uppercase tracking-[0.2em]">
+                RapiReport Digital Health • Secure Patient File
+              </p>
+            </div>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

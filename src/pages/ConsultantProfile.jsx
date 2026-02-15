@@ -7,14 +7,16 @@ import Button from "@/components/ui/Button";
 import {
     Stethoscope,
     Users,
-    Star,
     Clock,
     Medal,
     MapPin,
+
     GraduationCap,
     ArrowLeft,
     CalendarCheck,
-    MessageSquare
+    MessageSquare,
+    Globe,
+    Briefcase,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import Loading from "@/components/ui/Loading";
@@ -114,28 +116,42 @@ const ConsultantProfile = () => {
                                 </div>
                             </div>
 
-                            <div className="prose prose-sm max-w-none text-gray-600 font-medium leading-relaxed mb-8">
-                                <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest mb-2 flex items-center gap-2">
-                                    <Users className="w-4 h-4 text-primary-600" /> About
+                            <div className="prose prose-sm max-w-none text-gray-600 font-medium leading-relaxed mb-10">
+                                <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                    <Users className="w-4 h-4 text-primary-600" /> About the Doctor
                                 </h3>
-                                <p>{doctor.bio || "No biography provided."}</p>
+                                <div className="bg-gray-50/50 p-6 rounded-2xl border border-gray-100 italic">
+                                    "{doctor.bio || "No biography provided."}"
+                                </div>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                {doctor.education && (
-                                    <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
-                                        <h3 className="text-xs font-black text-gray-900 uppercase tracking-widest mb-3 flex items-center gap-2">
-                                            <GraduationCap className="w-4 h-4 text-gray-400" /> Education
-                                        </h3>
-                                        <p className="text-sm font-semibold text-gray-700">{doctor.education}</p>
+                                <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                                    <h3 className="text-xs font-black text-gray-900 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                        <GraduationCap className="w-4 h-4 text-primary-600" /> Qualifications
+                                    </h3>
+                                    <p className="text-sm font-bold text-gray-700">{doctor.qualifications || "Not specified"}</p>
+                                </div>
+
+                                <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                                    <h3 className="text-xs font-black text-gray-900 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                        <Globe className="w-4 h-4 text-primary-600" /> Languages
+                                    </h3>
+                                    <div className="flex flex-wrap gap-2">
+                                        {(doctor.profile_languages || "English, Nepali").split(',').map((lang, idx) => (
+                                            <span key={idx} className="px-3 py-1 bg-primary-50 text-primary-700 rounded-lg text-xs font-black uppercase tracking-wider">
+                                                {lang.trim()}
+                                            </span>
+                                        ))}
                                     </div>
-                                )}
+                                </div>
+
                                 {doctor.clinic_address && (
-                                    <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
-                                        <h3 className="text-xs font-black text-gray-900 uppercase tracking-widest mb-3 flex items-center gap-2">
-                                            <MapPin className="w-4 h-4 text-gray-400" /> Clinic Address
+                                    <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow md:col-span-2">
+                                        <h3 className="text-xs font-black text-gray-900 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                            <MapPin className="w-4 h-4 text-primary-600" /> Primary Clinic Address
                                         </h3>
-                                        <p className="text-sm font-semibold text-gray-700">{doctor.clinic_address}</p>
+                                        <p className="text-sm font-bold text-gray-700">{doctor.clinic_address}</p>
                                     </div>
                                 )}
                             </div>
@@ -167,19 +183,11 @@ const ConsultantProfile = () => {
                         </CardBody>
                     </Card>
 
-                    <Card className="bg-gradient-to-br from-indigo-600 to-indigo-800 text-white border-none shadow-xl shadow-indigo-200">
-                        <CardBody className="p-6">
-                            <h3 className="font-bold text-lg mb-2">Need help?</h3>
-                            <p className="text-indigo-100 text-sm mb-4">Chat with our support team if you have questions about booking.</p>
-                            <Button variant="secondary" className="w-full justify-center bg-white/10 border-white/20 text-white hover:bg-white/20">
-                                Contact Support
-                            </Button>
-                        </CardBody>
-                    </Card>
                 </div>
             </div>
         </div>
     );
 };
+
 
 export default ConsultantProfile;

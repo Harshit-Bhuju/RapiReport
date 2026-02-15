@@ -30,7 +30,7 @@ if ($role !== 'doctor') {
 
 $stats = [];
 
-$totalRx = $conn->prepare("SELECT COUNT(DISTINCT h.id) as cnt FROM ocr_history h JOIN consultations c ON c.patient_user_id = h.user_id WHERE c.doctor_user_id = ?");
+$totalRx = $conn->prepare("SELECT COUNT(DISTINCT h.id) as cnt FROM ocr_history h JOIN appointments a ON a.patient_user_id = h.user_id WHERE a.doctor_user_id = ?");
 $totalRx->bind_param('i', $user_id);
 $totalRx->execute();
 $totalRxRes = $totalRx->get_result();
@@ -44,8 +44,8 @@ $stats['commonMedicines'] = []; // JSON medicines storage makes SQL grouping com
 $recentRx = $conn->prepare("
     SELECT COUNT(*) as cnt
     FROM ocr_history h
-    JOIN consultations c ON c.patient_user_id = h.user_id
-    WHERE c.doctor_user_id = ?
+    JOIN appointments a ON a.patient_user_id = h.user_id
+    WHERE a.doctor_user_id = ?
     AND h.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
 ");
 $recentRx->bind_param('i', $user_id);

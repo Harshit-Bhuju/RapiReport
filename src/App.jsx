@@ -31,12 +31,8 @@ import Consultants from "@/pages/Consultants";
 import Booking from "@/pages/Booking";
 import BookingSuccess from "@/pages/BookingSuccess";
 import BookingFailed from "@/pages/BookingFailed";
-import MyAppointments from "@/pages/MyAppointments";
 import UserAppointments from "@/pages/UserAppointments";
 import RiskAnalysis from "@/pages/RiskAnalysis";
-
-
-
 import HealthPlanner from "@/pages/HealthPlanner";
 import NotFound from "@/pages/NotFound";
 import DoctorConsultation from "@/pages/DoctorConsultation";
@@ -53,9 +49,8 @@ import PrescriptionScan from "@/pages/health/PrescriptionScan";
 import Symptoms from "@/pages/health/Symptoms";
 
 import Marketplace from "@/pages/health/Marketplace";
-import Campaigns from "@/pages/health/Campaigns";
 import MedicalHistory from "@/pages/health/MedicalHistory";
-import HistoryAnalyze from "@/pages/health/HistoryAnalyze";
+import HistoryAnalyze from "@/pages/health/HistoryAnalyze"; 
 import Alerts from "@/pages/health/Alerts";
 import CommunityInsights from "@/pages/health/CommunityInsights";
 import ConsultationCallManager from "@/components/features/ConsultationCallManager";
@@ -199,11 +194,11 @@ function App() {
               <Route
                 path="/appointments"
                 element={
-                  <RoleRoute allowedRoles={["doctor"]}>
+                  <ProtectedRoute>
                     <DashboardLayout>
-                      <MyAppointments />
+                      <UserAppointments />
                     </DashboardLayout>
-                  </RoleRoute>
+                  </ProtectedRoute>
                 }
               />
               <Route
@@ -304,16 +299,6 @@ function App() {
                   <ProtectedRoute>
                     <DashboardLayout>
                       <Marketplace />
-                    </DashboardLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/campaigns"
-                element={
-                  <ProtectedRoute>
-                    <DashboardLayout>
-                      <Campaigns />
                     </DashboardLayout>
                   </ProtectedRoute>
                 }

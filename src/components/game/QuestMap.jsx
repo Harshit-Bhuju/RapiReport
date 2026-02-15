@@ -105,8 +105,35 @@ const RecenterMap = ({ center, zoom }) => {
 
 const QuestMap = () => {
   const { user, currentLocation, pathHistory, updateLocation, quests, engagedQuest, selectedQuestId, setSelectedQuest, viewingQuestId, setViewingQuestId, setEngagedQuest, isAITracking, skipQuest } = useGameStore();
+  const [gpsStarted, setGpsStarted] = useState(false);
   const [error, setError] = useState(null);
   const [shouldFollow, setShouldFollow] = useState(true);
+
+  // Manual GPS trigger to satisfy "User Gesture" requirement
+  const startGps = () => {
+    if (!("geolocation" in navigator)) {
+      setError("GPS not supported by browser");
+      return;
+    }
+    setGpsStarted(true);
+  };
+
+  useEffect(() => {
+    if (!gpsStarted) return;
+
+    const watchId = navigator.geolocation.watchPosition(
+      (pos) => {
+        updateLocation(pos.coords.latitude, pos.coords.longitude);
+        setError(null);
+      },
+      (err) => {
+        console.error("GPS Error:", err);
+        setError(err.message === "User denied Geolocation" ? "Please enable GPS to play" : err.message);
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
+    );
+    return () => navigator.geolocation.clearWatch(watchId);
+  }, [updateLocation, gpsStarted]);
 
   const selectedQuest = quests.find(q => q.id === selectedQuestId);
   const distToQuest = (currentLocation && selectedQuest)
@@ -122,32 +149,16 @@ const QuestMap = () => {
 
   const currentAvailableQuest = quests.find(q => q.type === "place" && !q.completed && isNear(q));
 
-  useEffect(() => {
-    if (!("geolocation" in navigator)) {
-      setError("GPS not available");
-      return;
-    }
-    const watchId = navigator.geolocation.watchPosition(
-      (pos) => {
-        updateLocation(pos.coords.latitude, pos.coords.longitude);
-        setError(null);
-      },
-      (err) => setError(err.message),
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
-    );
-    return () => navigator.geolocation.clearWatch(watchId);
-  }, [updateLocation]);
-
   const defaultCenter = currentLocation ? [currentLocation.lat, currentLocation.lng] : [27.7172, 85.324];
   const center = currentLocation ? [currentLocation.lat, currentLocation.lng] : defaultCenter;
 
   return (
-    <div className="h-full w-full relative bg-gray-50">
+    <div className="h-full w-full relative bg-slate-900 overflow-hidden rounded-3xl group">
       <MapContainer
         center={defaultCenter}
         zoom={16}
         scrollWheelZoom={true}
-        className="h-full w-full z-0"
+        className="h-full w-full z-0 grayscale-[0.2] contrast-[1.1]"
         zoomControl={false}>
         <TileLayer
           attribution="&copy; OSM"
@@ -167,8 +178,16 @@ const QuestMap = () => {
           />
         )}
 
-        {/* Footprint Trail (Path History) - HIDDEN for cleaner UI */}
-        {/*
+        {/* User Marker */}
+        {currentLocation && (
+          <Marker
+            position={[currentLocation.lat, currentLocation.lng]}
+            icon={USER_ICON}
+            zIndexOffset={2000}
+          />
+        )}
+
+        {/* Footprint Trail (Path History) */}
         {pathHistory.length > 0 && pathHistory.map((pt, i) => (
           (pt && pt[0] != null && pt[1] != null) && (
             <Marker
@@ -179,19 +198,10 @@ const QuestMap = () => {
             />
           )
         ))}
-        */}
-
-        {/* Navigation Lines REMOVED as per request */}
 
         {/* Quest Marker (Show ONLY one quest at a time - engaged or current next one) */}
         {quests.map((q, idx) => {
           const currentIdx = user.questsToday ?? 0;
-
-          // Determine if this is the ONE quest to show:
-          // 1. If we are engaged in a specific quest, ONLY show that one.
-          // 2. If NO engaged quest, ONLY show the next available quest (index currentIdx).
-          // 3. Hide all completed/skipped markers for a cleaner look.
-
           const isEngagedMatch = engagedQuest && engagedQuest.id === q.id;
           const isNextMatch = !engagedQuest && idx === currentIdx;
 
@@ -205,27 +215,21 @@ const QuestMap = () => {
               zIndexOffset={1000}
               eventHandlers={{
                 click: () => {
-                  // DISABLE INTERACTION IF COMPLETED OR SKIPPED
                   if (!q.completed && !q.skipped) {
-                    if (engagedQuest?.id === q.id) {
-                      setViewingQuestId(q.id);
-                    } else {
-                      setViewingQuestId(q.id);
-                      setSelectedQuest(q.id);
-                      setEngagedQuest(q);
-                    }
+                    setViewingQuestId(q.id);
+                    setSelectedQuest(q.id);
+                    setEngagedQuest(q);
                   }
                 }
               }}
-              // Opacity reduced for completed/skipped to show they are inactive
               opacity={q.completed || q.skipped ? 0.6 : 1}
-              icon={getQuestIcon(q.icon || (q.type === 'walk' ? 'pin' : 'pin'), q.completed, q.skipped)}>
-              {/* Only show popup if active */}
+              icon={getQuestIcon(q.icon || 'pin', q.completed, q.skipped)}>
               {!q.completed && !q.skipped && (
-                <Popup>
-                  <div className="text-center p-1 min-w-[140px]">
-                    <p className="font-black text-xs text-gray-900 leading-tight mb-1 uppercase">{q.title}</p>
-                    <p className="text-[10px] text-gray-500 mb-2 font-medium">{q.description}</p>
+                <Popup className="quest-popup">
+                  <div className="text-center p-2 min-w-[160px]">
+                    <div className="w-8 h-8 mx-auto mb-2 bg-indigo-50 rounded-full flex items-center justify-center text-indigo-600" dangerouslySetInnerHTML={{ __html: QUEST_ICONS[q.icon] || QUEST_ICONS.pin }} />
+                    <p className="font-black text-sm text-gray-900 leading-tight mb-1 uppercase tracking-tight">{q.title}</p>
+                    <p className="text-[10px] text-gray-500 font-medium leading-relaxed">{q.description}</p>
                   </div>
                 </Popup>
               )}
@@ -234,29 +238,69 @@ const QuestMap = () => {
         })}
       </MapContainer>
 
-      <div className="absolute top-4 right-4 z-[20] flex flex-col gap-2">
+      {/* GPS START OVERLAY */}
+      {!gpsStarted && (
+        <div className="absolute inset-0 z-[100] bg-slate-900/40 backdrop-blur-md flex items-center justify-center p-6 text-center animate-in fade-in duration-500">
+          <div className="max-w-xs w-full bg-white rounded-3xl p-8 shadow-2xl border border-white/50 space-y-6">
+            <div className="w-20 h-20 bg-indigo-600 rounded-full mx-auto flex items-center justify-center text-white shadow-xl shadow-indigo-200">
+              <Navigation className="w-10 h-10 animate-pulse" />
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight">Ready to explore?</h3>
+              <p className="text-xs text-gray-500 font-medium leading-relaxed">
+                Click handle to start your GPS tracking and find local health quests near you.
+              </p>
+            </div>
+            <button
+              onClick={startGps}
+              className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-lg shadow-indigo-100 hover:bg-indigo-700 hover:scale-105 active:scale-95 transition-all">
+              Start Adventure
+            </button>
+            {error && (
+              <p className="text-[10px] font-bold text-red-500 bg-red-50 py-2 rounded-lg border border-red-100 uppercase tracking-tighter">
+                {error}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ERROR OVERLAY IF GPS FAILS AFTER START */}
+      {gpsStarted && error && (
+        <div className="absolute top-4 left-4 right-4 z-[50] animate-in slide-in-from-top duration-300">
+          <div className="bg-red-500 text-white px-4 py-3 rounded-2xl shadow-xl flex items-center gap-3 border-2 border-white/20">
+            <X className="w-5 h-5 flex-shrink-0" />
+            <p className="text-[10px] font-black uppercase tracking-wider">{error}</p>
+            <button onClick={() => setError(null)} className="ml-auto p-1 hover:bg-white/20 rounded-lg">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="absolute top-6 right-6 z-[20] flex flex-col gap-3">
         <button
           onClick={() => setShouldFollow(!shouldFollow)}
-          className={`p-3 rounded-2xl shadow-xl transition-all ${shouldFollow
-            ? "bg-indigo-600 text-white shadow-indigo-200"
-            : "bg-white text-gray-600 shadow-sm"
+          className={`p-4 rounded-2xl shadow-2xl transition-all border-2 ${shouldFollow
+            ? "bg-indigo-600 text-white border-indigo-400 shadow-indigo-200"
+            : "bg-white text-gray-600 border-gray-50 shadow-sm"
             }`}>
           <Navigation className={`w-5 h-5 ${shouldFollow ? "animate-pulse" : ""}`} />
         </button>
       </div>
 
-      <div className="absolute bottom-4 left-3 right-3 sm:left-4 sm:right-4 lg:right-auto z-[20] flex flex-wrap items-center gap-x-3 gap-y-1.5 bg-white/95 px-3 py-2 rounded-xl border border-gray-100 shadow-lg">
-        <div className="flex items-center gap-1.5">
-          <div className="w-4 h-4 rounded-full bg-indigo-600 shadow-sm flex items-center justify-center text-white" dangerouslySetInnerHTML={{ __html: QUEST_ICONS.pin }} />
-          <span className="text-[8px] font-black text-gray-700 uppercase tracking-tight">Quest</span>
+      <div className="absolute bottom-6 left-6 right-6 lg:right-auto z-[20] flex flex-wrap items-center gap-x-4 gap-y-2 bg-white/95 backdrop-blur-sm px-5 py-3 rounded-2xl border border-gray-100 shadow-2xl">
+        <div className="flex items-center gap-2">
+          <div className="w-5 h-5 rounded-full bg-indigo-600 shadow-lg flex items-center justify-center text-white" dangerouslySetInnerHTML={{ __html: QUEST_ICONS.pin }} />
+          <span className="text-[9px] font-black text-gray-800 uppercase tracking-tight">Quest</span>
         </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-2.5 h-2.5 rounded-full bg-red-500 border border-white" />
-          <span className="text-[8px] font-black text-gray-700 uppercase tracking-tight">Me</span>
+        <div className="flex items-center gap-2">
+          <div className="w-3.5 h-3.5 rounded-full bg-red-500 border-2 border-white shadow-md shadow-red-200" />
+          <span className="text-[9px] font-black text-gray-800 uppercase tracking-tight">You</span>
         </div>
-        <div className="flex items-center gap-1.5" title="Trail: your walking path (footprints as you move)">
-          <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 opacity-60" />
-          <span className="text-[8px] font-black text-gray-700 uppercase tracking-tight">Trail</span>
+        <div className="flex items-center gap-2" title="Trail: your walking history">
+          <div className="w-2.5 h-2.5 rounded-full bg-indigo-400 opacity-60 shadow-sm" />
+          <span className="text-[9px] font-black text-gray-800 uppercase tracking-tight">Traces</span>
         </div>
       </div>
     </div>

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Serves prescription images. Requires auth. Path must be in uploads/prescriptions/.
  * Same pattern as get_report_image.php.
@@ -20,12 +21,15 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 $file = isset($_GET['file']) ? basename($_GET['file']) : '';
-if (!preg_match('/^rx_[a-zA-Z0-9_.-]+\.(jpg|jpeg|png)$/i', $file)) {
+// Allow common image prefixes used for prescriptions (rx_, ocr_)
+if (!preg_match('/^(rx_|ocr_|report_|img_|)[a-zA-Z0-9_.-]+\.(jpg|jpeg|png)$/i', $file)) {
     http_response_code(400);
     exit;
 }
 
-$path = __DIR__ . '/../uploads/prescriptions/' . $file;
+// Serves EXCLUSIVELY from the ocr folder now
+$path = __DIR__ . '/../uploads/ocr/' . $file;
+
 if (!file_exists($path) || !is_file($path)) {
     http_response_code(404);
     exit;

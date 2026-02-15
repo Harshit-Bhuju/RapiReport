@@ -31,9 +31,9 @@ if ($is_form_data) {
     $meds_raw = $_POST['meds'] ?? '[]';
     $meds = is_array($meds_raw) ? $meds_raw : (json_decode($meds_raw, true) ?: []);
 
-    // Handle image upload (same as reports)
+    // Handle image upload (save to ocr folder)
     if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
-        $upload_dir = __DIR__ . '/../uploads/prescriptions/';
+        $upload_dir = __DIR__ . '/../uploads/ocr/';
 
         // Create directory if it doesn't exist
         if (!is_dir($upload_dir)) {
@@ -55,13 +55,13 @@ if ($is_form_data) {
             exit;
         }
 
-        // Generate unique filename (stored path: filename only for API serve)
+        // Generate unique filename in ocr folder
         $ext = pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION);
-        $filename = uniqid('rx_', true) . '.' . strtolower($ext);
+        $filename = uniqid('ocr_', true) . '.' . strtolower($ext);
         $full_path = $upload_dir . $filename;
 
         if (move_uploaded_file($_FILES['image']['tmp_name'], $full_path)) {
-            $image_path = $filename; // Store filename; serve script uses it
+            $image_path = $filename; // Store filename
         }
     }
 } else {

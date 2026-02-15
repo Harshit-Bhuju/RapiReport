@@ -16,8 +16,8 @@ export const getAPIBaseUrl = () => {
         window.location.hostname === 'localhost' ||
         window.location.hostname === '127.0.0.1'
     ) {
-        return 'http://localhost/RapiReport/backend/api';
+        return "/api";
     }
     // In production, we assume the API is at /api relative to the domain
-    return '/api';
+    return "/api";
 };

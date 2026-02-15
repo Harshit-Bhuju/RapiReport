@@ -6,7 +6,6 @@ import {
   Phone,
   Video,
   MessageSquare,
-  Star,
   Clock,
   ShieldCheck,
   CreditCard,
@@ -27,8 +26,6 @@ const DoctorConsultation = () => {
       name: "Dr. Sarah Johnson",
       specialty: "General Physician",
       experience: "8 years",
-      rating: 4.9,
-      reviews: 124,
       rate: 500,
       image:
         "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80&w=300&h=300",
@@ -39,8 +36,6 @@ const DoctorConsultation = () => {
       name: "Dr. Michael Chen",
       specialty: "Cardiologist",
       experience: "12 years",
-      rating: 4.8,
-      reviews: 98,
       rate: 800,
       image:
         "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&q=80&w=300&h=300",
@@ -51,8 +46,6 @@ const DoctorConsultation = () => {
       name: "Dr. Emily Williams",
       specialty: "Dermatologist",
       experience: "6 years",
-      rating: 4.7,
-      reviews: 156,
       rate: 600,
       image:
         "https://images.unsplash.com/photo-1594824476967-48c8b964273f?auto=format&fit=crop&q=80&w=300&h=300",
@@ -123,20 +116,16 @@ const DoctorConsultation = () => {
                   />
                   <span
                     className={`absolute -bottom-2 -right-2 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border-2 border-white ${doctor.status === "Online"
-                        ? "bg-success-100 text-success-700"
-                        : "bg-warning-100 text-warning-700"
+                      ? "bg-success-100 text-success-700"
+                      : "bg-warning-100 text-warning-700"
                       }`}>
                     {doctor.status}
                   </span>
                 </div>
                 <div className="flex flex-col items-end">
-                  <span className="flex items-center gap-1 text-warning-500 font-black">
-                    <Star className="w-4 h-4 fill-current" />
-                    {doctor.rating}
-                  </span>
-                  <span className="text-xs font-medium text-gray-400">
-                    {doctor.reviews} {t("doctors.reviews")}
-                  </span>
+                  <div className="w-10 h-10 rounded-xl bg-primary-50 flex items-center justify-center text-primary-600">
+                    <Stethoscope className="w-5 h-5" />
+                  </div>
                 </div>
               </div>
 

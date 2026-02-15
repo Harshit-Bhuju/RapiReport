@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import {
@@ -7,8 +7,9 @@ import {
   FileText,
   Save,
   ArrowLeft,
-  Star,
   Clock,
+  Calendar,
+  User,
 } from "lucide-react";
 import { Card, CardBody } from "@/components/ui/Card";
 import Input from "@/components/ui/Input";
@@ -45,6 +46,8 @@ const DoctorProfile = () => {
   const navigate = useNavigate();
   const { user, updateProfile } = useAuthStore();
   const [saving, setSaving] = useState(false);
+  const [appointments, setAppointments] = useState([]);
+  const [loadingApts, setLoadingApts] = useState(true);
 
   const [formData, setFormData] = useState({
     displayName: user?.doctorProfile?.displayName || user?.name || "",
@@ -54,7 +57,25 @@ const DoctorProfile = () => {
     bio: user?.doctorProfile?.bio || "Share a short bio about your practice and approach to patient care.",
     languages: user?.doctorProfile?.languages || "English, Nepali",
     qualifications: user?.doctorProfile?.qualifications || "MBBS, MD",
+    availability: user?.doctorProfile?.availability_json || [],
   });
+
+  useEffect(() => {
+    const fetchAppointments = async () => {
+      try {
+        const res = await axios.get(API.DOCTOR_APPOINTMENTS, { withCredentials: true });
+        if (res.data.status === "success") {
+          // Only show confirmed appointments
+          setAppointments(res.data.appointments.filter(a => a.status === 'confirmed'));
+        }
+      } catch (error) {
+        console.error("Error fetching doctor appointments:", error);
+      } finally {
+        setLoadingApts(false);
+      }
+    };
+    fetchAppointments();
+  }, []);
 
   const handleSave = async () => {
     if (!formData.displayName || !formData.specialty) {
@@ -152,10 +173,6 @@ const DoctorProfile = () => {
                   <span className="flex items-center gap-1">
                     <Clock className="w-3 h-3" />
                     {formData.experienceYears} yrs exp
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Star className="w-3 h-3 text-warning-500 fill-current" />
-                    4.9
                   </span>
                 </div>
                 <div className="w-full pt-4 border-t border-gray-100">
@@ -265,82 +282,6 @@ const DoctorProfile = () => {
                   setFormData({ ...formData, bio: e.target.value })
                 }
               />
-            </CardBody>
-          </Card>
-
-          <Card className="border-none shadow-xl shadow-gray-100/50">
-            <CardBody className="p-6 sm:p-8">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center text-purple-600">
-                  <Clock className="w-5 h-5" />
-                </div>
-                <h2 className="text-lg font-bold text-gray-900">Availability</h2>
-              </div>
-
-              <div className="space-y-4">
-                <p className="text-sm text-gray-500 mb-4">Set your weekly availability for consultations. Patients can only book slots within these times.</p>
-                {/* Simple Availability UI - can be expanded */}
-                {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map(day => (
-                  <div key={day} className="flex items-center gap-4 p-3 border border-gray-100 rounded-xl">
-                    <div className="w-24 font-bold text-sm">{day}</div>
-                    <select
-                      className="p-2 border rounded-lg text-sm bg-gray-50"
-                      value={formData.availability?.find(s => s.day === day)?.startTime || "09:00"}
-                      onChange={(e) => {
-                        const newAv = [...(formData.availability || [])];
-                        const idx = newAv.findIndex(s => s.day === day);
-                        if (idx >= 0) newAv[idx].startTime = e.target.value;
-                        else newAv.push({ day, startTime: e.target.value, endTime: "17:00" });
-                        setFormData({ ...formData, availability: newAv });
-                      }}
-                    >
-                      <option value="09:00">09:00 AM</option>
-                      <option value="10:00">10:00 AM</option>
-                      <option value="11:00">11:00 AM</option>
-                      <option value="12:00">12:00 PM</option>
-                      <option value="13:00">01:00 PM</option>
-                    </select>
-                    <span className="text-gray-400">-</span>
-                    <select
-                      className="p-2 border rounded-lg text-sm bg-gray-50"
-                      value={formData.availability?.find(s => s.day === day)?.endTime || "17:00"}
-                      onChange={(e) => {
-                        const newAv = [...(formData.availability || [])];
-                        const idx = newAv.findIndex(s => s.day === day);
-                        if (idx >= 0) newAv[idx].endTime = e.target.value;
-                        else newAv.push({ day, startTime: "09:00", endTime: e.target.value });
-                        setFormData({ ...formData, availability: newAv });
-                      }}
-                    >
-                      <option value="12:00">12:00 PM</option>
-                      <option value="13:00">01:00 PM</option>
-                      <option value="14:00">02:00 PM</option>
-                      <option value="15:00">03:00 PM</option>
-                      <option value="16:00">04:00 PM</option>
-                      <option value="17:00">05:00 PM</option>
-                      <option value="18:00">06:00 PM</option>
-                    </select>
-                    <label className="flex items-center gap-2 text-xs font-bold cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={!!formData.availability?.find(s => s.day === day)}
-                        onChange={(e) => {
-                          let newAv = [...(formData.availability || [])];
-                          if (e.target.checked) {
-                            if (!newAv.find(s => s.day === day)) {
-                              newAv.push({ day, startTime: "09:00", endTime: "17:00" });
-                            }
-                          } else {
-                            newAv = newAv.filter(s => s.day !== day);
-                          }
-                          setFormData({ ...formData, availability: newAv });
-                        }}
-                      />
-                      Active
-                    </label>
-                  </div>
-                ))}
-              </div>
             </CardBody>
           </Card>
 

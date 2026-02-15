@@ -18,7 +18,7 @@ if (empty($ocrText)) {
     exit;
 }
 
-$apiKey = getenv("GEMINI_API_KEY") ?: "";
+$apiKey = getenv("GEMINI_API_KEY") ?: "AIzaSyDk_oCdPeE4P3BWtsjNChp6uZL98fzS-9Q";
 if (empty($apiKey)) {
     echo json_encode([
         'status' => 'success',

@@ -1,9 +1,9 @@
 import { create } from "zustand";
 import toast from "react-hot-toast";
-import { getAPIBaseUrl } from "../config";
+import API from "../Configs/ApiEndpoints";
 
 // Distance in meters between two lat/lng points (Haversine)
-export const distanceMeters = (lat1, lng1, lat2, lng2) => {
+const distanceMeters = (lat1, lng1, lat2, lng2) => {
   const R = 6371000; // Radius of the earth in meters
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
   const dLng = ((lng2 - lng1) * Math.PI) / 180;
@@ -24,9 +24,9 @@ const QUEST_POOL = [
     type: "place",
     title: "Morning Strength",
     description: "Complete 5 Pushups to kickstart your day",
-    offsetLat: 0.000005,
+    offsetLat: 0.00002, // ~2m North (Immediate)
     offsetLng: 0,
-    radiusMeters: 1,
+    radiusMeters: 5,
     points: 100,
     icon: "health",
     videoVerification: true,
@@ -38,9 +38,9 @@ const QUEST_POOL = [
     type: "place",
     title: "Core Booster",
     description: "Complete 8 Pushups for core stability",
-    offsetLat: 0.000005,
-    offsetLng: 0.000005,
-    radiusMeters: 1,
+    offsetLat: 0,
+    offsetLng: 0.00002, // ~2m East (Immediate)
+    radiusMeters: 5,
     points: 120,
     icon: "activity",
     videoVerification: true,
@@ -52,9 +52,9 @@ const QUEST_POOL = [
     type: "place",
     title: "Midday Power",
     description: "Complete 10 Pushups for energy",
-    offsetLat: -0.000005,
-    offsetLng: 0.000005,
-    radiusMeters: 1,
+    offsetLat: -0.00002, // ~2m South (Immediate)
+    offsetLng: 0,
+    radiusMeters: 5,
     points: 150,
     icon: "zap",
     videoVerification: true,
@@ -65,10 +65,10 @@ const QUEST_POOL = [
     id: "pushup_4",
     type: "place",
     title: "Park Challenge",
-    description: "Complete 12 Pushups in the fresh air",
-    offsetLat: -0.000005,
-    offsetLng: -0.000005,
-    radiusMeters: 1,
+    description: "Complete 12 Pushups",
+    offsetLat: 0,
+    offsetLng: -0.00003, // ~3m West
+    radiusMeters: 5,
     points: 180,
     icon: "park",
     videoVerification: true,
@@ -79,10 +79,10 @@ const QUEST_POOL = [
     id: "pushup_5",
     type: "place",
     title: "Stamina Test",
-    description: "Complete 15 Pushups for endurance",
-    offsetLat: 0,
-    offsetLng: -0.000005,
-    radiusMeters: 1,
+    description: "Complete 15 Pushups",
+    offsetLat: 0.00005, // ~5m North-East
+    offsetLng: 0.00005,
+    radiusMeters: 10,
     points: 200,
     icon: "activity",
     videoVerification: true,
@@ -94,9 +94,9 @@ const QUEST_POOL = [
     type: "place",
     title: "Endurance Pro",
     description: "Complete 18 Pushups to level up",
-    offsetLat: 0.00001, // ~1.1m
-    offsetLng: 0,
-    radiusMeters: 1,
+    offsetLat: -0.00005, // ~5m South-West
+    offsetLng: -0.00005,
+    radiusMeters: 10,
     points: 250,
     icon: "trophy",
     videoVerification: true,
@@ -108,9 +108,9 @@ const QUEST_POOL = [
     type: "place",
     title: "Focus Master",
     description: "Complete 20 Pushups with perfect form",
-    offsetLat: 0,
-    offsetLng: 0.00002,
-    radiusMeters: 1,
+    offsetLat: 0.0001, // ~10m North
+    offsetLng: 0,
+    radiusMeters: 15,
     points: 300,
     icon: "target",
     videoVerification: true,
@@ -122,9 +122,9 @@ const QUEST_POOL = [
     type: "place",
     title: "Elite Strength",
     description: "Complete 22 Pushups for elite status",
-    offsetLat: -0.00002,
-    offsetLng: 0,
-    radiusMeters: 1,
+    offsetLat: 0,
+    offsetLng: 0.0001, // ~10m East
+    radiusMeters: 15,
     points: 350,
     icon: "zap",
     videoVerification: true,
@@ -136,9 +136,9 @@ const QUEST_POOL = [
     type: "place",
     title: "Ultimate Warrior",
     description: "Complete 25 Pushups to finish the set",
-    offsetLat: 0,
-    offsetLng: -0.00002,
-    radiusMeters: 1,
+    offsetLat: -0.0001, // ~10m South
+    offsetLng: 0,
+    radiusMeters: 20,
     points: 400,
     icon: "health",
     videoVerification: true,
@@ -150,9 +150,9 @@ const QUEST_POOL = [
     type: "place",
     title: "Daily Finale",
     description: "Complete 30 Pushups for the Super Bonus!",
-    offsetLat: 0.00002,
-    offsetLng: 0.00002,
-    radiusMeters: 1,
+    offsetLat: 0,
+    offsetLng: -0.0001, // ~10m West
+    radiusMeters: 20,
     points: 500,
     icon: "trophy",
     isSuperPoint: true,
@@ -162,8 +162,8 @@ const QUEST_POOL = [
   },
 ];
 
-// Within this distance (m) user sees "You have reached the destination" and can start live tracking (1m for now)
-export const ARRIVED_RADIUS_METERS = 1;
+// Within this distance (m) user sees "You have reached the destination" and can start live tracking (5m given GPS jitter)
+const ARRIVED_RADIUS_METERS = 5;
 
 function getAgeGroup(age) {
   if (age == null || age === "") return "adult";
@@ -189,7 +189,7 @@ function questMatchesProfile(q, profile) {
   return hasCondition(q.healthConsideration);
 }
 
-export const useGameStore = create((set, get) => ({
+const useGameStore = create((set, get) => ({
   // Set from QuestGame so API calls use logged-in user
   authUserId: null,
   setAuthUserId: (id) => set({ authUserId: id }),
@@ -209,7 +209,6 @@ export const useGameStore = create((set, get) => ({
   cancelQuest: () => set({ engagedQuest: null }),
   isAITracking: false,
   setIsAITracking: (isTracking) => set({ isAITracking: isTracking }),
-  quests: [],
   currentLocation: null,
   pathHistory: [],
   distanceWalkedMeters: 0,
@@ -296,34 +295,21 @@ export const useGameStore = create((set, get) => ({
     const totalWalked = distanceWalkedMeters + addedMeters;
 
     let updatedQuests = quests;
-    let pointsEarned = 0;
-    let newlyCompleted = 0;
 
     quests.forEach((q) => {
       if (q.completed) return;
-      if (q.type === "place") {
-        const dist = distanceMeters(lat, lng, q.lat, q.lng);
-        if (dist <= q.radiusMeters) {
-          pointsEarned += q.points;
-          newlyCompleted += 1;
-          updatedQuests = updatedQuests.map((x) =>
-            x.id === q.id ? { ...x, completed: true } : x,
-          );
-        }
-      } else if (q.type === "walk") {
+      if (q.type === "walk") {
         if (totalWalked >= q.targetMeters) {
-          pointsEarned += q.points;
-          newlyCompleted += 1;
           updatedQuests = updatedQuests.map((x) =>
             x.id === q.id
               ? { ...x, completed: true, progressMeters: q.targetMeters }
-              : x,
+              : x
           );
         } else {
           updatedQuests = updatedQuests.map((x) =>
             x.id === q.id
               ? { ...x, progressMeters: Math.round(totalWalked) }
-              : x,
+              : x
           );
         }
       }
@@ -334,27 +320,7 @@ export const useGameStore = create((set, get) => ({
       pathHistory: newPath,
       distanceWalkedMeters: totalWalked,
       quests: updatedQuests,
-      user: {
-        ...get().user,
-        pointsToday: get().user.pointsToday + pointsEarned,
-        cumulativePoints: get().user.cumulativePoints + pointsEarned,
-        questsCompleted: get().user.questsCompleted + newlyCompleted,
-      },
     });
-  },
-
-  redeemReward: (rewardId) => {
-    const { rewards, user } = get();
-    const reward = rewards.find((r) => r.id === rewardId);
-    if (reward && (user.weeklyPoints || 0) >= reward.pointsRequired) {
-      set((s) => ({
-        user: {
-          ...s.user,
-          weeklyPoints: s.user.weeklyPoints - reward.pointsRequired,
-          cumulativePoints: s.user.cumulativePoints - reward.pointsRequired,
-        },
-      }));
-    }
   },
 
   completeQuest: async (questId) => {
@@ -381,7 +347,7 @@ export const useGameStore = create((set, get) => ({
       // Sync with backend - WAIT for response before updating state to ensure persistence
       const userId = get().authUserId ?? 1;
       try {
-        const res = await fetch(`${getAPIBaseUrl()}/complete_quest.php`, {
+        const res = await fetch(API.COMPLETE_QUEST, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -443,7 +409,7 @@ export const useGameStore = create((set, get) => ({
       // Sync with backend - WAIT for response
       const userId = get().authUserId ?? 1;
       try {
-        const res = await fetch(`${getAPIBaseUrl()}/complete_quest.php`, {
+        const res = await fetch(API.COMPLETE_QUEST, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -493,7 +459,7 @@ export const useGameStore = create((set, get) => ({
   fetchUserStats: async () => {
     const userId = get().authUserId ?? 1;
     try {
-      const res = await fetch(`${getAPIBaseUrl()}/get_user_stats.php?user_id=${encodeURIComponent(userId)}`);
+      const res = await fetch(`${API.GET_USER_STATS}?user_id=${encodeURIComponent(userId)}`);
       const json = await res.json();
       if (json.status === "success" && json.data) {
         const d = json.data;
@@ -517,7 +483,7 @@ export const useGameStore = create((set, get) => ({
 
   fetchLeaderboard: async () => {
     try {
-      const res = await fetch(`${getAPIBaseUrl()}/get_leaderboard.php`);
+      const res = await fetch(API.GET_LEADERBOARD);
       const json = await res.json();
       if (json.status === "success" && json.data) {
         set({ leaderboard: json.data });
@@ -567,7 +533,7 @@ export const useGameStore = create((set, get) => ({
   fetchQuests: async () => {
     const userId = get().authUserId ?? 1;
     try {
-      const res = await fetch(`${getAPIBaseUrl()}/get_quest_status.php?user_id=${encodeURIComponent(userId)}`);
+      const res = await fetch(`${API.GET_QUEST_STATUS}?user_id=${encodeURIComponent(userId)}`);
       const json = await res.json();
       if (json.status === "success") {
         const { currentLocation } = get();
@@ -590,11 +556,9 @@ export const useGameStore = create((set, get) => ({
     }
   },
 
-
   fetchRewards: async () => {
     try {
-      const apiRoot = getAPIBaseUrl().replace('/api', '');
-      const response = await fetch(apiRoot + '/health/rewards_list.php', {
+      const response = await fetch(API.REWARDS_LIST, {
         credentials: 'include'
       });
       const data = await response.json();
@@ -612,8 +576,7 @@ export const useGameStore = create((set, get) => ({
   // Redeem a reward
   redeemReward: async (rewardId) => {
     try {
-      const apiRoot = getAPIBaseUrl().replace('/api', '');
-      const response = await fetch(apiRoot + '/health/rewards_redeem.php', {
+      const response = await fetch(API.REWARDS_REDEEM, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -635,3 +598,5 @@ export const useGameStore = create((set, get) => ({
     }
   },
 }));
+
+export { useGameStore, distanceMeters, ARRIVED_RADIUS_METERS, QUEST_POOL };

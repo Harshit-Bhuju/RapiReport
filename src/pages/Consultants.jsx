@@ -216,16 +216,6 @@ const Consultants = () => {
             <h3 className="font-bold text-gray-900 text-base leading-tight group-hover:text-primary-600 transition-colors">
               {doc.display_name || doc.username}
             </h3>
-            <div className="flex items-center gap-1 mt-1">
-              {[...Array(5)].map((_, i) => (
-                <Star
-                  key={i}
-                  className={`w-3 h-3 ${i < 4 ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
-                    }`}
-                />
-              ))}
-              <span className="text-xs text-gray-600 ml-1">(4.0)</span>
-            </div>
           </div>
         </div>
 
@@ -319,8 +309,8 @@ const Consultants = () => {
                 <div className="text-sm">Available</div>
               </div>
               <div className="text-white/90">
-                <div className="text-3xl font-black text-white">4.8★</div>
-                <div className="text-sm">Rating</div>
+                <div className="text-3xl font-black text-white">24/7</div>
+                <div className="text-sm">Available</div>
               </div>
             </div>
           </div>
@@ -361,8 +351,8 @@ const Consultants = () => {
               <button
                 onClick={() => setViewMode("grid")}
                 className={`p-3 rounded-lg transition-all ${viewMode === "grid"
-                    ? "bg-white shadow-sm text-primary-600"
-                    : "text-gray-500 hover:text-gray-700"
+                  ? "bg-white shadow-sm text-primary-600"
+                  : "text-gray-500 hover:text-gray-700"
                   }`}
               >
                 <LayoutGrid className="w-5 h-5" />
@@ -370,8 +360,8 @@ const Consultants = () => {
               <button
                 onClick={() => setViewMode("compact")}
                 className={`p-3 rounded-lg transition-all ${viewMode === "compact"
-                    ? "bg-white shadow-sm text-primary-600"
-                    : "text-gray-500 hover:text-gray-700"
+                  ? "bg-white shadow-sm text-primary-600"
+                  : "text-gray-500 hover:text-gray-700"
                   }`}
               >
                 <Grid3x3 className="w-5 h-5" />
@@ -415,8 +405,8 @@ const Consultants = () => {
         {/* Doctors Grid */}
         <div
           className={`grid gap-6 ${viewMode === "compact"
-              ? "grid-cols-1 lg:grid-cols-2"
-              : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
+            ? "grid-cols-1 lg:grid-cols-2"
+            : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
             }`}
         >
           {loading ? (

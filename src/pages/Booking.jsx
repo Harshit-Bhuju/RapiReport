@@ -19,6 +19,8 @@ import Button from "@/components/ui/Button";
 import axios from "axios";
 import toast from "react-hot-toast";
 import API from "@/Configs/ApiEndpoints";
+import { cn } from "@/lib/utils";
+
 
 const Booking = () => {
   const { t } = useTranslation();
@@ -26,10 +28,34 @@ const Booking = () => {
   const navigate = useNavigate();
   const { doctor } = location.state || {};
 
-  const [selectedDate, setSelectedDate] = useState("");
-  const [selectedSlot, setSelectedSlot] = useState("");
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [selectedTime, setSelectedTime] = useState("");
+  const [bookedSlots, setBookedSlots] = useState([]);
+  const [fetchingSlots, setFetchingSlots] = useState(false);
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (doctor?.user_id && selectedDate) {
+      fetchBookedSlots();
+    }
+  }, [selectedDate, doctor]);
+
+  const fetchBookedSlots = async () => {
+    setFetchingSlots(true);
+    try {
+      const res = await axios.get(`${API.DOCTOR_SLOTS}?doctor_id=${doctor.user_id}&date=${selectedDate}`, {
+        withCredentials: true
+      });
+      if (res.data.status === "success") {
+        setBookedSlots(res.data.booked_slots || []);
+      }
+    } catch (error) {
+      console.error("Error fetching booked slots:", error);
+    } finally {
+      setFetchingSlots(false);
+    }
+  };
 
   useEffect(() => {
     if (doctor?.availability_json) {
@@ -89,21 +115,19 @@ const Booking = () => {
   const timeSlots = getTimeSlots();
 
   const handleBooking = async () => {
-    if (!selectedDate || !selectedSlot) {
+    if (!selectedDate || !selectedTime) {
       toast.error(t("booking.errorSlot"));
       return;
     }
 
     setIsSubmitting(true);
     try {
-      // This will call the backend API that initiates eSewa payment
-      // Following CultureConnect Pattern
       const response = await axios.post(
         API.ESEWA_INITIATE,
         {
-          doctor_user_id: doctor.id,
+          doctor_user_id: doctor.user_id || doctor.id,
           appointment_date: selectedDate,
-          appointment_time_slot: selectedSlot,
+          appointment_time_slot: selectedTime,
           consultation_fee: doctor.consultation_rate,
           notes: notes,
         },
@@ -203,17 +227,31 @@ const Booking = () => {
                     {t("booking.availableSlots")}
                   </label>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    {timeSlots.map((slot) => (
-                      <button
-                        key={slot}
-                        onClick={() => setSelectedSlot(slot)}
-                        className={`py-2.5 px-3 rounded-xl text-xs font-bold transition-all border-2 ${selectedSlot === slot
-                          ? "bg-primary-600 text-white border-primary-600 shadow-lg shadow-primary-200"
-                          : "bg-white text-gray-600 border-gray-100 hover:border-primary-200"
-                          }`}>
-                        {slot}
-                      </button>
-                    ))}
+                    {timeSlots.map((time) => {
+                      const isBooked = bookedSlots.includes(time);
+                      return (
+                        <button
+                          key={time}
+                          disabled={isBooked}
+                          onClick={() => setSelectedTime(time)}
+                          className={cn(
+                            "p-3 rounded-xl border-2 text-sm font-bold transition-all flex flex-col items-center justify-center gap-1",
+                            isBooked
+                              ? "bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed"
+                              : selectedTime === time
+                                ? "bg-primary-50 border-primary-600 text-primary-600 shadow-lg shadow-primary-100"
+                                : "bg-white border-gray-100 text-gray-700 hover:border-primary-200 hover:bg-gray-50"
+                          )}
+                        >
+                          <span>{time}</span>
+                          {isBooked && (
+                            <span className="text-[9px] font-black uppercase tracking-tighter text-error-500 bg-error-50 px-1.5 py-0.5 rounded-full border border-error-100">
+                              Booked
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -300,7 +338,7 @@ const Booking = () => {
 
               <Button
                 onClick={handleBooking}
-                disabled={isSubmitting || !selectedDate || !selectedSlot}
+                disabled={isSubmitting || !selectedDate || !selectedTime}
                 className="w-full py-3.5 rounded-xl font-black uppercase tracking-widest bg-primary-600 text-white shadow-xl shadow-primary-100 hover:bg-primary-700 gap-2 group/pay text-xs">
                 {isSubmitting ? (
                   <span className="truncate">{t("common.processing")}</span>

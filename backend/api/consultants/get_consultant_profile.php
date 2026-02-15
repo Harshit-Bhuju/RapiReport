@@ -20,7 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
     $query = "SELECT u.id, u.username, u.profile_pic, 
                      dp.display_name, dp.specialty, dp.experience_years, dp.consultation_rate, dp.bio, dp.is_available, dp.availability_json,
-                     dp.education, dp.clinic_address
+                     dp.education
               FROM users u
               LEFT JOIN doctor_profiles dp ON u.id = dp.user_id
               WHERE u.id = ? AND u.role = 'doctor'";

@@ -118,6 +118,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Set session
     $_SESSION['user_id'] = $user['id'];
     $_SESSION['user_email'] = $user['email'];
+    $_SESSION['role'] = $user['role'];
     $_SESSION['logged_in'] = true;
 
     echo json_encode([

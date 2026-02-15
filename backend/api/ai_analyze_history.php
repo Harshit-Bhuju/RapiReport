@@ -15,36 +15,69 @@ if (!isset($_SESSION['user_id'])) {
 
 $user_id = (int)$_SESSION['user_id'];
 
-// Check if we are analyzing a family member or ourselves
+// Initial target is the current user (self-analysis)
 $target_user_id = $user_id;
 $is_family_analysis = false;
+$is_doctor_analysis = false;
 
 $input = json_decode(file_get_contents('php://input'), true);
 if (isset($input['member_id']) && (int)$input['member_id'] > 0) {
     $target_member_id = (int)$input['member_id'];
 
-    // Verify family relationship (accepted, either direction)
-    $check = $conn->prepare("
-        SELECT 1 FROM family_members
-        WHERE status = 'accepted'
-          AND (
-              (user_id = ? AND member_user_id = ?)
-              OR
-              (user_id = ? AND member_user_id = ?)
-          )
-        LIMIT 1
-    ");
-    $check->bind_param('iiii', $user_id, $target_member_id, $target_member_id, $user_id);
-    $check->execute();
-    $checkRes = $check->get_result();
+    // If target is self, just proceed
+    if ($target_member_id === $user_id) {
+        $target_user_id = $user_id;
+    } else {
+        // If I'm a doctor, check if I have an appointment with this patient
+        $role = $_SESSION['role'] ?? '';
 
-    if ($checkRes->num_rows === 0) {
-        echo json_encode(['status' => 'error', 'message' => 'Not an accepted family member']);
-        exit;
+        // Robustness: If role is not in session, fetch it
+        if (empty($role)) {
+            $rStmt = $conn->prepare("SELECT role FROM users WHERE id = ?");
+            $rStmt->bind_param("i", $user_id);
+            $rStmt->execute();
+            $rRes = $rStmt->get_result()->fetch_assoc();
+            $role = $rRes['role'] ?? '';
+            $_SESSION['role'] = $role; // Set it for future requests
+            $rStmt->close();
+        }
+
+        if ($role === 'doctor') {
+            $check = $conn->prepare("SELECT 1 FROM appointments WHERE doctor_user_id = ? AND patient_user_id = ? LIMIT 1");
+            $check->bind_param('ii', $user_id, $target_member_id);
+            $check->execute();
+            if ($check->get_result()->num_rows > 0) {
+                $target_user_id = $target_member_id;
+                $is_doctor_analysis = true;
+            }
+            $check->close();
+        }
+
+        if (!$is_doctor_analysis) {
+            // Verify family relationship (accepted, either direction)
+            $check = $conn->prepare("
+                SELECT 1 FROM family_members
+                WHERE status = 'accepted'
+                  AND (
+                      (user_id = ? AND member_user_id = ?)
+                      OR
+                      (user_id = ? AND member_user_id = ?)
+                  )
+                LIMIT 1
+            ");
+            $check->bind_param('iiii', $user_id, $target_member_id, $target_member_id, $user_id);
+            $check->execute();
+            $checkRes = $check->get_result();
+
+            if ($checkRes->num_rows === 0) {
+                echo json_encode(['status' => 'error', 'message' => 'Not an accepted family member or patient']);
+                exit;
+            }
+            $target_user_id = $target_member_id;
+            $is_family_analysis = true;
+            $check->close();
+        }
     }
-    $target_user_id = $target_member_id;
-    $is_family_analysis = true;
-    $check->close();
 }
 
 // 1. Fetch User Profile (Conditions, Allergies, etc.)
@@ -101,10 +134,9 @@ $symptoms = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 $stmt->close();
 
 // 4. Construct Clinical Prompt
-$apiKey = getenv("GEMINI_API_KEY") ?: "REPLACE_WITH_YOUR_BACKEND_API_KEY";
+$apiKey = getenv("GEMINI_API_KEY") ?: "AIzaSyDk_oCdPeE4P3BWtsjNChp6uZL98fzS-9Q";
 $modelId = getenv("GEMINI_MODEL") ?: "gemini-2.5-flash";
 $url = "https://generativelanguage.googleapis.com/v1beta/models/{$modelId}:generateContent?key={$apiKey}";
-
 $patientName = $userProfile['username'] ?? $userProfile['email'] ?? 'Patient';
 $historyContext = "IMPORTANT: The patient's name is: " . $patientName . ". Always use this exact name in your analysis. Do NOT invent or use any other names.\n\n";
 $historyContext .= "User Profile:\n";
@@ -140,6 +172,10 @@ foreach ($symptoms as $s) {
     $historyContext .= "- [" . $s['date'] . "] " . $s['text'] . " (Severity: " . $s['severity'] . ")" . $vitalsStr . "\n";
 }
 
+if (function_exists('mb_convert_encoding')) {
+    $historyContext = mb_convert_encoding($historyContext, 'UTF-8', 'UTF-8');
+}
+
 $prompt = "
 You are RapiReport AI, a senior medical analyst. 
 Analyze the following patient history and provide a comprehensive clinical summary.
@@ -165,9 +201,11 @@ Analyze the following patient history and provide a comprehensive clinical summa
 
 $postData = [
     "contents" => [
-        ["parts" => [["text" => $prompt]]]
+        [
+            "parts" => [["text" => $prompt]]
+        ]
     ],
-    "systemInstruction" => [
+    "system_instruction" => [
         "parts" => [["text" => "You are a professional medical history analyzer for the RapiReport app."]]
     ]
 ];
@@ -175,16 +213,17 @@ $postData = [
 $ch = curl_init($url);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 curl_setopt($ch, CURLOPT_POST, true);
-curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($postData));
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($postData, JSON_PARTIAL_OUTPUT_ON_ERROR));
 curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-curl_setopt($ch, CURLOPT_TIMEOUT, 45);
+curl_setopt($ch, CURLOPT_TIMEOUT, 60);
 
 $response = curl_exec($ch);
 $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+$error = curl_error($ch);
 curl_close($ch);
 
 if ($httpCode !== 200) {
-    echo json_encode(['status' => 'error', 'message' => 'AI analysis failed', 'details' => json_decode($response, true)]);
+    echo json_encode(['status' => 'error', 'message' => 'AI analysis failed', 'http_code' => $httpCode, 'error' => $error, 'details' => json_decode($response, true)]);
     exit;
 }
 

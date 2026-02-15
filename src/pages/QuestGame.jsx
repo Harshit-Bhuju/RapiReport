@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useGameStore, distanceMeters, ARRIVED_RADIUS_METERS } from "../store/gameStore";
+import { useGameStore, distanceMeters, ARRIVED_RADIUS_METERS, QUEST_POOL } from "../store/gameStore";
 import { useAuthStore } from "../store/authStore";
 import QuestMap from "../components/game/QuestMap";
 import Leaderboard from "../components/game/Leaderboard";
@@ -107,21 +107,20 @@ const QuestGame = () => {
     }
   }, [currentLocation?.lat, currentLocation?.lng, anchored, quests, anchorQuestsToLocation, fetchQuests]);
 
-  // AUTO-OPEN NEXT QUEST: When questsToday increments, find and open the next available quest
+  // AUTO-OPEN NEXT QUEST: Find and open the next available (not completed/skipped) quest
   useEffect(() => {
-    const nextIdx = user.questsToday ?? 0;
-    if (nextIdx < quests.length) {
-      const nextQuest = quests[nextIdx];
-      if (nextQuest && !nextQuest.completed && !nextQuest.skipped) {
-        // Delay slightly to allow success animation or skip transition to feel natural
-        const timer = setTimeout(() => {
-          setViewingQuestId(nextQuest.id);
-          setSelectedQuest(nextQuest.id);
-        }, 1000);
-        return () => clearTimeout(timer);
-      }
+    // We find the first quest in the current sequence that isn't done
+    const nextQuest = quests.find(q => !q.completed && !q.skipped);
+
+    if (nextQuest) {
+      // Delay slightly to allow success animation or skip transition to feel natural
+      const timer = setTimeout(() => {
+        setViewingQuestId(nextQuest.id);
+        setSelectedQuest(nextQuest.id);
+      }, 1000);
+      return () => clearTimeout(timer);
     }
-  }, [user.questsToday, quests.length]); // quests.length check ensures we don't trigger too early
+  }, [quests]); // Re-run when the quests list (with completion status) changes
 
   const viewingQuest = quests.find(q => q.id === viewingQuestId);
 
@@ -234,27 +233,28 @@ const QuestGame = () => {
                       }
                     }}
                     disabled={isLocked || isCompleted}
-                    className={`w-full text-left p-2.5 rounded-lg border transition-all ${isLocked
-                      ? "bg-gray-50 border-gray-100 cursor-not-allowed opacity-60"
+                    className={`w-full text-left p-3 rounded-xl border-2 transition-all ${isLocked
+                      ? "bg-gray-50 border-gray-100 cursor-not-allowed opacity-40"
                       : isCompleted
                         ? q.skipped
-                          ? "bg-red-50/50 border-red-100 opacity-80 cursor-default"
-                          : "bg-emerald-50/50 border-emerald-100 opacity-80 cursor-default"
+                          ? "bg-red-50 border-red-200 cursor-not-allowed"
+                          : "bg-emerald-50 border-emerald-200 cursor-not-allowed"
                         : isCurrent
-                          ? viewingQuestId === q.id ? "border-indigo-500 bg-indigo-50/50 ring-1 ring-indigo-200" : "border-gray-200 bg-white hover:border-indigo-300"
-                          : "bg-white border-gray-100"
+                          ? viewingQuestId === q.id ? "border-indigo-500 bg-indigo-50/50 ring-2 ring-indigo-200/50 shadow-md" : "border-indigo-200 bg-white hover:border-indigo-400 hover:shadow-sm"
+                          : "bg-white border-gray-100 hover:border-gray-300"
                       }`}>
                     <div className="flex items-center justify-between gap-1.5">
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <span className={`text-[8px] font-black px-1 py-0.5 rounded shrink-0 ${q.skipped ? "bg-red-100 text-red-700" : isCompleted ? "bg-emerald-100 text-emerald-700" : isLocked ? "bg-gray-200 text-gray-500" : "bg-indigo-600 text-white"}`}>
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-lg shrink-0 ${q.skipped ? "bg-red-200 text-red-700" : isCompleted ? "bg-emerald-200 text-emerald-700" : isLocked ? "bg-gray-200 text-gray-500" : "bg-indigo-600 text-white"}`}>
                           #{idx + 1}
                         </span>
-                        {isCompleted && !q.skipped && <CheckCircle2 className="w-3 h-3 text-emerald-500 shrink-0" />}
-                        {q.skipped && <X className="w-3 h-3 text-red-500 shrink-0" />}
-                        <h4 className={`font-bold text-[11px] truncate ${isLocked ? "text-gray-400" : "text-gray-900"}`}>{q.title}</h4>
+                        {isCompleted && !q.skipped && <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />}
+                        {q.skipped && <X className="w-4 h-4 text-red-600 shrink-0" />}
+                        <h4 className={`font-black text-xs truncate ${isLocked ? "text-gray-400" : isCompleted ? (q.skipped ? "text-red-700" : "text-emerald-700") : "text-gray-900"}`}>{q.title}</h4>
                       </div>
-                      {!isLocked && !isCompleted && <span className="text-[9px] font-black text-indigo-600 shrink-0">+{q.points}P</span>}
-                      {q.skipped && <span className="text-[8px] font-black text-red-600 uppercase tracking-tighter shrink-0">Skipped</span>}
+                      {!isLocked && !isCompleted && <span className="text-[10px] font-black text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full shrink-0">+{q.points}P</span>}
+                      {q.skipped && <span className="text-[10px] font-black text-red-600 uppercase tracking-tight shrink-0">Skipped</span>}
+                      {isCompleted && !q.skipped && <span className="text-[10px] font-black text-emerald-600 uppercase tracking-tight shrink-0">Done</span>}
                     </div>
                   </button>
                 );
@@ -268,12 +268,14 @@ const QuestGame = () => {
       <AnimatePresence>
         {viewingQuest && !engagedQuest && (
           <motion.div
+            key="quest-detail-overlay"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/50 backdrop-blur-sm"
             onClick={() => setViewingQuestId(null)}>
             <motion.div
+              key="quest-detail-modal"
               initial={{ y: "100%", opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: "100%", opacity: 0 }}
@@ -342,12 +344,14 @@ const QuestGame = () => {
       <AnimatePresence>
         {showLeaderboardPopup && (
           <motion.div
+            key="leaderboard-overlay"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/50 backdrop-blur-sm"
             onClick={() => setShowLeaderboardPopup(false)}>
             <motion.div
+              key="leaderboard-modal"
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
@@ -371,6 +375,7 @@ const QuestGame = () => {
       <AnimatePresence>
         {engagedQuest && (
           <motion.div
+            key="engaged-quest-overlay"
             initial={{ y: "100%", opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: "100%", opacity: 0 }}
@@ -490,6 +495,7 @@ const QuestGame = () => {
         {/* AI Tracking Full-screen Overlay */}
         {isAITracking && engagedQuest && (
           <motion.div
+            key="ai-tracking-overlay"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -505,6 +511,7 @@ const QuestGame = () => {
 
         {showSuccess && lastQuestDone && (
           <motion.div
+            key="success-overlay"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}

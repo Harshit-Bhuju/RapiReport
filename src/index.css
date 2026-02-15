@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800;900&family=Noto+Sans+Devanagari:wght@300;400;500;600;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800;900&family=Noto+Sans+Devanagari:wght@300;400;500;600;700&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -19,10 +19,20 @@
 
   html {
     scroll-behavior: smooth;
+    touch-action: manipulation;
   }
 
   *:focus-visible {
     @apply outline-none ring-2 ring-primary-500 ring-offset-2;
+  }
+
+  /* Prevent Headless UI Dialog touch intervention */
+  [data-headlessui-state="open"] {
+    touch-action: none;
+  }
+
+  .fixed.inset-0.bg-black\/25 {
+    touch-action: none;
   }
 }
 
@@ -91,11 +101,10 @@
   }
 
   .font-outfit {
-    font-family: 'Outfit', sans-serif;
+    font-family: "Outfit", sans-serif;
   }
 
   @keyframes float {
-
     0%,
     100% {
       transform: translateY(0);

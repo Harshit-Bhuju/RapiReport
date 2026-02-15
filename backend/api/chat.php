@@ -21,7 +21,7 @@ if (empty($message)) {
 }
 
 // Get API Key from environment
-$apiKey = getenv("GEMINI_API_KEY") ?: "REPLACE_WITH_YOUR_BACKEND_API_KEY";
+$apiKey = getenv("GEMINI_API_KEY") ?: "AIzaSyDk_oCdPeE4P3BWtsjNChp6uZL98fzS-9Q";
 
 $modelId = getenv("GEMINI_MODEL") ?: "gemini-2.5-flash";
 $url = "https://generativelanguage.googleapis.com/v1beta/models/{$modelId}:generateContent?key={$apiKey}";

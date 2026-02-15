@@ -86,11 +86,11 @@ const QuestMap = () => {
     ? L.latLng(currentLocation.lat, currentLocation.lng).distanceTo(L.latLng(selectedQuest.lat, selectedQuest.lng))
     : 1000;
 
-  // Helper to check if user is near a quest (radius in meters, default 100m)
+  // In zone = within quest radius (10m, 20m, ... 100m). Reached = within 0.5m (handled in popup).
   const isNear = (q) => {
     if (!currentLocation || !q.lat || !q.lng) return false;
     const distM = L.latLng(currentLocation.lat, currentLocation.lng).distanceTo(L.latLng(q.lat, q.lng));
-    return distM <= (q.radiusMeters ?? 100);
+    return distM <= (q.radiusMeters ?? 1);
   };
 
   const currentAvailableQuest = quests.find(q => q.type === "place" && !q.completed && isNear(q));

@@ -134,7 +134,7 @@ export const FamilyMemberCard = ({
                       "text-[10px] font-bold px-2 py-0.5 rounded-full border",
                       getSeverityColor(s.severity),
                     )}>
-                    {s.text?.length > 25 ? s.text.slice(0, 25) + "…" : s.text}
+                    {t(`common.severities.${s.severity}`)}: {s.text?.length > 25 ? s.text.slice(0, 25) + "…" : s.text}
                   </span>
                 ))}
               </div>

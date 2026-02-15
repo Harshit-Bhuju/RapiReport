@@ -7,7 +7,7 @@
  */
 require_once __DIR__ . '/../../config/header.php';
 
-header('Content-Type: application/json');
+header('Content-Type: application/json; charset=UTF-8');
 
 if (!isset($_SESSION['user_id'])) {
     echo json_encode(['status' => 'error', 'message' => 'Unauthorized']);
@@ -35,17 +35,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    // Verify user is part of the conversation
-    $stmt = $conn->prepare("
-        SELECT id FROM appointments
-        WHERE (doctor_user_id = ? AND patient_user_id = ?)
-        OR (doctor_user_id = ? AND patient_user_id = ?)
-        LIMIT 1
-    ");
-    $stmt->bind_param('iiii', $user_id, $recipient_id, $recipient_id, $user_id);
-    $stmt->execute();
-    if ($stmt->get_result()->num_rows === 0 && !$appointment_id) {
-        // Allow if no strict check (legacy)
+    // Verify user and recipient are part of the same appointment/conversation
+    if ($hasAppointmentId && $appointment_id > 0) {
+        $check = $conn->prepare("
+            SELECT id FROM appointments
+            WHERE id = ? AND (
+                (doctor_user_id = ? AND patient_user_id = ?)
+                OR (doctor_user_id = ? AND patient_user_id = ?)
+            )
+            LIMIT 1
+        ");
+        $check->bind_param('iiiii', $appointment_id, $user_id, $recipient_id, $recipient_id, $user_id);
+        $check->execute();
+        if ($check->get_result()->num_rows === 0) {
+            echo json_encode(['status' => 'error', 'message' => 'Not authorized for this appointment']);
+            exit;
+        }
+    } else {
+        $stmt = $conn->prepare("
+            SELECT id FROM appointments
+            WHERE (doctor_user_id = ? AND patient_user_id = ?)
+            OR (doctor_user_id = ? AND patient_user_id = ?)
+            LIMIT 1
+        ");
+        $stmt->bind_param('iiii', $user_id, $recipient_id, $recipient_id, $user_id);
+        $stmt->execute();
+        if ($stmt->get_result()->num_rows === 0) {
+            echo json_encode(['status' => 'error', 'message' => 'Not authorized for this conversation']);
+            exit;
+        }
     }
 
     if ($hasAppointmentId && $appointment_id > 0) {
@@ -91,6 +109,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             FROM consultation_messages
             WHERE appointment_id = ?
             ORDER BY created_at ASC
+            LIMIT 500
         ");
         $stmt->bind_param('i', $appointment_id);
     } else {
@@ -100,6 +119,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             WHERE (sender_id = ? AND receiver_id = ?)
             OR (sender_id = ? AND receiver_id = ?)
             ORDER BY created_at ASC
+            LIMIT 500
         ");
         $stmt->bind_param('iiii', $user_id, $other_user_id, $other_user_id, $user_id);
     }

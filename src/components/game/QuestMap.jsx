@@ -77,7 +77,7 @@ const RecenterMap = ({ center, zoom }) => {
 };
 
 const QuestMap = () => {
-  const { currentLocation, pathHistory, updateLocation, quests, selectedQuestId, setSelectedQuest, viewingQuestId, setViewingQuestId, setEngagedQuest, isAITracking, skipQuest } = useGameStore();
+  const { currentLocation, pathHistory, updateLocation, quests, engagedQuest, selectedQuestId, setSelectedQuest, viewingQuestId, setViewingQuestId, setEngagedQuest, isAITracking, skipQuest } = useGameStore();
   const [error, setError] = useState(null);
   const [shouldFollow, setShouldFollow] = useState(true);
 
@@ -163,16 +163,23 @@ const QuestMap = () => {
           />
         )}
 
-        {/* Quest Marker (Only show the selected one) */}
+        {/* Quest Marker (Only show the engaged one for cleaner navigation) */}
         {quests.map((q) => (
-          (q.lat && q.lng && q.id === selectedQuestId) && (
+          (q.lat && q.lng && engagedQuest?.id === q.id) && (
             <Marker
               key={q.id}
               position={[q.lat, q.lng]}
+              zIndexOffset={1000}
               eventHandlers={{
                 click: () => {
-                  setViewingQuestId(q.id);
-                  setSelectedQuest(q.id);
+                  if (!q.completed && !q.skipped) {
+                    setViewingQuestId(q.id);
+                    setSelectedQuest(q.id);
+                    setEngagedQuest(q);
+                  } else {
+                    setViewingQuestId(q.id);
+                    setSelectedQuest(q.id);
+                  }
                 }
               }}
               icon={getQuestIcon(q.icon || (q.type === 'walk' ? 'pin' : 'pin'), q.completed)}>

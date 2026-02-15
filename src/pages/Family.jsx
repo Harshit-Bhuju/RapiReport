@@ -69,6 +69,31 @@ const Family = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [historyAnalysis, setHistoryAnalysis] = useState(null);
 
+  // WebRTC refs
+  const localVideoRef = useRef(null);
+  const remoteVideoRef = useRef(null);
+  const pcRef = useRef(null);
+  const localStreamRef = useRef(null);
+  const remoteStreamRef = useRef(null);
+  const signalPollIntervalRef = useRef(null);
+  const lastSignalIdRef = useRef(0);
+  const incomingPollIntervalRef = useRef(null);
+  const chatPollIntervalRef = useRef(null);
+  const incomingAudioRef = useRef(null);
+  const outgoingAudioRef = useRef(null);
+  const iceCandidateBufferRef = useRef([]); // Buffer ICE candidates until remote desc is set
+  const isCallConnectedRef = useRef(false); // Track if connection was ever established
+
+  // Setup simple ringtone audio (you need to place the mp3 files in /public/sounds)
+  useEffect(() => {
+    if (typeof Audio !== "undefined") {
+      incomingAudioRef.current = new Audio("/sounds/family_incoming.mp3");
+      outgoingAudioRef.current = new Audio("/sounds/family_outgoing.mp3");
+      if (incomingAudioRef.current) incomingAudioRef.current.loop = true;
+      if (outgoingAudioRef.current) outgoingAudioRef.current.loop = true;
+    }
+  }, []);
+
   // Cleanup media/peer on unmount
   useEffect(() => {
     return () => {

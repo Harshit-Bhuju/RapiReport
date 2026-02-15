@@ -15,13 +15,12 @@ import {
   Sparkles,
   BrainCircuit,
   Brain,
-  Plus,
-  Trash2,
   Loader2,
   Users,
   ChevronDown,
   ChevronUp,
 } from "lucide-react";
+import Badge from "@/components/ui/Badge";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import Button from "@/components/ui/Button";
@@ -37,15 +36,17 @@ const MedicalHistory = () => {
   const {
     prescriptions,
     fetchPrescriptions,
+    reports,
+    fetchReports,
     symptoms,
+    ocrHistory,
     historyAnalysis,
     fetchHistoryAnalysis,
     fetchSymptoms,
+    fetchHealthData,
   } = useHealthStore();
   const { updateProfile } = useAuthStore();
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [newCondition, setNewCondition] = useState("");
-  const [newParental, setNewParental] = useState("");
   const [isUpdating, setIsUpdating] = useState(false);
   const [familyMembers, setFamilyMembers] = useState([]);
   const [familyHealthData, setFamilyHealthData] = useState({});
@@ -53,10 +54,9 @@ const MedicalHistory = () => {
   const [expandedMember, setExpandedMember] = useState(null);
 
   useEffect(() => {
-    fetchPrescriptions();
-    fetchSymptoms();
+    fetchHealthData();
     fetchFamilyHealth();
-  }, [fetchPrescriptions, fetchSymptoms]);
+  }, [fetchHealthData]);
 
   const fetchFamilyHealth = async () => {
     setIsFetchingFamily(true);
@@ -125,91 +125,7 @@ const MedicalHistory = () => {
     return Array.isArray(p) ? p : [];
   }, [user?.parentalHistory, user?.parental_history]);
 
-  const handleUpdateField = async (field, value) => {
-    setIsUpdating(true);
-    try {
-      const data = {
-        name: user.name || user.username,
-        age: user.age,
-        gender: user.gender,
-        conditions: user.conditions,
-        customConditions: user.customConditions,
-        parentalHistory: user.parentalHistory || user.parental_history,
-        customParentalHistory: user.customParentalHistory,
-        language: user.language || "en",
-        ...field, // Override the specific field
-      };
-
-      // Ensure conditions and parentalHistory are arrays before sending if they were overridden
-      if (field.conditions && typeof field.conditions === "string") {
-        try {
-          data.conditions = JSON.parse(field.conditions);
-        } catch {
-          data.conditions = [field.conditions];
-        }
-      }
-      if (field.parentalHistory && typeof field.parentalHistory === "string") {
-        try {
-          data.parentalHistory = JSON.parse(field.parentalHistory);
-        } catch {
-          data.parentalHistory = [field.parentalHistory];
-        }
-      }
-
-      const res = await updateProfile(data);
-      if (res.success) {
-        // toast.success("Updated successfully");
-      } else {
-        console.error("Update failed", res.message);
-      }
-    } catch (err) {
-      console.error("Update error", err);
-    } finally {
-      setIsUpdating(false);
-    }
-  };
-
-  const addCondition = () => {
-    if (!newCondition.trim()) return;
-    const updated = [...conditions, newCondition.trim()];
-    handleUpdateField({ conditions: updated });
-    setNewCondition("");
-  };
-
-  const removeCondition = (index) => {
-    openConfirm({
-      title: t("confirm.removeCondition") || "Remove condition?",
-      message: "This will remove it from your medical history.",
-      confirmLabel: t("confirm.remove") || "Remove",
-      cancelLabel: t("confirm.cancel") || "Cancel",
-      variant: "danger",
-      onConfirm: () => {
-        const updated = conditions.filter((_, i) => i !== index);
-        handleUpdateField({ conditions: updated });
-      },
-    });
-  };
-
-  const addParental = () => {
-    if (!newParental.trim()) return;
-    const updated = [...parentalHistory, newParental.trim()];
-    handleUpdateField({ parentalHistory: updated });
-    setNewParental("");
-  };
-
-  const removeParental = (index) => {
-    openConfirm({
-      title: t("confirm.removeParental") || "Remove family history entry?",
-      message: "This will remove it from your family history.",
-      confirmLabel: t("confirm.remove") || "Remove",
-      cancelLabel: t("confirm.cancel") || "Cancel",
-      variant: "danger",
-      onConfirm: () => {
-        const updated = parentalHistory.filter((_, i) => i !== index);
-        handleUpdateField({ parentalHistory: updated });
-      },
-    });
-  };
+  // No longer needed as editing is handled in Profile
 
   const recentSymptoms = useMemo(
     () =>
@@ -222,6 +138,16 @@ const MedicalHistory = () => {
   const recentPrescriptions = useMemo(
     () => prescriptions.slice(0, 10),
     [prescriptions],
+  );
+
+  const recentReports = useMemo(
+    () => reports.slice(0, 10).sort((a, b) => (b.date || b.createdAt || "").localeCompare(a.date || a.createdAt || "")),
+    [reports],
+  );
+
+  const recentOcrItems = useMemo(
+    () => ocrHistory.slice(0, 10),
+    [ocrHistory],
   );
 
   return (
@@ -302,23 +228,6 @@ const MedicalHistory = () => {
               <h2 className="text-lg font-black text-gray-900">Conditions</h2>
             </div>
             <div className="space-y-4">
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Add condition..."
-                  value={newCondition}
-                  onChange={(e) => setNewCondition(e.target.value)}
-                  className="h-9 text-sm"
-                  onKeyPress={(e) => e.key === "Enter" && addCondition()}
-                />
-                <Button
-                  onClick={addCondition}
-                  size="sm"
-                  className="shrink-0 h-9"
-                  disabled={isUpdating}>
-                  <Plus className="w-4 h-4" />
-                </Button>
-              </div>
-
               {conditions.length ? (
                 <ul className="space-y-2">
                   {conditions.map((item, i) => (
@@ -331,11 +240,6 @@ const MedicalHistory = () => {
                           ? item
                           : (item?.label ?? JSON.stringify(item))}
                       </div>
-                      <button
-                        onClick={() => removeCondition(i)}
-                        className="text-gray-400 hover:text-error-600 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
                     </li>
                   ))}
                 </ul>
@@ -355,23 +259,6 @@ const MedicalHistory = () => {
               </h2>
             </div>
             <div className="space-y-4">
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Add family history..."
-                  value={newParental}
-                  onChange={(e) => setNewParental(e.target.value)}
-                  className="h-9 text-sm"
-                  onKeyPress={(e) => e.key === "Enter" && addParental()}
-                />
-                <Button
-                  onClick={addParental}
-                  size="sm"
-                  className="shrink-0 h-9"
-                  disabled={isUpdating}>
-                  <Plus className="w-4 h-4" />
-                </Button>
-              </div>
-
               {parentalHistory.length ? (
                 <ul className="space-y-2">
                   {parentalHistory.map((item, i) => (
@@ -384,11 +271,6 @@ const MedicalHistory = () => {
                           ? item
                           : (item?.label ?? JSON.stringify(item))}
                       </div>
-                      <button
-                        onClick={() => removeParental(i)}
-                        className="text-gray-400 hover:text-error-600 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
                     </li>
                   ))}
                 </ul>
@@ -400,57 +282,92 @@ const MedicalHistory = () => {
         </Card>
       </div>
 
+      <div className="grid grid-cols-1 gap-6">
+        <Card className="border-none shadow-xl shadow-gray-100/50">
+          <CardBody className="p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <FileText className="w-5 h-5 text-primary-600" />
+              <h2 className="text-lg font-black text-gray-900">
+                {t("family.labReports") || "Lab reports"}
+              </h2>
+            </div>
+            {recentReports.length ? (
+              <div className="space-y-3">
+                {recentReports.map((r) => (
+                  <div
+                    key={r.id}
+                    className="flex items-center justify-between p-3 bg-gray-50/50 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer group"
+                    onClick={() => navigate(`/results/${r.id}`)}>
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center text-gray-400 group-hover:text-primary-600 shadow-sm border border-gray-100">
+                        <FileText className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-gray-900 line-clamp-1">
+                          {r.type || "Lab Report"}
+                        </p>
+                        <p className="text-[10px] font-medium text-gray-400">
+                          {r.lab} • {format(new Date(r.date || r.createdAt), "MMM d, yyyy")}
+                        </p>
+                      </div>
+                    </div>
+                    <Badge
+                      variant={r.status === "normal" ? "success" : "error"}
+                      className="text-[9px] px-2 py-0.5">
+                      {(r.status || "normal").toUpperCase()}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500 italic">
+                {t("family.noLabReports") || "No reports recorded."}
+              </p>
+            )}
+          </CardBody>
+        </Card>
+      </div>
+
       <Card className="border-none shadow-xl shadow-gray-100/50">
         <CardBody className="p-6">
           <div className="flex items-center gap-2 mb-4">
-            <FileText className="w-5 h-5 text-primary-600" />
+            <ShieldAlert className="w-5 h-5 text-primary-600" />
             <h2 className="text-lg font-black text-gray-900">
-              Past prescriptions
+              Scanned documents
             </h2>
           </div>
-          {recentPrescriptions.length ? (
-            <ul className="space-y-3">
-              {recentPrescriptions.map((rx) => (
+          {recentOcrItems.length ? (
+            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {recentOcrItems.map((ocr) => (
                 <li
-                  key={rx.id}
-                  className="text-sm border-b border-gray-100 pb-3 last:border-0 last:pb-0">
-                  <div className="flex gap-3">
-                    {rx.imagePath && (
-                      <a
-                        href={API.PRESCRIPTION_IMAGE(rx.imagePath)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="shrink-0 w-16 h-16 rounded-lg overflow-hidden border border-gray-200 hover:opacity-90 transition-opacity"
-                      >
+                  key={ocr.id}
+                  className="group relative bg-gray-50/50 p-4 rounded-2xl hover:bg-white hover:shadow-xl hover:shadow-primary-100/50 border border-transparent hover:border-primary-100 transition-all duration-300">
+                  <div className="flex gap-4">
+                    {ocr.image_path && (
+                      <div className="shrink-0 w-20 h-20 rounded-xl overflow-hidden border border-gray-100 shadow-sm">
                         <img
-                          src={API.PRESCRIPTION_IMAGE(rx.imagePath)}
-                          alt="Prescription"
+                          src={API.OCR_IMAGE(ocr.image_path)}
+                          alt="Document Scan"
                           className="w-full h-full object-cover"
                           crossOrigin="use-credentials"
                         />
-                      </a>
+                      </div>
                     )}
-                    <div className="flex-1 min-w-0">
-                      <span className="text-gray-500">
-                        {rx.createdAt
-                          ? format(new Date(rx.createdAt), "MMM d, yyyy")
-                          : "—"}
-                      </span>
-                      <p className="font-medium text-gray-900 mt-0.5">
-                        {(rx.meds || [])
-                          .map((m) => m.name)
-                          .filter(Boolean)
-                          .join(", ") || "No medicines listed"}
+                    <div className="flex-1 min-w-0 flex flex-col justify-center">
+                      <p className="text-[10px] font-black text-primary-600 uppercase tracking-widest mb-1">
+                        {format(new Date(ocr.created_at), "MMM d, yyyy")}
                       </p>
-                      {rx.note && <p className="text-gray-500 mt-0.5">{rx.note}</p>}
+                      <p className="text-sm text-gray-700 line-clamp-3 leading-relaxed">
+                        {ocr.refined_text || ocr.raw_text || "No text content"}
+                      </p>
                     </div>
                   </div>
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="text-sm text-gray-500">
-              No prescriptions saved yet. Use Prescription Scan to add.
+            <p className="text-sm text-gray-500 italic">
+              No scanned documents found.
             </p>
           )}
         </CardBody>
@@ -607,6 +524,30 @@ const MedicalHistory = () => {
                           <p className="text-xs text-gray-500">
                             <span className="font-bold text-gray-700">{health.prescriptions.length}</span> recent prescriptions on record
                           </p>
+                        )}
+
+                        {health.reports && health.reports.length > 0 && (
+                          <div>
+                            <p className="text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1.5">
+                              Lab Reports
+                            </p>
+                            <div className="space-y-1.5">
+                              {health.reports.slice(0, 2).map((r) => (
+                                <div key={r.id} className="flex items-center justify-between p-2 bg-white border border-gray-100 rounded-lg shadow-sm">
+                                  <div className="flex items-center gap-2 overflow-hidden">
+                                    <FileText className="w-3 h-3 text-gray-400" />
+                                    <span className="text-[11px] font-medium text-gray-700 truncate">{r.type}</span>
+                                  </div>
+                                  <span className={cn(
+                                    "text-[9px] font-black px-1.5 py-0.5 rounded uppercase",
+                                    r.status === "normal" ? "bg-success-50 text-success-700" : "bg-error-50 text-error-700"
+                                  )}>
+                                    {r.status}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
                         )}
                       </div>
                     )}

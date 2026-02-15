@@ -48,6 +48,7 @@ const QuestGame = () => {
     fetchRewards,
     viewingQuestId,
     setViewingQuestId,
+    cancelQuest,
   } = useGameStore();
 
   const [showLeaderboardPopup, setShowLeaderboardPopup] = useState(false);
@@ -68,9 +69,7 @@ const QuestGame = () => {
   const DEFAULT_QUEST_LNG = 85.324;
 
   useEffect(() => {
-    // Populate quest list right away so user doesn't wait for GPS
     anchorQuestsToLocation(DEFAULT_QUEST_LAT, DEFAULT_QUEST_LNG);
-
     fetchUserStats();
     fetchLeaderboard();
     fetchRewards();
@@ -84,6 +83,15 @@ const QuestGame = () => {
     return () => clearInterval(interval);
   }, [fetchUserStats, fetchQuests, fetchLeaderboard, fetchRewards, anchorQuestsToLocation]);
 
+  // When auth user becomes available, refetch so points/leaderboard come from DB
+  useEffect(() => {
+    if (authUser?.id) {
+      fetchUserStats();
+      fetchLeaderboard();
+      fetchQuests();
+    }
+  }, [authUser?.id, fetchUserStats, fetchLeaderboard, fetchQuests]);
+
   // When real location is available, re-anchor quests for correct map positions and re-apply completed/skipped
   useEffect(() => {
     if (!currentLocation) return;
@@ -91,6 +99,22 @@ const QuestGame = () => {
     anchorQuestsToLocation(currentLocation.lat, currentLocation.lng);
     fetchQuests();
   }, [currentLocation?.lat, currentLocation?.lng, anchorQuestsToLocation, fetchQuests]);
+
+  // AUTO-OPEN NEXT QUEST: When questsToday increments, find and open the next available quest
+  useEffect(() => {
+    const nextIdx = user.questsToday ?? 0;
+    if (nextIdx < quests.length) {
+      const nextQuest = quests[nextIdx];
+      if (nextQuest && !nextQuest.completed && !nextQuest.skipped) {
+        // Delay slightly to allow success animation or skip transition to feel natural
+        const timer = setTimeout(() => {
+          setViewingQuestId(nextQuest.id);
+          setSelectedQuest(nextQuest.id);
+        }, 1000);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [user.questsToday, quests.length]); // quests.length check ensures we don't trigger too early
 
   const viewingQuest = quests.find(q => q.id === viewingQuestId);
 
@@ -104,6 +128,8 @@ const QuestGame = () => {
         setShowSuccess(true);
         setIsAITracking(false);
         fetchUserStats();
+        fetchLeaderboard();
+        fetchQuests();
       }
     }
   };
@@ -192,27 +218,33 @@ const QuestGame = () => {
                     key={q.id}
                     type="button"
                     onClick={() => {
-                      if (!isLocked) {
+                      if (!isLocked && !isCompleted) {
                         setViewingQuestId(q.id);
                         setSelectedQuest(q.id);
                       }
                     }}
-                    disabled={isLocked}
+                    disabled={isLocked || isCompleted}
                     className={`w-full text-left p-2.5 rounded-lg border transition-all ${isLocked
                       ? "bg-gray-50 border-gray-100 cursor-not-allowed opacity-60"
-                      : isCurrent
-                        ? viewingQuestId === q.id ? "border-indigo-500 bg-indigo-50/50 ring-1 ring-indigo-200" : "border-gray-200 bg-white hover:border-indigo-300"
-                        : isCompleted ? "bg-emerald-50/50 border-emerald-100" : "bg-white border-gray-100"
+                      : isCompleted
+                        ? q.skipped
+                          ? "bg-red-50/50 border-red-100 opacity-80 cursor-default"
+                          : "bg-emerald-50/50 border-emerald-100 opacity-80 cursor-default"
+                        : isCurrent
+                          ? viewingQuestId === q.id ? "border-indigo-500 bg-indigo-50/50 ring-1 ring-indigo-200" : "border-gray-200 bg-white hover:border-indigo-300"
+                          : "bg-white border-gray-100"
                       }`}>
                     <div className="flex items-center justify-between gap-1.5">
                       <div className="flex items-center gap-1.5 min-w-0">
-                        <span className={`text-[8px] font-black px-1 py-0.5 rounded shrink-0 ${isCompleted ? "bg-emerald-100 text-emerald-700" : isLocked ? "bg-gray-200 text-gray-500" : "bg-indigo-600 text-white"}`}>
+                        <span className={`text-[8px] font-black px-1 py-0.5 rounded shrink-0 ${q.skipped ? "bg-red-100 text-red-700" : isCompleted ? "bg-emerald-100 text-emerald-700" : isLocked ? "bg-gray-200 text-gray-500" : "bg-indigo-600 text-white"}`}>
                           #{idx + 1}
                         </span>
-                        {isCompleted && <CheckCircle2 className="w-3 h-3 text-emerald-500 shrink-0" />}
+                        {isCompleted && !q.skipped && <CheckCircle2 className="w-3 h-3 text-emerald-500 shrink-0" />}
+                        {q.skipped && <X className="w-3 h-3 text-red-500 shrink-0" />}
                         <h4 className={`font-bold text-[11px] truncate ${isLocked ? "text-gray-400" : "text-gray-900"}`}>{q.title}</h4>
                       </div>
                       {!isLocked && !isCompleted && <span className="text-[9px] font-black text-indigo-600 shrink-0">+{q.points}P</span>}
+                      {q.skipped && <span className="text-[8px] font-black text-red-600 uppercase tracking-tighter shrink-0">Skipped</span>}
                     </div>
                   </button>
                 );
@@ -265,6 +297,7 @@ const QuestGame = () => {
                             onClick={() => {
                               skipQuest(viewingQuest.id);
                               setViewingQuestId(null);
+                              fetchQuests();
                               toast.dismiss(t.id);
                             }}
                             className="px-4 py-2 bg-gray-600 text-white rounded-lg font-bold text-sm hover:bg-gray-700">
@@ -321,87 +354,121 @@ const QuestGame = () => {
       <AnimatePresence>
         {engagedQuest && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/95 z-[100] flex flex-col p-4 md:p-8">
-            <div className="flex justify-between items-center mb-6">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg">
-                  <Activity className="w-6 h-6" />
+            initial={{ y: "100%", opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: "100%", opacity: 0 }}
+            className="fixed bottom-0 left-0 right-0 z-[100] p-4 lg:p-8 flex justify-center">
+            <div className="w-full max-w-lg bg-white/90 backdrop-blur-xl rounded-[2.5rem] p-6 sm:p-8 shadow-2xl border border-white/50 ring-1 ring-black/5">
+              <div className="flex justify-between items-center mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg">
+                    <Activity className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h2 className="text-gray-900 font-black uppercase text-sm tracking-widest">{engagedQuest.title}</h2>
+                    <p className="text-indigo-600 text-[10px] font-bold uppercase tracking-tight">Move to destination · {engagedQuest.targetReps ?? 5} {engagedQuest.exercise || "push-ups"}</p>
+                  </div>
                 </div>
-                <div>
-                  <h2 className="text-white font-black uppercase text-sm tracking-widest">{engagedQuest.title}</h2>
-                  <p className="text-indigo-400 text-[10px] font-bold uppercase tracking-tight">Active Objective</p>
-                </div>
+                <button
+                  onClick={() => {
+                    setEngagedQuest(null);
+                    setViewingQuestId(null);
+                  }}
+                  className="p-2 bg-gray-100 text-gray-400 rounded-full hover:bg-gray-200 transition-all">
+                  <X size={18} />
+                </button>
               </div>
-              <button
-                onClick={() => {
-                  setEngagedQuest(null);
-                  setViewingQuestId(null);
-                }}
-                className="p-3 bg-white/10 text-white rounded-full hover:bg-white/20 transition-all">
-                <X size={20} />
-              </button>
-            </div>
 
-            <div className="flex-1 flex flex-col justify-center max-w-lg mx-auto w-full gap-8">
               {!isAITracking ? (() => {
                 const distM = currentLocation && engagedQuest.lat != null
                   ? distanceMeters(currentLocation.lat, currentLocation.lng, engagedQuest.lat, engagedQuest.lng)
                   : null;
                 const reachedDestination = distM != null && distM <= ARRIVED_RADIUS_METERS;
-                const zoneMeters = engagedQuest.radiusMeters ?? 1;
                 const distDisplay = distM != null ? (distM < 1 ? distM.toFixed(1) : Math.round(distM)) : "—";
+
                 if (!reachedDestination) {
                   return (
-                    <div className="bg-white rounded-[3rem] p-8 sm:p-10 text-center shadow-2xl">
-                      <div className="mb-6 p-5 rounded-2xl bg-slate-50 border-2 border-slate-200 text-left">
-                        <p className="font-bold text-slate-700 text-sm">
+                    <div className="text-center">
+                      <div className="mb-6 p-6 rounded-3xl bg-slate-50/50 border-2 border-slate-100/50 text-left backdrop-blur-md">
+                        <p className="font-bold text-slate-800 text-base leading-relaxed">
                           {distM != null ? (
-                            <>You are <span className="font-black text-slate-900">{distDisplay}m</span> from the quest point. Reach within {ARRIVED_RADIUS_METERS}m to see &quot;You have reached the destination&quot; and start live tracking.</>
+                            <>You are <span className="font-black text-indigo-600 tabular-nums">{distDisplay}m</span> from the quest point. Move within <span className="text-indigo-600">1m</span> to unlock live tracking.</>
                           ) : (
-                            "Getting your location..."
+                            "Syncing GPS satellites..."
                           )}
                         </p>
-                        <p className="text-slate-500 text-[10px] font-bold mt-2 uppercase">Quest zone: {zoneMeters}m</p>
+                        <div className="mt-4 flex items-center gap-2 text-indigo-500/60">
+                          <Activity className="w-4 h-4 animate-pulse" />
+                          <p className="text-[10px] font-black uppercase tracking-widest leading-none">Goal: Within 1m · {engagedQuest.targetReps ?? 5} {engagedQuest.exercise || "push-ups"}</p>
+                        </div>
                       </div>
-                      <p className="text-gray-500 text-sm font-semibold">First reach the destination, then you can start the AI tracker.</p>
+                      <div className="flex flex-col gap-3">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            skipQuest(engagedQuest.id);
+                            setEngagedQuest(null);
+                            setViewingQuestId(null);
+                          }}
+                          className="w-full py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] bg-red-50 text-red-600 border border-red-100 hover:bg-red-100 transition-colors">
+                          Skip this quest
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            cancelQuest();
+                            setViewingQuestId(null);
+                          }}
+                          className="w-full py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] bg-slate-100 text-slate-500 hover:bg-slate-200 transition-colors">
+                          Cancel & Exit
+                        </button>
+                      </div>
                     </div>
                   );
                 }
                 return (
-                <div className="bg-white rounded-[3rem] p-8 sm:p-10 text-center shadow-2xl">
-                  <div className="mb-6 p-5 rounded-2xl bg-emerald-50 border-2 border-emerald-200 text-left">
-                    <p className="font-black text-emerald-800 text-sm uppercase tracking-wide flex items-center gap-2">
-                      <CheckCircle2 className="w-5 h-5 shrink-0" />
-                      You have reached the destination
-                    </p>
-                    <p className="text-emerald-700 text-xs font-semibold mt-2">
-                      You are within {ARRIVED_RADIUS_METERS}m. Start live tracking below to complete this quest.
-                    </p>
-                    <p className="text-emerald-600 text-[10px] font-bold mt-2 uppercase">Quest zone: {zoneMeters}m · Your distance: {distDisplay}m</p>
+                  <div className="text-center animate-in fade-in zoom-in duration-300">
+                    <div className="mb-6 p-6 rounded-3xl bg-emerald-50/80 border-2 border-emerald-100/80 text-left backdrop-blur-md">
+                      <p className="font-black text-emerald-800 text-lg uppercase tracking-tight flex items-center gap-2">
+                        <CheckCircle2 className="w-6 h-6 text-emerald-600 shrink-0" />
+                        Destination Reached
+                      </p>
+                      <p className="text-emerald-700 text-sm font-bold mt-3 leading-relaxed">
+                        You're within <span className="text-emerald-900 font-black">1m</span>. Now complete <span className="font-black text-indigo-600">{engagedQuest.targetReps ?? 5}</span> {engagedQuest.exercise || "push-ups"} with AI tracker to finish.
+                      </p>
+                    </div>
+                    <div className="flex flex-col gap-3">
+                      <button
+                        onClick={startAITracker}
+                        className="w-full py-6 rounded-2xl font-black uppercase tracking-widest shadow-xl transition-all text-sm bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-200 hover:scale-[1.02] active:scale-[0.98]">
+                        Start Video Tracking
+                      </button>
+                      <div className="flex gap-3">
+                        <button
+                          onClick={() => {
+                            skipQuest(engagedQuest.id);
+                            setEngagedQuest(null);
+                            setViewingQuestId(null);
+                          }}
+                          className="flex-1 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] bg-red-50 text-red-600 border border-red-100">
+                          Skip
+                        </button>
+                        <button
+                          onClick={() => {
+                            cancelQuest();
+                            setViewingQuestId(null);
+                          }}
+                          className="flex-1 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] bg-slate-100 text-slate-500">
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                  <div className="w-20 h-20 bg-indigo-50 rounded-3xl mx-auto mb-6 flex items-center justify-center text-indigo-600">
-                    <Video className="w-10 h-10" />
-                  </div>
-                  <h3 className="text-xl font-black text-gray-900 mb-2 uppercase tracking-tight leading-tight">
-                    Start Video Verification
-                  </h3>
-                  <p className="text-gray-500 font-bold text-sm mb-8 leading-relaxed">
-                    Position your phone where the AI can see your full body. Need {engagedQuest.targetReps} reps!
-                  </p>
-                  <button
-                    onClick={startAITracker}
-                    className="w-full py-6 rounded-[2rem] font-black uppercase tracking-widest shadow-2xl transition-all text-sm bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-200 ring-2 ring-emerald-300">
-                    Start live tracking
-                  </button>
-                </div>
                 );
               })() : (
-                <div className="w-full aspect-[9/16] md:aspect-video bg-black rounded-[2.5rem] overflow-hidden border-4 border-indigo-500/30 relative">
+                <div className="w-full aspect-[9/16] md:aspect-video bg-black rounded-[2.5rem] overflow-hidden border-4 border-indigo-500/30 relative shadow-2xl">
                   <AITracker
-                    targetReps={engagedQuest.targetReps || 20}
+                    targetReps={engagedQuest.targetReps ?? 5}
                     onRepCount={(count) => setAiReps(count)}
                     onTargetReached={handleQuestComplete}
                     onClose={() => setIsAITracking(false)}
@@ -430,7 +497,7 @@ const QuestGame = () => {
               </p>
               {lastQuestDone.type === "place" && (
                 <p className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-6">
-                  Quest zone: {lastQuestDone.radiusMeters ?? 10}m
+                  Quest zone: {lastQuestDone.radiusMeters ?? 1}m
                 </p>
               )}
               <button
@@ -442,7 +509,7 @@ const QuestGame = () => {
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </div >
   );
 };
 

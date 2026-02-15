@@ -36,6 +36,7 @@ export const useHealthStore = create(
       adherenceLogs: [],
       adherenceReminders: [],
       symptoms: [],
+      ocrHistory: [],
 
       historyAnalysis: null,
 
@@ -60,6 +61,10 @@ export const useHealthStore = create(
         const j = await apiGet(API.SYMPTOMS_LIST);
         if (j?.status === "success") set({ symptoms: j.data ?? [] });
       },
+      fetchOcrHistory: async () => {
+        const j = await apiGet(API.OCR_HISTORY_LIST);
+        if (j?.status === "success") set({ ocrHistory: j.data ?? [] });
+      },
 
       fetchHistoryAnalysis: async () => {
         const res = await apiPost(API.AI_ANALYZE_HISTORY, {});
@@ -73,9 +78,8 @@ export const useHealthStore = create(
         await Promise.all([
           g.fetchPrescriptions(),
           g.fetchReports(),
-          g.fetchAdherenceLogs(),
-          g.fetchAdherenceReminders(),
           g.fetchSymptoms(),
+          g.fetchOcrHistory(),
         ]);
       },
 

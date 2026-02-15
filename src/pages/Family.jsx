@@ -27,6 +27,7 @@ import {
   BrainCircuit,
   Sparkles,
   Send,
+  RefreshCw,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import ReactMarkdown from "react-markdown";
@@ -68,6 +69,7 @@ const Family = () => {
   const [isMicOn, setIsMicOn] = useState(true);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [historyAnalysis, setHistoryAnalysis] = useState(null);
+  const [isRefreshingHealth, setIsRefreshingHealth] = useState(false);
 
   // WebRTC refs
   const localVideoRef = useRef(null);
@@ -829,11 +831,14 @@ const Family = () => {
     }
   };
 
-  useEffect(() => {
-    const fetchHealth = async () => {
+  // Fetch health for one or all accepted members (always fresh, no cache skip)
+  const fetchMemberHealth = useCallback(
+    async (memberId = null) => {
       const acceptedMembers = members.filter((m) => m.status === "accepted");
-      for (const m of acceptedMembers) {
-        if (memberHealthData[m.member_id]) continue; // already loaded
+      const toFetch = memberId
+        ? acceptedMembers.filter((m) => m.member_id === memberId)
+        : acceptedMembers;
+      for (const m of toFetch) {
         try {
           const res = await axios.get(API.FAMILY_MEMBER_HEALTH, {
             params: { member_id: m.member_id },
@@ -845,7 +850,6 @@ const Family = () => {
               [m.member_id]: res.data.data,
             }));
           } else {
-            // Set error state to stop spinner
             setMemberHealthData((prev) => ({
               ...prev,
               [m.member_id]: {
@@ -871,13 +875,32 @@ const Family = () => {
           }));
         }
       }
+    },
+    [members],
+  );
+
+  // Initial load + refetch when members change
+  useEffect(() => {
+    if (members.length > 0) fetchMemberHealth();
+  }, [members, fetchMemberHealth]);
+
+  // When health modal opens, fetch fresh data and poll every 10s for updates
+  const healthModalPollRef = useRef(null);
+  useEffect(() => {
+    if (!isHealthModalOpen || !healthModalMember?.id) return;
+    fetchMemberHealth(healthModalMember.id);
+    healthModalPollRef.current = setInterval(() => {
+      fetchMemberHealth(healthModalMember.id);
+    }, 10000);
+    return () => {
+      if (healthModalPollRef.current) {
+        clearInterval(healthModalPollRef.current);
+        healthModalPollRef.current = null;
+      }
     };
-    if (members.length > 0) fetchHealth();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [members]);
+  }, [isHealthModalOpen, healthModalMember?.id, fetchMemberHealth]);
 
   const handleViewHealth = (cardMember) => {
-    // cardMember has id = member_id
     const fullMember = members.find((m) => m.member_id === cardMember.id);
     setHealthModalMember({
       ...cardMember,
@@ -887,6 +910,24 @@ const Family = () => {
     setHistoryAnalysis(null);
     setIsHealthModalOpen(true);
   };
+
+  // Keep health modal in sync when memberHealthData refreshes
+  useEffect(() => {
+    if (
+      isHealthModalOpen &&
+      healthModalMember?.id &&
+      memberHealthData[healthModalMember.id]
+    ) {
+      setHealthModalMember((prev) =>
+        prev
+          ? {
+              ...prev,
+              health: memberHealthData[prev.id],
+            }
+          : prev,
+      );
+    }
+  }, [isHealthModalOpen, healthModalMember?.id, memberHealthData]);
 
   const handleAnalyzeHistory = async (memberId) => {
     setIsAnalyzing(true);
@@ -907,6 +948,17 @@ const Family = () => {
       toast.error("Failed to connect to AI service");
     } finally {
       setIsAnalyzing(false);
+    }
+  };
+
+  const handleRefreshHealthModal = async () => {
+    if (!healthModalMember?.id || isRefreshingHealth) return;
+    setIsRefreshingHealth(true);
+    try {
+      await fetchMemberHealth(healthModalMember.id);
+      toast.success("Health data refreshed");
+    } finally {
+      setIsRefreshingHealth(false);
     }
   };
 
@@ -1247,11 +1299,28 @@ const Family = () => {
           setHealthModalMember(null);
         }}
         title={
-          healthModalMember
-            ? t("family.healthDetails", {
-                name: healthModalMember.name,
-              }) || `${healthModalMember.name}'s Health`
-            : t("family.viewHealthDetails")
+          healthModalMember ? (
+            <div className="flex items-center justify-between gap-3 w-full pr-2">
+              <span>
+                {t("family.healthDetails", {
+                  name: healthModalMember.name,
+                }) || `${healthModalMember.name}'s Health`}
+              </span>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleRefreshHealthModal}
+                disabled={isRefreshingHealth}
+                className="shrink-0"
+                title="Refresh health data">
+                <RefreshCw
+                  className={cn("w-4 h-4", isRefreshingHealth && "animate-spin")}
+                />
+              </Button>
+            </div>
+          ) : (
+            t("family.viewHealthDetails")
+          )
         }
         size="lg">
         {healthModalMember && healthModalMember.health && (

@@ -857,6 +857,7 @@ const Family = () => {
               [m.member_id]: res.data.data,
             }));
           } else {
+            const errMsg = res.data?.message || "Unknown API error";
             setMemberHealthData((prev) => ({
               ...prev,
               [m.member_id]: {
@@ -865,11 +866,13 @@ const Family = () => {
                 reports: [],
                 prescriptions: [],
                 error: true,
+                errorMessage: errMsg,
               },
             }));
           }
         } catch (err) {
-          console.error("Failed to fetch health for member", m.member_id, err);
+          const errMsg = err?.response?.data?.message || err?.message || "Network error";
+          console.error("Failed to fetch family member health", m.member_id, err?.response?.data || err?.message);
           setMemberHealthData((prev) => ({
             ...prev,
             [m.member_id]: {
@@ -878,6 +881,7 @@ const Family = () => {
               reports: [],
               prescriptions: [],
               error: true,
+              errorMessage: errMsg,
             },
           }));
         }
@@ -907,7 +911,7 @@ const Family = () => {
     };
   }, [isHealthModalOpen, healthModalMember?.id, fetchMemberHealth]);
 
-  const handleViewHealth = (cardMember) => {
+  const handleViewHealth = async (cardMember) => {
     const fullMember = members.find((m) => m.member_id === cardMember.id);
     setHealthModalMember({
       ...cardMember,
@@ -916,6 +920,8 @@ const Family = () => {
     });
     setHistoryAnalysis(null);
     setIsHealthModalOpen(true);
+    // Force fetch immediately so modal always gets fresh data
+    await fetchMemberHealth(cardMember.id);
   };
 
   // Keep health modal in sync when memberHealthData refreshes
@@ -970,20 +976,23 @@ const Family = () => {
   };
 
   // Map API data to FamilyMemberCard expected format
-  const mapToCard = (m) => ({
-    id: m.member_id,
-    name: m.username || m.email,
-    relation: m.relation || "Family",
-    alerts:
-      m.status === "pending"
-        ? [m.is_recipient ? t("family.statusPendingReceived") : t("family.statusPendingSent")]
-        : [],
-    avatar: m.profile_picture || null,
-    health: memberHealthData[m.member_id] || null,
-    status: m.status,
-    isRecipient: !!m.is_recipient,
-    link_id: m.link_id,
-  });
+  const mapToCard = (m) => {
+    const card = {
+      id: m.member_id,
+      name: m.username || m.email,
+      relation: m.relation || "Family",
+      alerts:
+        m.status === "pending"
+          ? [m.is_recipient ? t("family.statusPendingReceived") : t("family.statusPendingSent")]
+          : [],
+      avatar: m.profile_picture || null,
+      health: memberHealthData[m.member_id] || null,
+      status: m.status,
+      isRecipient: !!m.is_recipient,
+      link_id: m.link_id,
+    };
+    return card;
+  };
 
   return (
     <div className="space-y-6">
@@ -1320,8 +1329,11 @@ const Family = () => {
           </div>
         )}
         {healthModalMember && healthModalMember.health?.error && (
-          <div className="py-12 flex flex-col items-center justify-center text-gray-500">
+          <div className="py-12 flex flex-col items-center justify-center text-gray-500 px-4">
             <p className="text-sm font-bold">Failed to load health data.</p>
+            {healthModalMember.health?.errorMessage && (
+              <p className="text-xs text-gray-600 mt-2 text-center max-w-md">{healthModalMember.health.errorMessage}</p>
+            )}
             <Button
               size="sm"
               variant="outline"

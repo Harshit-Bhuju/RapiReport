@@ -92,13 +92,20 @@ const QuestGame = () => {
     }
   }, [authUser?.id, fetchUserStats, fetchLeaderboard, fetchQuests]);
 
-  // When real location is available, re-anchor quests for correct map positions and re-apply completed/skipped
+  // When real location is available, anchor quests. 
+  // We allow re-anchoring ONCE if the previous anchor was the default one (27.7...) 
+  // or if we haven't anchored at all.
   useEffect(() => {
     if (!currentLocation) return;
-    useGameStore.setState({ anchored: false });
-    anchorQuestsToLocation(currentLocation.lat, currentLocation.lng);
-    fetchQuests();
-  }, [currentLocation?.lat, currentLocation?.lng, anchorQuestsToLocation, fetchQuests]);
+
+    // Check if we are still on default anchor or not anchored
+    const isDefaultAnchor = quests.length > 0 && quests[0].lat === DEFAULT_QUEST_LAT + (QUEST_POOL[0].offsetLat || 0);
+
+    if (!anchored || isDefaultAnchor) {
+      anchorQuestsToLocation(currentLocation.lat, currentLocation.lng, true);
+      fetchQuests();
+    }
+  }, [currentLocation?.lat, currentLocation?.lng, anchored, quests, anchorQuestsToLocation, fetchQuests]);
 
   // AUTO-OPEN NEXT QUEST: When questsToday increments, find and open the next available quest
   useEffect(() => {

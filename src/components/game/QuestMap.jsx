@@ -104,7 +104,7 @@ const RecenterMap = ({ center, zoom }) => {
 };
 
 const QuestMap = () => {
-  const { currentLocation, pathHistory, updateLocation, quests, engagedQuest, selectedQuestId, setSelectedQuest, viewingQuestId, setViewingQuestId, setEngagedQuest, isAITracking, skipQuest } = useGameStore();
+  const { user, currentLocation, pathHistory, updateLocation, quests, engagedQuest, selectedQuestId, setSelectedQuest, viewingQuestId, setViewingQuestId, setEngagedQuest, isAITracking, skipQuest } = useGameStore();
   const [error, setError] = useState(null);
   const [shouldFollow, setShouldFollow] = useState(true);
 
@@ -183,12 +183,20 @@ const QuestMap = () => {
 
         {/* Navigation Lines REMOVED as per request */}
 
-        {/* Quest Marker (Only show the engaged one for cleaner navigation) */}
-        {quests.map((q) => {
-          // FILTER: If we are engaged in a quest, ONLY show that quest.
-          // If NOT engaged, show all available (or logic as desired).
-          // User said: "show one quest at a time that is started... dont show others"
-          if (engagedQuest && engagedQuest.id !== q.id) return null;
+        {/* Quest Marker (Show ONLY one quest at a time - engaged or current next one) */}
+        {quests.map((q, idx) => {
+          const currentIdx = user.questsToday ?? 0;
+
+          // Determine if this is the ONE quest to show:
+          // 1. If we are engaged in a specific quest, ONLY show that one.
+          // 2. If NO engaged quest, ONLY show the next available quest (index currentIdx).
+          // 3. Hide all completed/skipped markers for a cleaner look.
+
+          const isEngagedMatch = engagedQuest && engagedQuest.id === q.id;
+          const isNextMatch = !engagedQuest && idx === currentIdx;
+
+          if (!isEngagedMatch && !isNextMatch) return null;
+          if (q.completed || q.skipped) return null;
 
           return (q.lat && q.lng) && (
             <Marker

@@ -54,6 +54,7 @@ if ($user_data) {
     $bonus = 0;
     $total_added_points = $points;
 
+    // Daily Bonus for 10th completion (not skip)
     if (!$skipped && $new_count === 10) {
         $bonus = 500;
         $bonus_quest_id = "daily_bonus_10";
@@ -69,29 +70,21 @@ if ($user_data) {
         $total_added_points += $bonus;
     }
 
-    if ($skipped) {
-        // Skip: do NOT increment quests_today (skip does not count as completed)
-        // Only ensure last_refresh_date is set for the day
-        if ($user_data['last_refresh_date'] !== $today) {
-            $conn->query("UPDATE territory_users SET last_refresh_date = '$today' WHERE user_id = '$user_id'");
-        }
+    if ($user_data['last_refresh_date'] !== $today) {
+        $conn->query("UPDATE territory_users SET 
+            quests_today = 1, 
+            last_refresh_date = '$today',
+            cumulative_points = cumulative_points + $total_added_points,
+            points_today = $total_added_points,
+            yearly_super_points = yearly_super_points + (" . (!$skipped && $new_count === 10 ? 1 : 0) . ")
+            WHERE user_id = '$user_id'");
     } else {
-        if ($user_data['last_refresh_date'] !== $today) {
-            $conn->query("UPDATE territory_users SET 
-                quests_today = 1, 
-                last_refresh_date = '$today',
-                cumulative_points = cumulative_points + $total_added_points,
-                points_today = $total_added_points,
-                yearly_super_points = yearly_super_points + " . ($new_count === 10 ? 1 : 0) . "
-                WHERE user_id = '$user_id'");
-        } else {
-            $conn->query("UPDATE territory_users SET 
-                quests_today = quests_today + 1, 
-                cumulative_points = cumulative_points + $total_added_points,
-                points_today = points_today + $total_added_points,
-                yearly_super_points = yearly_super_points + " . ($new_count === 10 ? 1 : 0) . "
-                WHERE user_id = '$user_id'");
-        }
+        $conn->query("UPDATE territory_users SET 
+            quests_today = quests_today + 1, 
+            cumulative_points = cumulative_points + $total_added_points,
+            points_today = points_today + $total_added_points,
+            yearly_super_points = yearly_super_points + (" . (!$skipped && $new_count === 10 ? 1 : 0) . ")
+            WHERE user_id = '$user_id'");
     }
 }
 

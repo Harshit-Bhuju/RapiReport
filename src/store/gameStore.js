@@ -529,9 +529,9 @@ export const useGameStore = create((set, get) => ({
 
   anchored: false,
 
-  anchorQuestsToLocation: (lat, lng) => {
+  anchorQuestsToLocation: (lat, lng, force = false) => {
     const { anchored, quests } = get();
-    if (anchored && quests.length > 0) return;
+    if (!force && anchored && quests.length > 0) return;
 
     // Generate all 10 quests based on the user's location
     const allQuests = QUEST_POOL.map((poolItem, index) => {

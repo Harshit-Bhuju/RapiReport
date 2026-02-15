@@ -22,18 +22,45 @@ const QUEST_ICONS = {
   pin: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;"><path d="M18 8c0 4.97-6 10-6 10s-6-5.03-6-10a6 6 0 0 1 12 0Z"/><circle cx="12" cy="8" r="2"/></svg>`,
 };
 
-const getQuestIcon = (iconType, completed) => {
+const getQuestIcon = (iconType, completed, skipped) => {
   const svg = QUEST_ICONS[iconType] || QUEST_ICONS.pin;
-  const bg = completed ? "#22c55e" : "#6366f1";
-  const check = completed ? `<span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:bold;color:white;text-shadow:0 0 2px rgba(0,0,0,0.5)">✓</span>` : "";
+
+  if (skipped) {
+    return L.divIcon({
+      html: `<div style="
+        width:24px;height:24px;border-radius:50%;
+        background:#ef4444;border:2px solid white;
+        box-shadow:0 2px 4px rgba(0,0,0,0.2);
+        display:flex;align-items:center;justify-content:center;
+        position:relative;color:white;font-weight:bold;font-size:14px;
+      ">✕</div>`,
+      iconSize: [24, 24],
+      iconAnchor: [12, 12],
+    });
+  }
+
+  if (completed) {
+    return L.divIcon({
+      html: `<div style="
+        width:24px;height:24px;border-radius:50%;
+        background:#22c55e;border:2px solid white;
+        box-shadow:0 2px 4px rgba(0,0,0,0.2);
+        display:flex;align-items:center;justify-content:center;
+        position:relative;color:white;font-weight:bold;font-size:14px;
+      ">✓</div>`,
+      iconSize: [24, 24],
+      iconAnchor: [12, 12],
+    });
+  }
+
   return L.divIcon({
     html: `<div style="
       width:24px;height:24px;border-radius:50%;
-      background:${bg};border:2px solid white;
+      background:#6366f1;border:2px solid white;
       box-shadow:0 2px 4px rgba(0,0,0,0.2);
       display:flex;align-items:center;justify-content:center;
       position:relative;color:white;
-    ">${svg}${check}</div>`,
+    ">${svg}</div>`,
     iconSize: [24, 24],
     iconAnchor: [12, 12],
   });
@@ -152,96 +179,44 @@ const QuestMap = () => {
           )
         ))}
 
-        {/* Selected Quest Target Path */}
-        {selectedQuest?.type === "walk" && selectedQuest.targetPath && (
-          <Polyline
-            positions={selectedQuest.targetPath}
-            color="#0ea5e9"
-            weight={6}
-            opacity={0.4}
-            lineCap="round"
-          />
-        )}
+        {/* Navigation Lines REMOVED as per request */}
 
         {/* Quest Marker (Only show the engaged one for cleaner navigation) */}
         {quests.map((q) => (
-          (q.lat && q.lng && engagedQuest?.id === q.id) && (
+          (q.lat && q.lng) && (
             <Marker
               key={q.id}
               position={[q.lat, q.lng]}
               zIndexOffset={1000}
               eventHandlers={{
                 click: () => {
+                  // DISABLE INTERACTION IF COMPLETED OR SKIPPED
                   if (!q.completed && !q.skipped) {
-                    setViewingQuestId(q.id);
-                    setSelectedQuest(q.id);
-                    setEngagedQuest(q);
-                  } else {
-                    setViewingQuestId(q.id);
-                    setSelectedQuest(q.id);
+                    if (engagedQuest?.id === q.id) {
+                      setViewingQuestId(q.id);
+                    } else {
+                      setViewingQuestId(q.id);
+                      setSelectedQuest(q.id);
+                      setEngagedQuest(q);
+                    }
                   }
                 }
               }}
-              icon={getQuestIcon(q.icon || (q.type === 'walk' ? 'pin' : 'pin'), q.completed)}>
-              <Popup>
-                <div className="text-center p-1 min-w-[140px]">
-                  <p className="font-black text-xs text-gray-900 leading-tight mb-1 uppercase">{q.title}</p>
-                  <p className="text-[10px] text-gray-500 mb-2 font-medium">{q.description}</p>
-
-                  {q.completed ? (
-                    <span className="text-[9px] font-black text-green-600 bg-green-50 px-2 py-1 rounded-full uppercase tracking-tighter">Goal Reached</span>
-                  ) : (
-                    <span className="text-[9px] font-black text-indigo-600 bg-indigo-50 px-2 py-1 rounded-full uppercase tracking-tighter">+{q.points} P</span>
-                  )}
-                </div>
-              </Popup>
+              // Opacity reduced for completed/skipped to show they are inactive
+              opacity={q.completed || q.skipped ? 0.6 : 1}
+              icon={getQuestIcon(q.icon || (q.type === 'walk' ? 'pin' : 'pin'), q.completed, q.skipped)}>
+              {/* Only show popup if active */}
+              {!q.completed && !q.skipped && (
+                <Popup>
+                  <div className="text-center p-1 min-w-[140px]">
+                    <p className="font-black text-xs text-gray-900 leading-tight mb-1 uppercase">{q.title}</p>
+                    <p className="text-[10px] text-gray-500 mb-2 font-medium">{q.description}</p>
+                  </div>
+                </Popup>
+              )}
             </Marker>
           )
         ))}
-
-        {/* User Marker */}
-        {currentLocation && (
-          <Marker position={[currentLocation.lat, currentLocation.lng]} icon={USER_ICON}>
-            <Popup>
-              <div className="text-center p-2 min-w-[120px]">
-                <p className="font-black text-[10px] uppercase tracking-widest text-gray-400 mb-2">My Position</p>
-                {currentAvailableQuest && (
-                  <p className="bg-emerald-50 text-emerald-600 px-3 py-1 rounded-lg text-[9px] font-black uppercase mb-1">
-                    Arrived At Objective
-                  </p>
-                )}
-              </div>
-            </Popup>
-          </Marker>
-        )}
-
-        {/* Primary Navigation Path: "The Way" */}
-        {currentLocation && selectedQuest && !selectedQuest.completed && selectedQuest.lat != null && (
-          <>
-            {/* Thicker Outer Glow Line */}
-            <Polyline
-              positions={[
-                [currentLocation.lat, currentLocation.lng],
-                [selectedQuest.lat, selectedQuest.lng]
-              ]}
-              color="#6366f1"
-              weight={8}
-              opacity={0.15}
-            />
-            {/* Dashed Active Line */}
-            <Polyline
-              positions={[
-                [currentLocation.lat, currentLocation.lng],
-                [selectedQuest.lat, selectedQuest.lng]
-              ]}
-              color="#6366f1"
-              weight={4}
-              dashArray="1, 10"
-              lineCap="round"
-              opacity={0.8}
-            />
-          </>
-        )}
       </MapContainer>
 
       <div className="absolute top-4 right-4 z-[20] flex flex-col gap-2">

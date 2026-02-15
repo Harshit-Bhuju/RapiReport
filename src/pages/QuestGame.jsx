@@ -379,7 +379,7 @@ const QuestGame = () => {
                 </button>
               </div>
 
-              {!isAITracking ? (() => {
+              {!isAITracking && (() => {
                 const distM = currentLocation && engagedQuest.lat != null
                   ? distanceMeters(currentLocation.lat, currentLocation.lng, engagedQuest.lat, engagedQuest.lng)
                   : null;
@@ -465,17 +465,24 @@ const QuestGame = () => {
                     </div>
                   </div>
                 );
-              })() : (
-                <div className="w-full aspect-[9/16] md:aspect-video bg-black rounded-[2.5rem] overflow-hidden border-4 border-indigo-500/30 relative shadow-2xl">
-                  <AITracker
-                    targetReps={engagedQuest.targetReps ?? 5}
-                    onRepCount={(count) => setAiReps(count)}
-                    onTargetReached={handleQuestComplete}
-                    onClose={() => setIsAITracking(false)}
-                  />
-                </div>
-              )}
+              })()}
             </div>
+          </motion.div>
+        )}
+
+        {/* AI Tracking Full-screen Overlay */}
+        {isAITracking && engagedQuest && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[200] bg-black">
+            <AITracker
+              targetReps={engagedQuest.targetReps ?? 5}
+              onRepCount={(count) => setAiReps(count)}
+              onTargetReached={handleQuestComplete}
+              onClose={() => setIsAITracking(false)}
+            />
           </motion.div>
         )}
 

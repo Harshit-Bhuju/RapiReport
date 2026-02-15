@@ -86,19 +86,11 @@ const QuestMap = () => {
     ? L.latLng(currentLocation.lat, currentLocation.lng).distanceTo(L.latLng(selectedQuest.lat, selectedQuest.lng))
     : 1000;
 
-  // Helper to check if user is near a quest
+  // Helper to check if user is near a quest (radius in meters, default 1m)
   const isNear = (q) => {
     if (!currentLocation || !q.lat || !q.lng) return false;
-    const R = 6371000;
-    const dLat = ((q.lat - currentLocation.lat) * Math.PI) / 180;
-    const dLng = ((q.lng - currentLocation.lng) * Math.PI) / 180;
-    const a =
-      Math.sin(dLat / 2) ** 2 +
-      Math.cos((currentLocation.lat * Math.PI) / 180) *
-      Math.cos((q.lat * Math.PI) / 180) *
-      Math.sin(dLng / 2) ** 2;
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c <= (q.radiusMeters || 0.005);
+    const distM = L.latLng(currentLocation.lat, currentLocation.lng).distanceTo(L.latLng(q.lat, q.lng));
+    return distM <= (q.radiusMeters ?? 1);
   };
 
   const currentAvailableQuest = quests.find(q => q.type === "place" && !q.completed && isNear(q));
@@ -265,9 +257,9 @@ const QuestMap = () => {
           <div className="w-3 h-3 rounded-full bg-red-500 border border-white" />
           <span className="text-[9px] font-black text-gray-700 uppercase tracking-tight">Me</span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2" title="Your walking path (footprints as you move)">
           <div className="w-2 h-2 rounded-full bg-indigo-400 opacity-60" />
-          <span className="text-[9px] font-black text-gray-700 uppercase tracking-tight">Trail</span>
+          <span className="text-[9px] font-black text-gray-700 uppercase tracking-tight">Your Path</span>
         </div>
       </div>
     </div>

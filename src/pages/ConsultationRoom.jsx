@@ -4,7 +4,7 @@ import axios from "axios";
 import { useAuthStore } from "@/store/authStore";
 import API from "@/Configs/ApiEndpoints";
 import Button from "@/components/ui/Button";
-import { Video, VideoOff, Mic, MicOff, PhoneOff, User, Loader2 } from "lucide-react";
+import { Video, VideoOff, Mic, MicOff, PhoneOff, User, Loader2, ShieldCheck } from "lucide-react";
 import toast from "react-hot-toast";
 
 const ConsultationRoom = () => {
@@ -216,99 +216,109 @@ const ConsultationRoom = () => {
         }
     };
 
-    if (loading) return <div className="h-screen flex items-center justify-center"><Loader2 className="animate-spin text-primary-600" /></div>;
+    if (loading) {
+        return (
+            <div className="h-screen flex items-center justify-center bg-gray-950">
+                <Loader2 className="w-10 h-10 animate-spin text-primary-500" />
+            </div>
+        );
+    }
+
+    const otherParty = details?.other_party || {};
+    const otherName = otherParty.name || "Doctor";
 
     return (
         <div className="h-screen bg-gray-950 flex flex-col relative overflow-hidden font-sans">
-            {/* Header / Info Overlay */}
-            <div className="absolute top-0 left-0 right-0 z-30 p-8 bg-gradient-to-b from-black/70 via-black/30 to-transparent flex justify-between items-start text-white">
-                <div className="flex gap-4 items-center">
-                    <div className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center overflow-hidden">
-                        {details.other_party.avatar ? (
-                            <img src={details.other_party.avatar} className="w-full h-full object-cover" alt="" />
+            {/* Header */}
+            <div className="absolute top-0 left-0 right-0 z-30 p-4 sm:p-6 md:p-8 bg-gradient-to-b from-black/80 via-black/40 to-transparent flex justify-between items-start text-white">
+                <div className="flex gap-3 sm:gap-4 items-center">
+                    <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center overflow-hidden shrink-0">
+                        {otherParty.avatar ? (
+                            <img src={otherParty.avatar} className="w-full h-full object-cover" alt="" />
                         ) : (
                             <User className="w-6 h-6 text-white/50" />
                         )}
                     </div>
                     <div>
-                        <h2 className="text-xl font-black tracking-tight">{details.other_party.name}</h2>
+                        <h2 className="text-lg sm:text-xl font-black tracking-tight">{otherName}</h2>
                         <div className="flex items-center gap-2">
-                            <div className={`w-2 h-2 rounded-full ${isInCall ? 'bg-success-500 animate-pulse' : 'bg-warning-500'}`}></div>
+                            <div className={`w-2 h-2 rounded-full shrink-0 ${isInCall ? "bg-success-500 animate-pulse" : "bg-warning-500"}`} />
                             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/60">{status}</p>
                         </div>
                     </div>
                 </div>
-                <div className="hidden md:flex flex-col items-end">
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 mb-1">Appointment Time</p>
-                    <p className="font-black text-lg bg-white/10 backdrop-blur-md px-4 py-1.5 rounded-xl border border-white/10">{details.appointment_time}</p>
-                </div>
+                {details.appointment_time && (
+                    <div className="hidden sm:flex flex-col items-end">
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 mb-1">Appointment</p>
+                        <p className="font-black text-sm md:text-lg bg-white/10 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10">{details.appointment_time}</p>
+                    </div>
+                )}
             </div>
 
             {/* Main Video Stage */}
             <div className="flex-1 relative bg-gray-900 overflow-hidden">
-                {/* Remote Video (Main) */}
-                <video
-                    ref={remoteVideoRef}
-                    autoPlay
-                    playsInline
-                    className="w-full h-full object-cover"
-                />
+                <video ref={remoteVideoRef} autoPlay playsInline className="w-full h-full object-cover" />
 
-                {/* Status Overlay (When no remote stream yet) */}
+                {/* Connecting overlay (when no remote stream yet) */}
                 {isInCall && !remoteVideoRef.current?.srcObject && (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-900/60 backdrop-blur-sm z-10 text-center px-6">
-                        <div className="w-20 h-20 bg-primary-600/20 rounded-full flex items-center justify-center mb-6 border border-primary-500/30">
-                            <Loader2 className="w-10 h-10 text-primary-500 animate-spin" />
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-900/70 backdrop-blur-sm z-10 text-center px-6">
+                        <div className="w-20 h-20 bg-primary-600/20 rounded-full flex items-center justify-center mb-6 border-2 border-primary-500/30">
+                            <Loader2 className="w-10 h-10 text-primary-400 animate-spin" />
                         </div>
                         <h3 className="text-xl font-black text-white mb-2">Establishing Secure Connection</h3>
-                        <p className="text-gray-400 font-medium max-w-xs uppercase text-[10px] tracking-widest">Waiting for {details.other_party.name} to establish a peer-to-peer connection...</p>
+                        <p className="text-gray-400 font-medium max-w-xs text-sm">Waiting for {otherName} to connect…</p>
+                        <div className="flex items-center gap-2 mt-4 px-4 py-2 rounded-full bg-white/5 border border-white/10">
+                            <ShieldCheck className="w-4 h-4 text-success-500" />
+                            <span className="text-xs font-bold text-white/80 uppercase tracking-wider">End-to-end encrypted</span>
+                        </div>
                     </div>
                 )}
 
-                {/* Local Video - PIP */}
-                <div className="absolute bottom-32 right-6 w-36 md:w-48 aspect-[3/4] bg-gray-800 rounded-[2rem] overflow-hidden border-4 border-white/10 shadow-2xl z-20 transition-all duration-500 group">
-                    <video
-                        ref={localVideoRef}
-                        autoPlay
-                        playsInline
-                        muted
-                        className="w-full h-full object-cover transform scale-x-[-1]"
-                    />
-                    <div className="absolute bottom-3 left-3 bg-black/50 backdrop-blur-md px-2 py-0.5 rounded-lg text-[8px] font-black text-white uppercase tracking-widest border border-white/10">
-                        You
+                {/* Local Video PIP */}
+                {isInCall && (
+                    <div className="absolute bottom-28 right-4 sm:right-6 w-28 h-36 sm:w-36 sm:h-44 md:w-44 md:h-56 rounded-2xl overflow-hidden border-2 border-white/20 shadow-2xl z-20 bg-black">
+                        <video
+                            ref={localVideoRef}
+                            autoPlay
+                            playsInline
+                            muted
+                            className="w-full h-full object-cover"
+                            style={{ transform: "scaleX(-1)" }}
+                        />
+                        <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded-lg text-[9px] font-bold text-white/90 bg-black/50 uppercase tracking-wider">You</div>
                     </div>
-                </div>
+                )}
 
-                {/* Join Interface (The high-trust medical portal) */}
+                {/* Join Screen */}
                 {!isInCall && (
-                    <div className="absolute inset-0 bg-gray-950/95 backdrop-blur-xl flex flex-col items-center justify-center z-40 p-8 text-center">
+                    <div className="absolute inset-0 bg-gray-950/95 backdrop-blur-xl flex flex-col items-center justify-center z-40 p-6 sm:p-8 text-center">
                         <div className="max-w-md w-full animate-in zoom-in-95 duration-500">
-                            <div className="relative mb-10 mx-auto w-32 h-32">
-                                <div className="absolute inset-0 bg-primary-600 rounded-full animate-ping opacity-20"></div>
-                                <div className="relative w-32 h-32 rounded-[3rem] bg-white shadow-2xl overflow-hidden border-4 border-white flex items-center justify-center">
-                                    {details.other_party.avatar ? (
-                                        <img src={details.other_party.avatar} className="w-full h-full object-cover" alt="" />
+                            <div className="relative mb-8 mx-auto w-28 h-28 sm:w-32 sm:h-32">
+                                <div className="absolute inset-0 bg-primary-500 rounded-full animate-ping opacity-20" style={{ animationDuration: "2s" }} />
+                                <div className="relative w-full h-full rounded-[2rem] bg-white/5 shadow-2xl overflow-hidden border-2 border-white/20 flex items-center justify-center">
+                                    {otherParty.avatar ? (
+                                        <img src={otherParty.avatar} className="w-full h-full object-cover" alt="" />
                                     ) : (
-                                        <User className="w-16 h-16 text-gray-200" />
+                                        <User className="w-14 h-14 sm:w-16 sm:h-16 text-gray-400" />
                                     )}
                                 </div>
-                                <div className="absolute -bottom-2 right-0 bg-success-500 w-8 h-8 rounded-full border-4 border-gray-950 flex items-center justify-center shadow-lg">
-                                    <ShieldCheck className="w-4 h-4 text-white" />
+                                <div className="absolute -bottom-1 right-0 bg-success-500 w-7 h-7 sm:w-8 sm:h-8 rounded-full border-2 border-gray-950 flex items-center justify-center shadow-lg">
+                                    <ShieldCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
                                 </div>
                             </div>
 
-                            <h3 className="text-3xl font-black text-white mb-3 tracking-tight">Ready for Consultation?</h3>
-                            <p className="text-gray-400 font-bold mb-10 tracking-wide uppercase text-xs">
-                                with <span className="text-white">{details.other_party.name}</span>
+                            <h3 className="text-2xl sm:text-3xl font-black text-white mb-2 tracking-tight">Ready for Consultation?</h3>
+                            <p className="text-gray-400 font-semibold mb-8 text-sm">
+                                with <span className="text-white">{otherName}</span>
                             </p>
 
-                            <div className="grid grid-cols-2 gap-4 mb-10 text-left max-w-xs mx-auto">
-                                <div className="bg-white/5 border border-white/10 p-4 rounded-3xl backdrop-blur-sm">
+                            <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-8 max-w-xs mx-auto">
+                                <div className="bg-white/5 border border-white/10 p-4 rounded-2xl backdrop-blur-sm">
                                     <Video className="w-5 h-5 text-primary-500 mb-2" />
                                     <p className="text-[10px] uppercase font-black text-gray-400 tracking-wider">Camera</p>
                                     <p className="text-sm font-bold text-white">Encrypted</p>
                                 </div>
-                                <div className="bg-white/5 border border-white/10 p-4 rounded-3xl backdrop-blur-sm">
+                                <div className="bg-white/5 border border-white/10 p-4 rounded-2xl backdrop-blur-sm">
                                     <Mic className="w-5 h-5 text-success-500 mb-2" />
                                     <p className="text-[10px] uppercase font-black text-gray-400 tracking-wider">Audio</p>
                                     <p className="text-sm font-bold text-white">Private</p>
@@ -317,9 +327,9 @@ const ConsultationRoom = () => {
 
                             <Button
                                 onClick={startCall}
-                                className="w-full py-5 rounded-[2rem] text-lg font-black uppercase tracking-widest bg-primary-600 text-white shadow-2xl shadow-primary-600/20 hover:bg-primary-500 hover:scale-105 active:scale-95 transition-all duration-300 gap-3"
+                                className="w-full py-4 sm:py-5 rounded-2xl text-base sm:text-lg font-black uppercase tracking-wider bg-primary-600 text-white shadow-2xl shadow-primary-600/25 hover:bg-primary-500 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 gap-3"
                             >
-                                <Video className="w-6 h-6" /> Join Call Room
+                                <Video className="w-5 h-5 sm:w-6 sm:h-6" /> Join Call Room
                             </Button>
                         </div>
                     </div>
@@ -328,35 +338,37 @@ const ConsultationRoom = () => {
 
             {/* Bottom Controls Bar */}
             {isInCall && (
-                <div className="p-8 bg-gradient-to-t from-black/80 to-transparent flex justify-center items-center gap-6 z-30">
+                <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-8 bg-gradient-to-t from-black/90 to-transparent flex justify-center items-center gap-4 sm:gap-6 z-30">
                     <button
                         onClick={toggleMic}
-                        className={`p-5 rounded-[2rem] transition-all border-2 flex items-center justify-center group ${micOn
-                                ? 'bg-white/5 border-white/10 hover:bg-white/10 text-white'
-                                : 'bg-red-500/10 border-red-500/20 text-red-500 hover:bg-red-500/20'
-                            }`}
-                        title={micOn ? "Mute Mic" : "Unmute Mic"}
+                        className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-all ${
+                            micOn
+                                ? "bg-white/10 hover:bg-white/20 text-white border border-white/10"
+                                : "bg-red-500/90 hover:bg-red-500 text-white shadow-lg shadow-red-500/30"
+                        }`}
+                        title={micOn ? "Mute" : "Unmute"}
                     >
-                        {micOn ? <Mic className="w-6 h-6" /> : <MicOff className="w-6 h-6" />}
+                        {micOn ? <Mic className="w-5 h-5 sm:w-6 sm:h-6" /> : <MicOff className="w-5 h-5 sm:w-6 sm:h-6" />}
                     </button>
 
                     <button
-                        onClick={endCall}
-                        className="p-6 rounded-[2.5rem] bg-red-600 hover:bg-red-500 text-white shadow-2xl shadow-red-600/30 hover:scale-110 active:scale-90 transition-all group"
+                        onClick={() => endCall()}
+                        className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-red-500 hover:bg-red-400 text-white flex items-center justify-center shadow-xl shadow-red-500/40 hover:scale-110 active:scale-95 transition-all"
                         title="End Consultation"
                     >
-                        <PhoneOff className="w-8 h-8" />
+                        <PhoneOff className="w-7 h-7 sm:w-8 sm:h-8" />
                     </button>
 
                     <button
                         onClick={toggleCamera}
-                        className={`p-5 rounded-[2rem] transition-all border-2 flex items-center justify-center group ${cameraOn
-                                ? 'bg-white/5 border-white/10 hover:bg-white/10 text-white'
-                                : 'bg-red-500/10 border-red-500/20 text-red-500 hover:bg-red-500/20'
-                            }`}
-                        title={cameraOn ? "Turn Camera Off" : "Turn Camera On"}
+                        className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-all ${
+                            cameraOn
+                                ? "bg-white/10 hover:bg-white/20 text-white border border-white/10"
+                                : "bg-red-500/90 hover:bg-red-500 text-white shadow-lg shadow-red-500/30"
+                        }`}
+                        title={cameraOn ? "Turn off camera" : "Turn on camera"}
                     >
-                        {cameraOn ? <Video className="w-6 h-6" /> : <VideoOff className="w-6 h-6" />}
+                        {cameraOn ? <Video className="w-5 h-5 sm:w-6 sm:h-6" /> : <VideoOff className="w-5 h-5 sm:w-6 sm:h-6" />}
                     </button>
                 </div>
             )}

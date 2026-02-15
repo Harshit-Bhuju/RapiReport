@@ -16,10 +16,10 @@ import {
   Video,
   X,
   Activity,
-  ChevronRight,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
 
 import { getAIBaseUrl } from "../config";
 
@@ -32,7 +32,6 @@ const QuestGame = () => {
     setSelectedQuest,
     completeQuest,
     currentLocation,
-    distanceWalkedMeters,
     user,
     fetchQuests,
     fetchUserStats,
@@ -51,7 +50,7 @@ const QuestGame = () => {
     setViewingQuestId,
   } = useGameStore();
 
-  const [activeTab, setActiveTab] = useState("map");
+  const [showLeaderboardPopup, setShowLeaderboardPopup] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [lastQuestDone, setLastQuestDone] = useState(null);
   const [aiReps, setAiReps] = useState(0);
@@ -83,10 +82,6 @@ const QuestGame = () => {
     }
   }, [currentLocation, anchored, anchorQuestsToLocation]);
 
-  const completedCount = quests.filter((q) => q.completed).length;
-  const placeQuests = quests.filter((q) => q.type === "place");
-  const walkQuests = quests.filter((q) => q.type === "walk");
-
   const viewingQuest = quests.find(q => q.id === viewingQuestId);
 
   const handleQuestComplete = async () => {
@@ -117,9 +112,9 @@ const QuestGame = () => {
   };
 
   return (
-    <div className="min-h-full pb-20">
-      {/* ─── SHARED HEADER ─── */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 px-4 md:px-0">
+    <div className="min-h-full pb-12">
+      {/* ─── HEADER: Title + Points + Leaderboard/Rewards buttons ─── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 mb-4 md:mb-6 px-4 md:px-0">
         <div>
           <h1 className="text-xl md:text-2xl font-black text-gray-900 tracking-tight uppercase">
             {t("quest.title")}
@@ -128,129 +123,53 @@ const QuestGame = () => {
             {t("hero.subtitle")}
           </p>
         </div>
-        <div className="flex gap-2">
-          <div className="bg-white text-gray-900 px-3 py-2 md:px-5 md:py-3 rounded-2xl border border-gray-100 flex items-center gap-2 md:gap-4 shadow-sm flex-1 md:flex-none justify-center">
-            <Target className="w-4 h-4 md:w-6 md:h-6 text-indigo-600" />
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+          <div className="bg-white text-gray-900 px-3 py-2 md:px-4 md:py-2.5 rounded-xl border border-gray-100 flex items-center gap-2 shadow-sm">
+            <Target className="w-4 h-4 text-indigo-600 shrink-0" />
             <div>
-              <p className="text-[8px] md:text-[10px] text-gray-400 font-black uppercase tracking-widest leading-tight">
-                Daily
-              </p>
-              <p className="font-black text-sm md:text-xl leading-none">
-                {user.questsToday || 0}/10
-              </p>
+              <p className="text-[8px] text-gray-400 font-black uppercase leading-tight">Daily</p>
+              <p className="font-black text-sm md:text-base leading-none">{user.questsToday || 0}/10</p>
             </div>
           </div>
-          <div className="bg-white text-gray-900 px-3 py-2 md:px-5 md:py-3 rounded-2xl border border-gray-100 flex items-center gap-2 md:gap-4 shadow-sm flex-1 md:flex-none justify-center">
-            <Zap className="w-4 h-4 md:w-6 md:h-6 text-orange-500" />
+          <div className="bg-white text-gray-900 px-3 py-2 md:px-4 md:py-2.5 rounded-xl border border-gray-100 flex items-center gap-2 shadow-sm">
+            <Zap className="w-4 h-4 text-orange-500 shrink-0" />
             <div>
-              <p className="text-[8px] md:text-[10px] text-gray-400 font-black uppercase tracking-widest leading-tight">
-                Today
-              </p>
-              <p className="font-black text-sm md:text-xl leading-none">
-                {user.pointsToday || 0}
-              </p>
+              <p className="text-[8px] text-gray-400 font-black uppercase leading-tight">Points</p>
+              <p className="font-black text-sm md:text-base leading-none">{user.pointsToday || 0}</p>
             </div>
           </div>
+          <button
+            onClick={() => setShowLeaderboardPopup(true)}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-50 border border-amber-100 text-amber-700 hover:bg-amber-100 transition-colors">
+            <Trophy className="w-4 h-4 shrink-0" />
+            <span className="font-bold text-sm">Leaderboard</span>
+          </button>
+          <Link
+            to="/marketplace"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-purple-50 border border-purple-100 text-purple-700 hover:bg-purple-100 transition-colors">
+            <Gift className="w-4 h-4 shrink-0" />
+            <span className="font-bold text-sm">Rewards</span>
+          </Link>
         </div>
       </div>
 
       {/* ─── RESPONSIVE LAYOUT ─── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left/Main Column: Map & Selected Quest Detail */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="h-[40vh] md:h-[500px] lg:h-[650px] rounded-[2rem] md:rounded-[2.5rem] overflow-hidden shadow-xl border border-gray-100">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
+        {/* Map Column */}
+        <div className="lg:col-span-2">
+          <div className="h-[35vh] sm:h-[40vh] md:h-[450px] lg:h-[580px] rounded-2xl md:rounded-3xl overflow-hidden shadow-xl border border-gray-100">
             <QuestMap />
           </div>
-
-          {/* Quest Status Tabs (Mobile Only) */}
-          <div className="lg:hidden flex gap-2 overflow-x-auto pb-2 px-4 no-scrollbar">
-            {["map", "objectives", "leaderboard", "marketplace"].map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === tab
-                  ? "bg-indigo-600 text-white shadow-lg shadow-indigo-200"
-                  : "bg-white text-gray-400 border border-gray-100"
-                  }`}>
-                {tab}
-              </button>
-            ))}
-          </div>
-
-          {activeTab === "map" && viewingQuest && !engagedQuest && (
-            <motion.div
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              className="bg-white rounded-3xl p-6 shadow-xl border-4 border-indigo-50 mx-4 lg:mx-0">
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-[10px] font-black text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full uppercase">
-                      Currently Selected
-                    </span>
-                    {currentLocation && viewingQuest.lat && (
-                      <span className="text-[10px] font-black text-rose-600 bg-rose-50 px-3 py-1 rounded-full uppercase flex items-center gap-1">
-                        <MapPin className="w-3 h-3" />
-                        {Math.round(distanceMeters(currentLocation.lat, currentLocation.lng, viewingQuest.lat, viewingQuest.lng))}m Away
-                      </span>
-                    )}
-                  </div>
-                  <h2 className="text-xl font-black text-gray-900 leading-tight">{viewingQuest.title}</h2>
-                </div>
-                <button
-                  onClick={() => setViewingQuestId(null)}
-                  className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-                  <X className="w-5 h-5 text-gray-400" />
-                </button>
-              </div>
-              <p className="text-gray-600 text-sm mb-6">{viewingQuest.description}</p>
-
-              <div className="grid grid-cols-2 gap-4 mb-6">
-                <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-100">
-                  <p className="text-[9px] font-black text-emerald-600 uppercase">On Completion</p>
-                  <p className="text-lg font-black text-emerald-700">+{viewingQuest.points} P</p>
-                </div>
-                <div className="p-4 rounded-2xl bg-rose-50 border border-rose-100">
-                  <p className="text-[9px] font-black text-rose-600 uppercase">On Skip</p>
-                  <p className="text-lg font-black text-rose-700">-5 P</p>
-                </div>
-              </div>
-
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setEngagedQuest(viewingQuest)}
-                  className="flex-1 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-indigo-100 transition-all">
-                  Start Objective
-                </button>
-                <button
-                  onClick={() => {
-                    if (window.confirm("Skip this quest? You will lose 5 points.")) {
-                      skipQuest(viewingQuest.id);
-                      setViewingQuestId(null);
-                    }
-                  }}
-                  className="px-6 py-4 bg-gray-100 hover:bg-gray-200 text-gray-500 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all">
-                  Skip
-                </button>
-              </div>
-              <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest text-center mt-4">
-                ⚠️ Skip deducts 5 points and uses one daily slot
-              </p>
-            </motion.div>
-          )}
         </div>
 
-        {/* Right Column: Objectives & Stats (Scrollable on Desktop) */}
-        <div className={`space-y-6 ${activeTab === "map" ? "hidden lg:block" : "block"} lg:max-h-[850px] lg:overflow-y-auto pr-2 custom-scrollbar`}>
-          {/* Daily Tracker Section */}
-          <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
-            <div className="flex items-center gap-2 mb-4">
-              <Footprints className="w-5 h-5 text-indigo-600" />
-              <h3 className="font-black text-gray-900 uppercase text-xs tracking-widest">
-                Daily Objectives
-              </h3>
+        {/* Right Column: Compact Daily Objectives (no heavy scroll) */}
+        <div className="px-4 lg:px-0">
+          <div className="bg-white rounded-2xl p-4 md:p-5 shadow-sm border border-gray-100 max-h-[50vh] lg:max-h-[580px] overflow-y-auto">
+            <div className="flex items-center gap-2 mb-3">
+              <Footprints className="w-4 h-4 text-indigo-600 shrink-0" />
+              <h3 className="font-black text-gray-900 uppercase text-[10px] tracking-widest">Daily Objectives</h3>
             </div>
-            <div className="space-y-3">
+            <div className="space-y-2">
               {quests.map((q, idx) => {
                 const isLocked = idx > (user.questsToday || 0);
                 const isCurrent = idx === (user.questsToday || 0);
@@ -266,47 +185,125 @@ const QuestGame = () => {
                       }
                     }}
                     disabled={isLocked}
-                    className={`w-full text-left p-4 rounded-2xl border-2 transition-all relative ${isLocked
-                      ? "bg-gray-50 border-gray-100 cursor-not-allowed opacity-50"
+                    className={`w-full text-left p-3 rounded-xl border transition-all ${isLocked
+                      ? "bg-gray-50 border-gray-100 cursor-not-allowed opacity-60"
                       : isCurrent
-                        ? viewingQuestId === q.id
-                          ? "border-indigo-600 bg-white ring-2 ring-indigo-50"
-                          : "border-gray-200 bg-white hover:border-indigo-300 shadow-sm"
-                        : isCompleted
-                          ? "bg-emerald-50/50 border-emerald-100"
-                          : "bg-white border-gray-100"
+                        ? viewingQuestId === q.id ? "border-indigo-500 bg-indigo-50/50 ring-1 ring-indigo-200" : "border-gray-200 bg-white hover:border-indigo-300"
+                        : isCompleted ? "bg-emerald-50/50 border-emerald-100" : "bg-white border-gray-100"
                       }`}>
-                    <div className="flex items-center justify-between mb-1">
-                      <div className="flex items-center gap-2">
-                        <span className={`text-[8px] font-black px-2 py-0.5 rounded-lg ${isCompleted ? "bg-emerald-100 text-emerald-700" :
-                          isLocked ? "bg-gray-200 text-gray-500" : "bg-indigo-600 text-white"
-                          }`}>
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className={`text-[8px] font-black px-1.5 py-0.5 rounded shrink-0 ${isCompleted ? "bg-emerald-100 text-emerald-700" : isLocked ? "bg-gray-200 text-gray-500" : "bg-indigo-600 text-white"}`}>
                           #{idx + 1}
                         </span>
-                        {isCompleted && <CheckCircle2 className="w-3 h-3 text-emerald-500" />}
+                        {isCompleted && <CheckCircle2 className="w-3 h-3 text-emerald-500 shrink-0" />}
+                        <h4 className={`font-bold text-xs truncate ${isLocked ? "text-gray-400" : "text-gray-900"}`}>{q.title}</h4>
                       </div>
-                      {!isLocked && !isCompleted && (
-                        <span className="text-[10px] font-black text-indigo-600">+{q.points} P</span>
-                      )}
+                      {!isLocked && !isCompleted && <span className="text-[9px] font-black text-indigo-600 shrink-0">+{q.points}P</span>}
                     </div>
-                    <h4 className={`font-black text-xs tracking-tight ${isLocked ? "text-gray-400" : "text-gray-900"}`}>
-                      {q.title}
-                    </h4>
-                    {isCurrent && (
-                      <p className="text-[9px] text-gray-500 font-medium mt-1 leading-tight line-clamp-1">
-                        {q.description}
-                      </p>
-                    )}
                   </button>
                 );
               })}
             </div>
           </div>
-
-          {(activeTab === "leaderboard" || activeTab === "objectives") && <Leaderboard />}
-          {(activeTab === "marketplace" || activeTab === "objectives") && <RewardsPanel />}
         </div>
       </div>
+
+      {/* ─── Quest Detail Popup (when quest clicked) ─── */}
+      <AnimatePresence>
+        {viewingQuest && !engagedQuest && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/50 backdrop-blur-sm"
+            onClick={() => setViewingQuestId(null)}>
+            <motion.div
+              initial={{ y: "100%", opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: "100%", opacity: 0 }}
+              transition={{ type: "spring", damping: 25 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl p-6 max-h-[85vh] overflow-y-auto">
+              <div className="flex justify-between items-start mb-4">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2 mb-1">
+                    <span className="text-[10px] font-black text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full uppercase">Selected</span>
+                    {currentLocation && viewingQuest.lat && (
+                      <span className="text-[10px] font-black text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full uppercase flex items-center gap-1">
+                        <MapPin className="w-3 h-3 shrink-0" />
+                        {Math.round(distanceMeters(currentLocation.lat, currentLocation.lng, viewingQuest.lat, viewingQuest.lng))}m away
+                      </span>
+                    )}
+                  </div>
+                  <h2 className="text-lg font-black text-gray-900 leading-tight">{viewingQuest.title}</h2>
+                </div>
+                <button onClick={() => setViewingQuestId(null)} className="p-2 hover:bg-gray-100 rounded-full shrink-0">
+                  <X className="w-5 h-5 text-gray-400" />
+                </button>
+              </div>
+              <p className="text-gray-600 text-sm mb-4">{viewingQuest.description}</p>
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-100">
+                  <p className="text-[9px] font-black text-emerald-600 uppercase">Completion</p>
+                  <p className="font-black text-emerald-700">+{viewingQuest.points} P</p>
+                </div>
+                <div className="p-3 rounded-xl bg-rose-50 border border-rose-100">
+                  <p className="text-[9px] font-black text-rose-600 uppercase">Skip</p>
+                  <p className="font-black text-rose-700">-5 P</p>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setEngagedQuest(viewingQuest)}
+                  className="flex-1 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-black uppercase text-xs tracking-widest shadow-lg">
+                  Start Quest
+                </button>
+                <button
+                  onClick={() => {
+                    if (window.confirm("Skip this quest? You will lose 5 points.")) {
+                      skipQuest(viewingQuest.id);
+                      setViewingQuestId(null);
+                    }
+                  }}
+                  className="px-4 py-3.5 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-xl font-bold text-xs uppercase">
+                  Skip
+                </button>
+              </div>
+              <p className="text-[9px] text-gray-400 font-bold uppercase text-center mt-3">Skip uses one daily slot</p>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ─── Leaderboard Popup ─── */}
+      <AnimatePresence>
+        {showLeaderboardPopup && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+            onClick={() => setShowLeaderboardPopup(false)}>
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-sm max-h-[80vh] overflow-hidden bg-white rounded-3xl shadow-2xl">
+              <div className="flex items-center justify-between p-4 border-b border-gray-100">
+                <h3 className="font-black text-gray-900">Weekly Leaderboard</h3>
+                <button onClick={() => setShowLeaderboardPopup(false)} className="p-2 hover:bg-gray-100 rounded-full">
+                  <X className="w-5 h-5 text-gray-500" />
+                </button>
+              </div>
+              <div className="p-4 overflow-y-auto max-h-[60vh]">
+                <Leaderboard compact />
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ─── MODALS & OVERLAYS ─── */}
       <AnimatePresence>

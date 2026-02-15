@@ -372,26 +372,7 @@ const Dashboard = () => {
             </CardBody>
           </Card>
 
-          {/* Genetic Wellness / Premium Feature */}
-          <Card className="border-none shadow-xl bg-gradient-to-br from-gray-900 to-gray-800 text-white overflow-hidden relative">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none" />
-            <CardBody className="p-6 relative z-10">
-              <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center mb-6 backdrop-blur-sm">
-                <ShieldCheck className="w-6 h-6 text-white" />
-              </div>
-              <h3 className="text-lg font-bold mb-2">
-                {t("dashboardPage.geneticWellness")}
-              </h3>
-              <p className="text-sm text-gray-300 leading-relaxed mb-6">
-                {t("dashboardPage.geneticDesc")}
-              </p>
-              <Button
-                className="w-full bg-white text-gray-900 hover:bg-gray-100 border-none font-bold rounded-xl py-3 flex items-center justify-center gap-2"
-                onClick={() => navigate("/prevention")}>
-                {t("dashboardPage.viewRisk")}
-              </Button>
-            </CardBody>
-          </Card>
+    
         </div>
       </div>
       <ChatInterface />

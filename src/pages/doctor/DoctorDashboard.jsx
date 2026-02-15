@@ -288,6 +288,7 @@ const DoctorDashboard = () => {
       id: appointment.patient_user_id,
       name: appointment.patient_name,
       avatar: appointment.patient_profile_pic,
+      appointmentId: appointment.id,
     });
     setIsChatOpen(true);
   };
@@ -930,6 +931,7 @@ Clinical Info:
           recipientId={selectedChatUser.id}
           recipientName={selectedChatUser.name}
           recipientAvatar={selectedChatUser.avatar}
+          appointmentId={selectedChatUser.appointmentId}
           isOpen={isChatOpen}
           onClose={() => setIsChatOpen(false)}
         />

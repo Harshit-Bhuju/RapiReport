@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { NavLink, useNavigate, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import API from "@/Configs/ApiEndpoints";
 import {
   LayoutDashboard,
   FileText,
@@ -29,6 +30,15 @@ const Sidebar = ({ isOpen, onClose }) => {
   const navigate = useNavigate();
   const { logout, user } = useAuthStore();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [userPoints, setUserPoints] = useState(null);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    fetch(API.REWARDS_LIST, { credentials: "include" })
+      .then((r) => r.json())
+      .then((d) => { if (d?.status === "success") setUserPoints(d.userPoints ?? 0); })
+      .catch(() => {});
+  }, [user?.id]);
 
   const mainGroups = [
     {
@@ -72,7 +82,12 @@ const Sidebar = ({ isOpen, onClose }) => {
       title: t("sidebar.discover"),
       items: [
         { name: t("quest.title"), path: "/quest-game", icon: Map },
-        { name: t("marketplace.title"), path: "/marketplace", icon: Gift },
+        {
+          name: t("marketplace.title"),
+          path: "/marketplace",
+          icon: Gift,
+          badge: userPoints != null ? `${userPoints} pts` : null,
+        },
       ],
     },
   ];
@@ -181,9 +196,14 @@ const Sidebar = ({ isOpen, onClose }) => {
                               : "group-hover:text-primary-600",
                           )}
                         />
-                        <span className="truncate tracking-tight">
+                        <span className="truncate tracking-tight flex-1">
                           {item.name}
                         </span>
+                        {item.badge && (
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-primary-100 text-primary-600 shrink-0">
+                            {item.badge}
+                          </span>
+                        )}
                       </>
                     )}
                   </NavLink>

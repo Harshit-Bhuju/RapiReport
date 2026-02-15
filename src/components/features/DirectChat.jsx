@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import API from "@/Configs/ApiEndpoints";
 import { useAuthStore } from "@/store/authStore";
 
-const DirectChat = ({ recipientId, recipientName, recipientAvatar, isOpen, onClose }) => {
+const DirectChat = ({ recipientId, recipientName, recipientAvatar, appointmentId, isOpen, onClose }) => {
     const { user } = useAuthStore();
     const [messages, setMessages] = useState([]);
     const [inputValue, setInputValue] = useState("");
@@ -13,14 +13,15 @@ const DirectChat = ({ recipientId, recipientName, recipientAvatar, isOpen, onClo
     const scrollRef = useRef(null);
     const pollInterval = useRef(null);
 
-    // Hardcoded endpoint for now or added to API config
-    const CHAT_ENDPOINT = `${API.BASE_URL}/api/consultants/consultation_chat.php`;
+    const CHAT_ENDPOINT = API.CONSULTATION_CHAT;
 
     const fetchMessages = async () => {
-        if (!recipientId) return;
+        if (!recipientId && !appointmentId) return;
         try {
-            const res = await axios.get(`${CHAT_ENDPOINT}?user_id=${recipientId}`, {
-                withCredentials: true,
+            const params = appointmentId ? { appointment_id: appointmentId } : { user_id: recipientId };
+            const res = await axios.get(CHAT_ENDPOINT, {
+                params,
+                withCredentials: true
             });
             if (res.data.status === "success") {
                 setMessages(res.data.messages);
@@ -31,14 +32,14 @@ const DirectChat = ({ recipientId, recipientName, recipientAvatar, isOpen, onClo
     };
 
     useEffect(() => {
-        if (isOpen && recipientId) {
+        if (isOpen && (recipientId || appointmentId)) {
             fetchMessages();
-            pollInterval.current = setInterval(fetchMessages, 3000); // Poll every 3s
+            pollInterval.current = setInterval(fetchMessages, 3000);
         }
         return () => {
             if (pollInterval.current) clearInterval(pollInterval.current);
         };
-    }, [isOpen, recipientId]);
+    }, [isOpen, recipientId, appointmentId]);
 
     useEffect(() => {
         if (scrollRef.current) {
@@ -47,11 +48,10 @@ const DirectChat = ({ recipientId, recipientName, recipientAvatar, isOpen, onClo
     }, [messages, isOpen]);
 
     const handleSend = async () => {
-        if (!inputValue.trim() || !recipientId) return;
+        if (!inputValue.trim() || (!recipientId && !appointmentId)) return;
         const text = inputValue;
         setInputValue("");
 
-        // Optimistic update
         const tempMsg = {
             id: "temp-" + Date.now(),
             sender_id: user.id,
@@ -61,11 +61,18 @@ const DirectChat = ({ recipientId, recipientName, recipientAvatar, isOpen, onClo
         };
         setMessages(prev => [...prev, tempMsg]);
 
+        const payload = { message: text };
+        if (appointmentId && recipientId) {
+            payload.appointment_id = appointmentId;
+            payload.recipient_id = recipientId;
+        } else if (recipientId) {
+            payload.recipient_id = recipientId;
+        } else {
+            return; // need at least one
+        }
+
         try {
-            await axios.post(CHAT_ENDPOINT, {
-                recipient_id: recipientId,
-                message: text
-            }, { withCredentials: true });
+            await axios.post(CHAT_ENDPOINT, payload, { withCredentials: true });
             fetchMessages(); // Refresh to get real ID
         } catch (error) {
             console.error("Failed to send", error);

@@ -33,6 +33,7 @@ import Button from "@/components/ui/Button";
 import Modal from "@/components/ui/Modal";
 import Input from "@/components/ui/Input";
 import { FamilyMemberCard } from "@/components/ui/FamilyMemberCard";
+import WebRTCCallUI from "@/components/ui/WebRTCCallUI";
 import { toast } from "react-hot-toast";
 import API from "@/Configs/ApiEndpoints";
 import { cn } from "@/lib/utils";
@@ -1091,224 +1092,55 @@ const Family = () => {
         </div>
       </Modal>
 
-      {/* Call Modal - Premium UI */}
+      {/* Call Modal — shared WebRTC UI */}
       <Modal
         isOpen={isCallModalOpen}
         onClose={() => endCall()}
         title=""
         hideHeader={true}
         size="full">
-        <div
-          className="relative w-full bg-gray-900 overflow-hidden flex flex-col justify-center"
-          style={{ minHeight: "80vh", height: "100%" }}>
-          {/* Remote video full-screen background */}
-          <div className="absolute inset-0 z-0">
-            <video
-              ref={remoteVideoRef}
-              autoPlay
-              playsInline
-              className="w-full h-full object-cover opacity-90"
-            />
-            {/* Dark overlay for better text contrast if video is somewhat bright, or just to blend */}
-            <div className="absolute inset-0 bg-black/20" />
-          </div>
-
-          {/* Profile/Status content (Only when NOT in call - e.g. Ringing) */}
-          {!isInCall && callInfo?.member && (
-            <div className="relative z-10 flex flex-col items-center justify-center h-full space-y-8 animate-in fade-in zoom-in duration-500">
-              <div className="relative">
-                <div className="absolute inset-0 bg-primary-500 rounded-full animate-ping opacity-20 filter blur-xl scale-150" />
-                <div className="w-40 h-40 rounded-full p-1 bg-gradient-to-br from-primary-400 to-purple-600 shadow-2xl relative z-10">
-                  <div className="w-full h-full rounded-full overflow-hidden border-4 border-gray-900 bg-gray-800 flex items-center justify-center">
-                    {callInfo.member.profile_picture ? (
-                      <img
-                        src={callInfo.member.profile_picture}
-                        alt={callInfo.member.username}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <Users className="w-16 h-16 text-gray-500" />
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div className="text-center space-y-2">
-                <h3 className="text-4xl font-black text-white tracking-tight drop-shadow-lg">
-                  {callInfo.member.username || callInfo.member.email}
-                </h3>
-                <p className="text-xl font-medium text-primary-200 animate-pulse">
-                  {callInfo.isCaller
-                    ? t("family.callingStatus") || "Calling..."
-                    : t("family.incomingCallStatus") ||
-                    "Incoming Video Call..."}
-                </p>
-              </div>
-
-              {/* Incoming Call Actions */}
-              {!callInfo.isCaller && (
-                <div className="flex items-center gap-12 mt-12">
-                  <button
-                    onClick={handleDeclineIncoming}
-                    className="flex flex-col items-center gap-2 group">
-                    <div className="w-20 h-20 rounded-full bg-red-500/90 backdrop-blur-sm text-white flex items-center justify-center shadow-lg shadow-red-500/30 group-hover:scale-110 group-hover:bg-red-500 transition-all duration-300">
-                      <Phone className="w-8 h-8 rotate-[135deg]" />
-                    </div>
-                    <span className="text-sm font-bold text-gray-300 group-hover:text-white transition-colors">
-                      Decline
-                    </span>
-                  </button>
-
-                  <button
-                    onClick={handleAcceptIncoming}
-                    className="flex flex-col items-center gap-2 group">
-                    <div className="w-20 h-20 rounded-full bg-emerald-500/90 backdrop-blur-sm text-white flex items-center justify-center shadow-lg shadow-emerald-500/30 group-hover:scale-110 group-hover:bg-emerald-500 transition-all duration-300 animate-bounce">
-                      <Phone className="w-8 h-8" />
-                    </div>
-                    <span className="text-sm font-bold text-gray-300 group-hover:text-white transition-colors">
-                      Accept
-                    </span>
-                  </button>
-                </div>
-              )}
-
-              {/* Caller Actions (Cancel) */}
-              {callInfo.isCaller && (
-                <div className="mt-12">
-                  <button
-                    onClick={() => endCall()}
-                    className="w-16 h-16 rounded-full bg-red-500/20 backdrop-blur-md border border-red-500/50 text-red-100 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all duration-300">
-                    <Phone className="w-8 h-8 rotate-[135deg]" />
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Local Video Preview - always mounted so ref stays attached */}
-          {isInCall && (
-            <div className="absolute top-4 right-4 sm:top-6 sm:right-6 w-24 sm:w-32 md:w-48 aspect-[3/4] rounded-2xl overflow-hidden shadow-2xl border-2 border-white/20 z-20 bg-black transition-all hover:scale-105 hover:border-primary-500/50">
-              <video
-                ref={localVideoRef}
-                autoPlay
-                playsInline
-                muted
-                className="w-full h-full object-cover"
-                style={{
-                  transform: "scaleX(-1)",
-                  display: isCameraOn ? "block" : "none",
-                }}
-              />
-              {!isCameraOn && (
-                <div className="w-full h-full flex items-center justify-center bg-gray-800">
-                  <VideoOff className="w-8 h-8 text-gray-500" />
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* In-Call Controls Bar */}
-          {isInCall && (
-            <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-20">
-              <div className="flex items-center gap-6 px-8 py-4 bg-gray-900/60 backdrop-blur-xl border border-white/10 rounded-full shadow-2xl">
-                {/* Mic */}
-                <button
-                  onClick={toggleMic}
-                  className={cn(
-                    "w-14 h-14 rounded-full flex items-center justify-center transition-all duration-200",
-                    isMicOn
-                      ? "bg-white/10 hover:bg-white/20 text-white"
-                      : "bg-red-500 hover:bg-red-600 text-white shadow-lg shadow-red-500/30",
-                  )}>
-                  {isMicOn ? (
-                    <Mic className="w-6 h-6" />
-                  ) : (
-                    <MicOff className="w-6 h-6" />
-                  )}
-                </button>
-
-                {/* Camera */}
-                <button
-                  onClick={toggleCamera}
-                  className={cn(
-                    "w-14 h-14 rounded-full flex items-center justify-center transition-all duration-200",
-                    isCameraOn
-                      ? "bg-white/10 hover:bg-white/20 text-white"
-                      : "bg-red-500 hover:bg-red-600 text-white shadow-lg shadow-red-500/30",
-                  )}>
-                  {isCameraOn ? (
-                    <Video className="w-6 h-6" />
-                  ) : (
-                    <VideoOff className="w-6 h-6" />
-                  )}
-                </button>
-
-                {/* End Call */}
-                <button
-                  onClick={() => endCall()}
-                  className="w-16 h-16 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center shadow-lg shadow-red-500/40 hover:scale-110 transition-all duration-200 ml-4">
-                  <Phone className="w-8 h-8 rotate-[135deg]" />
-                </button>
-
-                {/* Minimize */}
-                <button
-                  onClick={() => {
-                    setIsCallModalOpen(false);
-                    setIsCallMinimized(true);
-                  }}
-                  className="w-12 h-12 rounded-full bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white flex items-center justify-center transition-all duration-200 ml-2"
-                  title="Minimize Call">
-                  <Minimize2 className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
+        <WebRTCCallUI
+          localVideoRef={localVideoRef}
+          remoteVideoRef={remoteVideoRef}
+          localStreamRef={localStreamRef}
+          remoteStreamRef={remoteStreamRef}
+          isInCall={isInCall}
+          isCameraOn={isCameraOn}
+          isMicOn={isMicOn}
+          callInfo={callInfo}
+          mode="family"
+          onAccept={handleAcceptIncoming}
+          onDecline={handleDeclineIncoming}
+          onEnd={() => endCall()}
+          onToggleCamera={toggleCamera}
+          onToggleMic={toggleMic}
+          onMinimize={() => {
+            setIsCallModalOpen(false);
+            setIsCallMinimized(true);
+          }}
+          showConnectionStatus={false}
+        />
       </Modal>
 
-      {/* Minimized call overlay (like Instagram PIP) */}
-      {isInCall && isCallMinimized && callInfo && (
-        <div className="fixed bottom-4 right-4 z-40 w-64 h-40 bg-black rounded-2xl shadow-2xl overflow-hidden flex flex-col">
-          <div className="relative flex-1">
-            <video
-              ref={remoteVideoRef}
-              autoPlay
-              playsInline
-              className="w-full h-full object-cover"
-            />
-            {isCameraOn ? (
-              <video
-                ref={localVideoRef}
-                autoPlay
-                playsInline
-                muted
-                className="w-20 h-14 object-cover absolute bottom-2 right-2 rounded-lg border border-white/40"
-                style={{ transform: "scaleX(-1)" }}
-              />
-            ) : (
-              <div className="w-20 h-14 absolute bottom-2 right-2 rounded-lg border border-white/40 bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center">
-                <VideoOff className="w-5 h-5 text-white/80" />
-              </div>
-            )}
-          </div>
-          <div className="absolute top-1 right-1 flex gap-1">
-            <button
-              onClick={() => {
-                setIsCallMinimized(false);
-                setIsCallModalOpen(true);
-              }}
-              className="p-1 rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors"
-              title="Expand">
-              <Maximize2 className="w-3 h-3" />
-            </button>
-            <button
-              onClick={() => endCall()}
-              className="p-1 rounded-full bg-red-500 text-white hover:bg-red-600 transition-colors"
-              title="Hang up">
-              <Phone className="w-3 h-3 rotate-135" />
-            </button>
-          </div>
-        </div>
+      {/* Minimized PIP overlay */}
+            {isInCall && isCallMinimized && callInfo && (
+        <WebRTCCallUI
+          localVideoRef={localVideoRef}
+          remoteVideoRef={remoteVideoRef}
+          localStreamRef={localStreamRef}
+          remoteStreamRef={remoteStreamRef}
+          isInCall={isInCall}
+          isCameraOn={isCameraOn}
+          isMicOn={isMicOn}
+          callInfo={callInfo}
+          mode="family"
+          isMinimized={true}
+          onEnd={() => endCall()}
+          onExpand={() => {
+            setIsCallMinimized(false);
+            setIsCallModalOpen(true);
+          }}
+        />
       )}
       {/* Health Details Modal */}
       <Modal
@@ -1630,8 +1462,22 @@ const Family = () => {
                     <div
                       key={rx.id}
                       className="bg-white border border-gray-100 p-3 rounded-xl shadow-sm">
-                      <div className="flex justify-between items-start mb-2">
-                        <div className="flex-1">
+                      <div className="flex gap-3 justify-between items-start mb-2">
+                        {rx.imagePath && (
+                          <a
+                            href={API.PRESCRIPTION_IMAGE(rx.imagePath)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="shrink-0 w-14 h-14 rounded-lg overflow-hidden border border-gray-200 hover:opacity-90 transition-opacity"
+                          >
+                            <img
+                              src={API.PRESCRIPTION_IMAGE(rx.imagePath)}
+                              alt="Prescription"
+                              className="w-full h-full object-cover"
+                            />
+                          </a>
+                        )}
+                        <div className="flex-1 min-w-0">
                           <h4 className="text-sm font-bold text-gray-800 line-clamp-1">
                             {rx.meds?.map((m) => m.name).join(", ") || "No meds listed"}
                           </h4>
@@ -1639,7 +1485,7 @@ const Family = () => {
                             {rx.note || rx.rawText || "No additional notes"}
                           </p>
                         </div>
-                        <span className="text-[10px] font-medium text-gray-400 bg-gray-50 px-2 py-1 rounded-lg whitespace-nowrap ml-2">
+                        <span className="text-[10px] font-medium text-gray-400 bg-gray-50 px-2 py-1 rounded-lg whitespace-nowrap shrink-0">
                           {new Date(rx.createdAt).toLocaleDateString()}
                         </span>
                       </div>

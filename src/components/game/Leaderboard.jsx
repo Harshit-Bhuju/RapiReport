@@ -3,12 +3,12 @@ import { motion } from "framer-motion";
 import { Trophy } from "lucide-react";
 import { useGameStore } from "../../store/gameStore";
 
-const Leaderboard = () => {
+const Leaderboard = ({ compact }) => {
   const { leaderboard } = useGameStore();
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-      <div className="flex items-center gap-2 mb-6">
+    <div className={compact ? "p-0" : "bg-white rounded-2xl shadow-sm border border-gray-100 p-6"}>
+      <div className={`flex items-center gap-2 ${compact ? "mb-4" : "mb-6"}`}>
         <div className="p-2 bg-yellow-100 rounded-lg">
           <Trophy className="w-5 h-5 text-yellow-600" />
         </div>

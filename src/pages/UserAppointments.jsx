@@ -42,7 +42,8 @@ const UserAppointments = () => {
         setSelectedChatUser({
             id: appointment.other_user_id,
             name: appointment.display_name,
-            avatar: appointment.profile_pic
+            avatar: appointment.profile_pic,
+            appointmentId: appointment.id,
         });
         setIsChatOpen(true);
     };
@@ -190,6 +191,7 @@ const UserAppointments = () => {
                     recipientId={selectedChatUser.id}
                     recipientName={selectedChatUser.name}
                     recipientAvatar={selectedChatUser.avatar}
+                    appointmentId={selectedChatUser.appointmentId}
                     isOpen={isChatOpen}
                     onClose={() => setIsChatOpen(false)}
                 />

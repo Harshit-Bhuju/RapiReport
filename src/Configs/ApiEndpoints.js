@@ -60,6 +60,11 @@ const API = {
   PRESCRIPTIONS_LIST: `${BASE_URL}/health/prescriptions_list.php`,
   PRESCRIPTIONS_CREATE: `${BASE_URL}/health/prescriptions_create.php`,
   PRESCRIPTIONS_DELETE: `${BASE_URL}/health/prescriptions_delete.php`,
+  PRESCRIPTION_IMAGE: (imagePath) => {
+    if (!imagePath) return null;
+    const filename = imagePath.split('/').pop();
+    return `${BASE_URL}/health/get_prescription_image.php?file=${encodeURIComponent(filename)}`;
+  },
   SYMPTOMS_LIST: `${BASE_URL}/health/symptoms_list.php`,
 
   CHAT: `${BASE_URL}/api/chat.php`,
@@ -124,6 +129,7 @@ const API = {
   CONSULTATION_STATUS: `${BASE_URL}/api/consultants/consultation_call_status.php`,
   GET_CONSULTATION_DETAILS: `${BASE_URL}/api/consultants/get_consultation_details.php`,
   CONSULTATION_CALL_INCOMING: `${BASE_URL}/api/consultants/get_incoming_consultation_call.php`,
+  CONSULTATION_CHAT: `${BASE_URL}/api/consultants/consultation_chat.php`,
 
   // Prescriptions
   SAVE_PRESCRIPTION: `${BASE_URL}/health/prescriptions_create.php`,

@@ -15,7 +15,11 @@ if (!$user_id) {
     exit;
 }
 
-$stmt = $conn->prepare("SELECT id, user_id, doctor_user_id, note, raw_text, created_at FROM prescriptions WHERE user_id = ? ORDER BY created_at DESC");
+$hasImagePath = false;
+$cols = $conn->query("SHOW COLUMNS FROM prescriptions LIKE 'image_path'");
+if ($cols && $cols->num_rows > 0) $hasImagePath = true;
+$colsStr = $hasImagePath ? "id, user_id, doctor_user_id, note, raw_text, image_path, created_at" : "id, user_id, doctor_user_id, note, raw_text, created_at";
+$stmt = $conn->prepare("SELECT $colsStr FROM prescriptions WHERE user_id = ? ORDER BY created_at DESC");
 $stmt->bind_param('i', $user_id);
 $stmt->execute();
 $result = $stmt->get_result();
@@ -37,6 +41,7 @@ while ($row = $result->fetch_assoc()) {
         'doctor_user_id' => $row['doctor_user_id'] ? (int) $row['doctor_user_id'] : null,
         'note' => $row['note'],
         'rawText' => $row['raw_text'],
+        'imagePath' => ($hasImagePath && isset($row['image_path'])) ? $row['image_path'] : null,
         'createdAt' => $row['created_at'],
         'meds' => $meds,
     ];

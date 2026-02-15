@@ -392,18 +392,36 @@ const MedicalHistory = () => {
                 <li
                   key={rx.id}
                   className="text-sm border-b border-gray-100 pb-3 last:border-0 last:pb-0">
-                  <span className="text-gray-500">
-                    {rx.createdAt
-                      ? format(new Date(rx.createdAt), "MMM d, yyyy")
-                      : "—"}
-                  </span>
-                  <p className="font-medium text-gray-900 mt-0.5">
-                    {(rx.meds || [])
-                      .map((m) => m.name)
-                      .filter(Boolean)
-                      .join(", ") || "No medicines listed"}
-                  </p>
-                  {rx.note && <p className="text-gray-500 mt-0.5">{rx.note}</p>}
+                  <div className="flex gap-3">
+                    {rx.imagePath && (
+                      <a
+                        href={API.PRESCRIPTION_IMAGE(rx.imagePath)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="shrink-0 w-16 h-16 rounded-lg overflow-hidden border border-gray-200 hover:opacity-90 transition-opacity"
+                      >
+                        <img
+                          src={API.PRESCRIPTION_IMAGE(rx.imagePath)}
+                          alt="Prescription"
+                          className="w-full h-full object-cover"
+                        />
+                      </a>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <span className="text-gray-500">
+                        {rx.createdAt
+                          ? format(new Date(rx.createdAt), "MMM d, yyyy")
+                          : "—"}
+                      </span>
+                      <p className="font-medium text-gray-900 mt-0.5">
+                        {(rx.meds || [])
+                          .map((m) => m.name)
+                          .filter(Boolean)
+                          .join(", ") || "No medicines listed"}
+                      </p>
+                      {rx.note && <p className="text-gray-500 mt-0.5">{rx.note}</p>}
+                    </div>
+                  </div>
                 </li>
               ))}
             </ul>

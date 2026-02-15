@@ -17,8 +17,8 @@ const Modal = ({
     lg: "max-w-2xl",
     xl: "max-w-4xl",
     xxl: "max-w-6xl",
-    // Full-screen style: take entire viewport
-    full: "max-w-full h-[100dvh] sm:max-w-full md:max-w-5xl md:h-[90vh]",
+    // Full-screen: entire viewport on all devices
+    full: "max-w-full w-full h-[100dvh] max-h-[100dvh] rounded-none",
   };
 
   return (
@@ -39,7 +39,7 @@ const Modal = ({
           <div
             className={cn(
               "flex min-h-full items-center justify-center",
-              size === "full" ? "p-0 sm:p-2" : "p-4",
+              size === "full" ? "p-0" : "p-4",
             )}>
             <Transition.Child
               as={Fragment}

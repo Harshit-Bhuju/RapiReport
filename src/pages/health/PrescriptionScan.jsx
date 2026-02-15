@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useEffect, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import axios from "axios";
 import { Card, CardBody } from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
@@ -20,6 +21,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useHealthStore } from "@/store/healthStore";
+import { useConfirmStore } from "@/store/confirmStore";
 import { useAuthStore } from "@/store/authStore";
 import { useNavigate } from "react-router-dom";
 import API from "@/Configs/ApiEndpoints";
@@ -39,6 +41,7 @@ const fileToBase64 = (file) => {
 };
 
 const PrescriptionScan = () => {
+  const { t } = useTranslation();
   const { user } = useAuthStore();
   const {
     addPrescription,
@@ -88,22 +91,31 @@ const PrescriptionScan = () => {
     toast.success("Image loaded. Click Scan to read handwriting.");
   };
 
-  const handleDeleteHistory = async (id) => {
-    try {
-      const response = await axios.post(
-        API.OCR_HISTORY_DELETE,
-        { id },
-        { withCredentials: true },
-      );
-      if (response.data?.status === "success") {
-        toast.success("Deleted.");
-        setOcrHistory((prev) => prev.filter((h) => h.id !== id));
-      } else {
-        toast.error(response.data?.message || "Delete failed.");
-      }
-    } catch (err) {
-      toast.error("Error deleting history.");
-    }
+  const handleDeleteHistory = (id) => {
+    useConfirmStore.getState().openConfirm({
+      title: t("confirm.delete") + " history?",
+      message: "This will permanently delete this scan from your history.",
+      confirmLabel: t("confirm.delete"),
+      cancelLabel: t("confirm.cancel"),
+      variant: "danger",
+      onConfirm: async () => {
+        try {
+          const response = await axios.post(
+            API.OCR_HISTORY_DELETE,
+            { id },
+            { withCredentials: true },
+          );
+          if (response.data?.status === "success") {
+            toast.success("Deleted.");
+            setOcrHistory((prev) => prev.filter((h) => h.id !== id));
+          } else {
+            toast.error(response.data?.message || "Delete failed.");
+          }
+        } catch (err) {
+          toast.error("Error deleting history.");
+        }
+      },
+    });
   };
 
   const handleScan = async () => {
@@ -495,7 +507,19 @@ const PrescriptionScan = () => {
                               </div>
                             </div>
                             <button
-                              onClick={() => removePrescription(p.id)}
+                              onClick={() => {
+                                useConfirmStore.getState().openConfirm({
+                                  title: t("confirm.delete") + " prescription?",
+                                  message: t("confirm.removePrescription"),
+                                  confirmLabel: t("confirm.delete"),
+                                  cancelLabel: t("confirm.cancel"),
+                                  variant: "danger",
+                                  onConfirm: async () => {
+                                    await removePrescription(p.id);
+                                    toast.success("Prescription removed.");
+                                  },
+                                });
+                              }}
                               className="p-2 text-gray-300 hover:text-error-600 transition-opacity">
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>

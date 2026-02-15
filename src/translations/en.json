@@ -1,4 +1,20 @@
 {
+  "confirm": {
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "remove": "Remove",
+    "decline": "Decline",
+    "endCall": "End call",
+    "clearChat": "Clear chat",
+    "removeReport": "This will permanently delete this report from your account.",
+    "removePrescription": "This will permanently delete this prescription.",
+    "removeSymptom": "This will permanently delete this symptom entry.",
+    "removeMember": "Are you sure you want to remove this family member?",
+    "declineInvite": "Are you sure you want to decline this invitation?",
+    "removeDoctorRole": "Remove doctor role from this user?",
+    "removeCondition": "Remove this condition from your history?",
+    "removeParental": "Remove this parental history entry?"
+  },
   "nav": {
     "home": "Home",
     "features": "Features",
@@ -306,7 +322,10 @@
   "chat": {
     "namaste": "Namaste! I am RapiReport AI. How can I help you with your health today?",
     "error": "I'm sorry, I'm having trouble connecting right now. Please try again later.",
-    "clearHistory": "Are you sure you want to clear chat history?",
+    "clearHistory": "Are you sure you want to clear this chat?",
+    "deleteChat": "Delete this chat?",
+    "newChat": "New chat",
+    "chatHistory": "Chat history",
     "title": "RapiReport AI",
     "online": "Online Health Support",
     "thinking": "Thinking...",

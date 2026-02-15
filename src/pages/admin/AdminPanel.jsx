@@ -19,12 +19,14 @@ import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import API from "@/Configs/ApiEndpoints";
+import { useConfirmStore } from "@/store/confirmStore";
 
 // Add new API endpoint to Configs/ApiEndpoints if needed, 
 // for now we'll use a direct path for the new manage_rewards.php
 const ADMIN_MANAGE_REWARDS = "/admin/manage_rewards.php";
 
 const AdminPanel = () => {
+  const openConfirm = useConfirmStore((s) => s.openConfirm);
   const [users, setUsers] = useState([]);
   const [stats, setStats] = useState({
     total_users: 0,
@@ -114,26 +116,35 @@ const AdminPanel = () => {
     }
   };
 
-  const handleRemoveDoctor = async (user) => {
-    setAssigningId(user.id);
-    try {
-      const res = await axios.post(API.ADMIN_UPDATE_ROLE, {
-        user_id: user.id,
-        role: "user"
-      }, { withCredentials: true });
+  const handleRemoveDoctor = (u) => {
+    openConfirm({
+      title: "Remove doctor role?",
+      message: `Remove doctor role from ${u.name || u.username}? They will no longer appear as a consultant.`,
+      confirmLabel: "Remove",
+      cancelLabel: "Cancel",
+      variant: "danger",
+      onConfirm: async () => {
+        setAssigningId(u.id);
+        try {
+          const res = await axios.post(API.ADMIN_UPDATE_ROLE, {
+            user_id: u.id,
+            role: "user"
+          }, { withCredentials: true });
 
-      if (res.data.status === "success") {
-        toast.success(`${user.name || user.username}'s doctor role has been removed`);
-        fetchUsers();
-        fetchStats(); // Update stats too
-      } else {
-        toast.error(res.data.message || "Failed to remove doctor role");
-      }
-    } catch (error) {
-      toast.error("Error connecting to server");
-    } finally {
-      setAssigningId(null);
-    }
+          if (res.data.status === "success") {
+            toast.success(`${u.name || u.username}'s doctor role has been removed`);
+            fetchUsers();
+            fetchStats();
+          } else {
+            toast.error(res.data.message || "Failed to remove doctor role");
+          }
+        } catch (error) {
+          toast.error("Error connecting to server");
+        } finally {
+          setAssigningId(null);
+        }
+      },
+    });
   };
 
   const handleUpdatePoints = async (user, delta) => {

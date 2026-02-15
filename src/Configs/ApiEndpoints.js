@@ -80,6 +80,7 @@ const API = {
   AI_PARSE_PRESCRIPTION: `${BASE_URL}/api/ai_parse_prescription.php`,
   DOCTOR_PATIENTS: `${BASE_URL}/health/doctor_patients.php`,
   DOCTOR_PATIENT_TIMELINE: `${BASE_URL}/health/doctor_patient_timeline.php`,
+  GET_PATIENT_HEALTH_SUMMARY: `${BASE_URL}/health/doctor_patient_health_summary.php`,
   PRESCRIPTION_STATS: `${BASE_URL}/health/prescription_stats.php`,
 
   OCR_HISTORY_LIST: `${BASE_URL}/health/ocr_history_list.php`,

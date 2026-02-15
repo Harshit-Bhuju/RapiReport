@@ -170,13 +170,6 @@ const Dashboard = () => {
           colorClass="text-blue-600"
         />
         <QuickAction
-          icon={Pill}
-          label={t("dashboardPage.logMeds")}
-          onClick={() => navigate("/planner")}
-          bgClass="bg-emerald-50"
-          colorClass="text-emerald-600"
-        />
-        <QuickAction
           icon={Activity}
           label={t("dashboardPage.logSymptoms")}
           onClick={() => navigate("/symptoms")}
@@ -371,8 +364,6 @@ const Dashboard = () => {
               </Button>
             </CardBody>
           </Card>
-
-    
         </div>
       </div>
       <ChatInterface />

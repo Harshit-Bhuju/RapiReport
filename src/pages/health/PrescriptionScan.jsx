@@ -421,7 +421,7 @@ const PrescriptionScan = () => {
                               {new Date(item.created_at).toLocaleString()}
                             </span>
                           </div>
-                          {(item.image_path && API.OCR_IMAGE(item.image_path)) ? (
+                          {item.image_path && API.OCR_IMAGE(item.image_path) ? (
                             <a
                               href={API.OCR_IMAGE(item.image_path)}
                               target="_blank"
@@ -481,53 +481,6 @@ const PrescriptionScan = () => {
                       </div>
                     </div>
                   ))}
-
-                  {/* Saved prescriptions summary */}
-                  {prescriptions.length > 0 && (
-                    <div className="mt-4 pt-6 border-t border-gray-100">
-                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 pl-1">
-                        Recent Saved Prescriptions
-                      </p>
-                      <div className="space-y-3">
-                        {prescriptions.slice(0, 3).map((p) => (
-                          <div
-                            key={`p-${p.id}`}
-                            className="p-4 rounded-2xl border border-gray-50 bg-gray-50/30 flex items-center justify-between group">
-                            <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-full bg-success-50 flex items-center justify-center text-success-600">
-                                <Save className="w-4 h-4" />
-                              </div>
-                              <div>
-                                <p className="text-xs font-extrabold text-gray-900">
-                                  {p.note || `${p.meds?.length || 0} Medicines`}
-                                </p>
-                                <p className="text-[10px] font-bold text-gray-400">
-                                  {new Date(p.createdAt).toLocaleDateString()}
-                                </p>
-                              </div>
-                            </div>
-                            <button
-                              onClick={() => {
-                                useConfirmStore.getState().openConfirm({
-                                  title: t("confirm.delete") + " prescription?",
-                                  message: t("confirm.removePrescription"),
-                                  confirmLabel: t("confirm.delete"),
-                                  cancelLabel: t("confirm.cancel"),
-                                  variant: "danger",
-                                  onConfirm: async () => {
-                                    await removePrescription(p.id);
-                                    toast.success("Prescription removed.");
-                                  },
-                                });
-                              }}
-                              className="p-2 text-gray-300 hover:text-error-600 transition-opacity">
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
                 </div>
               )}
             </CardBody>

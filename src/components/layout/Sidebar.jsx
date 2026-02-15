@@ -36,7 +36,9 @@ const Sidebar = ({ isOpen, onClose }) => {
     if (!user?.id) return;
     fetch(API.REWARDS_LIST, { credentials: "include" })
       .then((r) => r.json())
-      .then((d) => { if (d?.status === "success") setUserPoints(d.userPoints ?? 0); })
+      .then((d) => {
+        if (d?.status === "success") setUserPoints(d.userPoints ?? 0);
+      })
       .catch(() => {});
   }, [user?.id]);
 
@@ -96,12 +98,12 @@ const Sidebar = ({ isOpen, onClose }) => {
   const systemItems = [
     ...(user?.role === "doctor"
       ? [
-        {
-          name: t("sidebar.doctorProfile"),
-          path: "/doctor-profile",
-          icon: ClipboardList,
-        },
-      ]
+          {
+            name: t("sidebar.doctorProfile"),
+            path: "/doctor-profile",
+            icon: ClipboardList,
+          },
+        ]
       : []),
     ...(user?.role === "admin"
       ? [{ name: t("nav.adminPanel"), path: "/admin", icon: Shield }]

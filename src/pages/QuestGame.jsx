@@ -36,10 +36,10 @@ const QuestGame = () => {
     user,
     fetchQuests,
     fetchUserStats,
-    fetchQuestStatus,
     anchored,
     anchorQuestsToLocation,
     setQuestProfile,
+    setAuthUserId,
     engagedQuest,
     setEngagedQuest,
     isAITracking,
@@ -57,11 +57,12 @@ const QuestGame = () => {
   const [aiReps, setAiReps] = useState(0);
 
   useEffect(() => {
+    setAuthUserId(authUser?.id ?? null);
     setQuestProfile({
       age: authUser?.age,
       conditions: authUser?.conditions,
     });
-  }, [authUser?.age, authUser?.conditions, setQuestProfile]);
+  }, [authUser?.id, authUser?.age, authUser?.conditions, setAuthUserId, setQuestProfile]);
 
   useEffect(() => {
     fetchUserStats();
@@ -113,72 +114,75 @@ const QuestGame = () => {
   };
 
   return (
-    <div className="min-h-full pb-12">
-      {/* ─── HEADER: Title + Points + Leaderboard/Rewards buttons ─── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 mb-4 md:mb-6 px-4 md:px-0">
-        <div>
-          <h1 className="text-xl md:text-2xl font-black text-gray-900 tracking-tight uppercase">
+    <div className="min-h-full pb-8">
+      {/* ─── HEADER: Title + Points + Leaderboard (popup) + Rewards link ─── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4 mb-3 md:mb-4 px-4 md:px-0">
+        <div className="min-w-0">
+          <h1 className="text-lg sm:text-xl md:text-2xl font-black text-gray-900 tracking-tight uppercase truncate">
             {t("quest.title")}
           </h1>
-          <p className="text-gray-500 font-bold text-xs md:text-sm">
+          <p className="text-gray-500 font-bold text-[10px] sm:text-xs md:text-sm truncate">
             {t("hero.subtitle")}
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-          <div className="bg-white text-gray-900 px-3 py-2 md:px-4 md:py-2.5 rounded-xl border border-gray-100 flex items-center gap-2 shadow-sm">
-            <Target className="w-4 h-4 text-indigo-600 shrink-0" />
-            <div>
+        <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0 flex-wrap">
+          <div className="bg-white text-gray-900 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg sm:rounded-xl border border-gray-100 flex items-center gap-1.5 sm:gap-2 shadow-sm min-w-0">
+            <Target className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-indigo-600 shrink-0" />
+            <div className="min-w-0">
               <p className="text-[8px] text-gray-400 font-black uppercase leading-tight">Daily</p>
-              <p className="font-black text-sm md:text-base leading-none">{user.questsToday || 0}/10</p>
+              <p className="font-black text-xs sm:text-sm leading-none tabular-nums">{user.questsToday ?? 0}/10</p>
             </div>
           </div>
-          <div className="bg-white text-gray-900 px-3 py-2 md:px-4 md:py-2.5 rounded-xl border border-gray-100 flex items-center gap-2 shadow-sm">
-            <Zap className="w-4 h-4 text-orange-500 shrink-0" />
-            <div>
+          <div className="bg-white text-gray-900 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg sm:rounded-xl border border-gray-100 flex items-center gap-1.5 sm:gap-2 shadow-sm min-w-0">
+            <Zap className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-orange-500 shrink-0" />
+            <div className="min-w-0">
               <p className="text-[8px] text-gray-400 font-black uppercase leading-tight">Points</p>
-              <p className="font-black text-sm md:text-base leading-none">{user.pointsToday || 0}</p>
+              <p className="font-black text-xs sm:text-sm leading-none tabular-nums">{user.pointsToday ?? 0}</p>
             </div>
           </div>
           <button
+            type="button"
             onClick={() => setShowLeaderboardPopup(true)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-50 border border-amber-100 text-amber-700 hover:bg-amber-100 transition-colors">
-            <Trophy className="w-4 h-4 shrink-0" />
-            <span className="font-bold text-sm">Leaderboard</span>
+            className="flex items-center gap-1.5 sm:gap-2 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg sm:rounded-xl bg-amber-50 border border-amber-100 text-amber-700 hover:bg-amber-100 transition-colors"
+            aria-label="Open leaderboard">
+            <Trophy className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+            <span className="font-bold text-[10px] sm:text-sm sm:inline hidden">Leaderboard</span>
           </button>
           <Link
             to="/marketplace"
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-purple-50 border border-purple-100 text-purple-700 hover:bg-purple-100 transition-colors">
-            <Gift className="w-4 h-4 shrink-0" />
-            <span className="font-bold text-sm">Rewards</span>
+            className="flex items-center gap-1.5 sm:gap-2 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg sm:rounded-xl bg-purple-50 border border-purple-100 text-purple-700 hover:bg-purple-100 transition-colors"
+            aria-label="Rewards marketplace">
+            <Gift className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+            <span className="font-bold text-[10px] sm:text-sm sm:inline hidden">Rewards</span>
           </Link>
         </div>
       </div>
 
-      {/* ─── RESPONSIVE LAYOUT ─── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
-        {/* Map Column */}
-        <div className="lg:col-span-2">
-          <div className="h-[35vh] sm:h-[40vh] md:h-[450px] lg:h-[580px] rounded-2xl md:rounded-3xl overflow-hidden shadow-xl border border-gray-100">
+      {/* ─── RESPONSIVE LAYOUT: Map + compact objectives (minimal scroll) ─── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 lg:gap-4">
+        <div className="lg:col-span-2 order-1">
+          <div className="h-[32vh] sm:h-[38vh] md:h-[400px] lg:h-[520px] rounded-xl md:rounded-2xl overflow-hidden shadow-lg border border-gray-100">
             <QuestMap />
           </div>
         </div>
 
-        {/* Right Column: Compact Daily Objectives (no heavy scroll) */}
-        <div className="px-4 lg:px-0">
-          <div className="bg-white rounded-2xl p-4 md:p-5 shadow-sm border border-gray-100 max-h-[50vh] lg:max-h-[580px] overflow-y-auto">
-            <div className="flex items-center gap-2 mb-3">
-              <Footprints className="w-4 h-4 text-indigo-600 shrink-0" />
+        {/* Daily Objectives: compact grid, minimal vertical scroll */}
+        <div className="px-4 lg:px-0 order-2">
+          <div className="bg-white rounded-xl md:rounded-2xl p-3 md:p-4 shadow-sm border border-gray-100">
+            <div className="flex items-center gap-2 mb-2">
+              <Footprints className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
               <h3 className="font-black text-gray-900 uppercase text-[10px] tracking-widest">Daily Objectives</h3>
             </div>
-            <div className="space-y-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-1.5 max-h-[28vh] sm:max-h-[36vh] lg:max-h-[460px] overflow-y-auto overflow-x-hidden scrollbar-thin">
               {quests.map((q, idx) => {
-                const isLocked = idx > (user.questsToday || 0);
-                const isCurrent = idx === (user.questsToday || 0);
+                const isLocked = idx > (user.questsToday ?? 0);
+                const isCurrent = idx === (user.questsToday ?? 0);
                 const isCompleted = q.completed || q.skipped;
 
                 return (
                   <button
                     key={q.id}
+                    type="button"
                     onClick={() => {
                       if (!isLocked) {
                         setViewingQuestId(q.id);
@@ -186,19 +190,19 @@ const QuestGame = () => {
                       }
                     }}
                     disabled={isLocked}
-                    className={`w-full text-left p-3 rounded-xl border transition-all ${isLocked
+                    className={`w-full text-left p-2.5 rounded-lg border transition-all ${isLocked
                       ? "bg-gray-50 border-gray-100 cursor-not-allowed opacity-60"
                       : isCurrent
                         ? viewingQuestId === q.id ? "border-indigo-500 bg-indigo-50/50 ring-1 ring-indigo-200" : "border-gray-200 bg-white hover:border-indigo-300"
                         : isCompleted ? "bg-emerald-50/50 border-emerald-100" : "bg-white border-gray-100"
                       }`}>
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className={`text-[8px] font-black px-1.5 py-0.5 rounded shrink-0 ${isCompleted ? "bg-emerald-100 text-emerald-700" : isLocked ? "bg-gray-200 text-gray-500" : "bg-indigo-600 text-white"}`}>
+                    <div className="flex items-center justify-between gap-1.5">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className={`text-[8px] font-black px-1 py-0.5 rounded shrink-0 ${isCompleted ? "bg-emerald-100 text-emerald-700" : isLocked ? "bg-gray-200 text-gray-500" : "bg-indigo-600 text-white"}`}>
                           #{idx + 1}
                         </span>
                         {isCompleted && <CheckCircle2 className="w-3 h-3 text-emerald-500 shrink-0" />}
-                        <h4 className={`font-bold text-xs truncate ${isLocked ? "text-gray-400" : "text-gray-900"}`}>{q.title}</h4>
+                        <h4 className={`font-bold text-[11px] truncate ${isLocked ? "text-gray-400" : "text-gray-900"}`}>{q.title}</h4>
                       </div>
                       {!isLocked && !isCompleted && <span className="text-[9px] font-black text-indigo-600 shrink-0">+{q.points}P</span>}
                     </div>
@@ -294,28 +298,28 @@ const QuestGame = () => {
         )}
       </AnimatePresence>
 
-      {/* ─── Leaderboard Popup ─── */}
+      {/* ─── Leaderboard Popup (mobile + laptop) ─── */}
       <AnimatePresence>
         {showLeaderboardPopup && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+            className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/50 backdrop-blur-sm"
             onClick={() => setShowLeaderboardPopup(false)}>
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-sm max-h-[80vh] overflow-hidden bg-white rounded-3xl shadow-2xl">
-              <div className="flex items-center justify-between p-4 border-b border-gray-100">
-                <h3 className="font-black text-gray-900">Weekly Leaderboard</h3>
-                <button onClick={() => setShowLeaderboardPopup(false)} className="p-2 hover:bg-gray-100 rounded-full">
+              className="w-full max-w-sm max-h-[85vh] sm:max-h-[80vh] overflow-hidden bg-white rounded-2xl sm:rounded-3xl shadow-2xl flex flex-col">
+              <div className="flex items-center justify-between p-3 sm:p-4 border-b border-gray-100 shrink-0">
+                <h3 className="font-black text-gray-900 text-base sm:text-lg">Weekly Leaderboard</h3>
+                <button type="button" onClick={() => setShowLeaderboardPopup(false)} className="p-2 hover:bg-gray-100 rounded-full" aria-label="Close">
                   <X className="w-5 h-5 text-gray-500" />
                 </button>
               </div>
-              <div className="p-4 overflow-y-auto max-h-[60vh]">
+              <div className="p-3 sm:p-4 overflow-y-auto min-h-0 flex-1">
                 <Leaderboard compact />
               </div>
             </motion.div>

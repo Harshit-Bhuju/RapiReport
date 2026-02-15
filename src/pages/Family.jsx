@@ -1323,14 +1323,43 @@ const Family = () => {
           )
         }
         size="lg">
-        {healthModalMember && healthModalMember.health && (
+        {healthModalMember && !healthModalMember.health && (
+          <div className="py-12 flex flex-col items-center justify-center text-gray-400">
+            <Loader2 className="w-10 h-10 animate-spin text-primary-500 mb-3" />
+            <p className="text-sm font-bold">Loading health history...</p>
+          </div>
+        )}
+        {healthModalMember && healthModalMember.health?.error && (
+          <div className="py-12 flex flex-col items-center justify-center text-gray-500">
+            <p className="text-sm font-bold">Failed to load health data.</p>
+            <Button
+              size="sm"
+              variant="outline"
+              className="mt-3"
+              onClick={handleRefreshHealthModal}>
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Retry
+            </Button>
+          </div>
+        )}
+        {healthModalMember && healthModalMember.health && !healthModalMember.health.error && (
           <div className="space-y-6">
-            {/* Header / Profile Summary */}
+            {/* Auto-refresh notice */}
+            <div className="flex items-center gap-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider bg-gray-50 px-3 py-2 rounded-xl">
+              <RefreshCw className="w-3 h-3" />
+              Auto-refreshes every 10s • Symptoms, prescriptions & family history update live
+            </div>
+
+            {/* Header / Profile Summary — full description */}
             <div className="flex items-center gap-4 bg-primary-50 p-4 rounded-2xl border border-primary-100">
               <div className="w-16 h-16 rounded-2xl bg-white flex items-center justify-center text-primary-500 shadow-sm shrink-0">
-                {healthModalMember.avatar ? (
+                {healthModalMember.avatar ||
+                healthModalMember.health.profile?.profilePic ? (
                   <img
-                    src={healthModalMember.avatar}
+                    src={
+                      healthModalMember.avatar ||
+                      healthModalMember.health.profile.profilePic
+                    }
                     alt={healthModalMember.name}
                     className="w-full h-full rounded-2xl object-cover"
                   />
@@ -1338,18 +1367,33 @@ const Family = () => {
                   <Users className="w-8 h-8" />
                 )}
               </div>
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <h3 className="text-lg font-black text-gray-900 leading-tight">
                   {healthModalMember.name}
                 </h3>
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">
                   {healthModalMember.relation}
                 </p>
-                <div className="flex gap-3 mt-2">
+                {healthModalMember.health.profile?.email && (
+                  <p className="text-xs text-gray-600 mt-1 flex items-center gap-1">
+                    <Mail className="w-3 h-3 shrink-0" />
+                    {healthModalMember.health.profile.email}
+                  </p>
+                )}
+                <div className="flex flex-wrap gap-2 mt-2">
                   {healthModalMember.health.profile?.age && (
                     <span className="text-xs font-bold text-gray-600 bg-white px-2 py-1 rounded-lg border border-gray-100">
                       {healthModalMember.health.profile.age}{" "}
                       {t("consultantsPage.years")}
+                    </span>
+                  )}
+                  {healthModalMember.health.profile?.dob && (
+                    <span className="text-xs font-bold text-gray-600 bg-white px-2 py-1 rounded-lg border border-gray-100">
+                      <Calendar className="w-3 h-3 inline mr-0.5" />
+                      DOB:{" "}
+                      {new Date(
+                        healthModalMember.health.profile.dob,
+                      ).toLocaleDateString()}
                     </span>
                   )}
                   {healthModalMember.health.profile?.gender && (

@@ -9,6 +9,7 @@ import {
   Droplets,
   ShieldAlert,
   ChevronRight,
+  Pill,
 } from "lucide-react";
 import { Card, CardBody } from "@/components/ui/Card";
 import { cn } from "@/lib/utils";
@@ -36,11 +37,18 @@ export const FamilyMemberCard = ({
 
   const conditions = health?.profile?.conditions;
   const allergies = health?.profile?.allergies;
+  const parentalHistory = health?.profile?.parentalHistory?.length || health?.profile?.customParentalHistory;
   const recentSymptoms = (health?.symptoms || []).slice(0, 3);
   const reportsCount = (health?.reports || []).length;
+  const prescriptionsCount = (health?.prescriptions || []).length;
   const hasHealthData =
     health &&
-    (conditions || allergies || recentSymptoms.length > 0 || reportsCount > 0);
+    (conditions ||
+      allergies ||
+      parentalHistory ||
+      recentSymptoms.length > 0 ||
+      reportsCount > 0 ||
+      prescriptionsCount > 0);
 
   return (
     <Card
@@ -141,13 +149,25 @@ export const FamilyMemberCard = ({
             </div>
           )}
 
-          {/* Reports Count */}
-          {reportsCount > 0 && (
-            <div className="flex items-center gap-2">
-              <FileText className="w-3.5 h-3.5 text-primary-500" />
-              <span className="text-xs font-bold text-gray-600">
-                {reportsCount} {t("family.healthReports") || "health report(s)"}
-              </span>
+          {/* Reports & Prescriptions Count */}
+          {(reportsCount > 0 || prescriptionsCount > 0) && (
+            <div className="flex items-center gap-3 flex-wrap">
+              {reportsCount > 0 && (
+                <div className="flex items-center gap-2">
+                  <FileText className="w-3.5 h-3.5 text-primary-500" />
+                  <span className="text-xs font-bold text-gray-600">
+                    {reportsCount} {t("family.healthReports") || "health report(s)"}
+                  </span>
+                </div>
+              )}
+              {prescriptionsCount > 0 && (
+                <div className="flex items-center gap-2">
+                  <Pill className="w-3.5 h-3.5 text-indigo-500" />
+                  <span className="text-xs font-bold text-gray-600">
+                    {prescriptionsCount} prescription(s)
+                  </span>
+                </div>
+              )}
             </div>
           )}
 

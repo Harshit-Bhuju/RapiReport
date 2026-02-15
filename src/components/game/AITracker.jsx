@@ -41,15 +41,9 @@ const AITracker = ({ targetReps, onRepCount, onTargetReached, onClose }) => {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
         ctx.save();
-        // DIGITAL ZOOM OUT (0.5x) - Scale and center the video frame
-        const zoomScale = 0.5;
-        const scaledW = canvas.width * zoomScale;
-        const scaledH = canvas.height * zoomScale;
-        const offsetX = (canvas.width - scaledW) / 2;
-        const offsetY = (canvas.height - scaledH) / 2;
-
-        ctx.translate(offsetX + scaledW, offsetY);
-        ctx.scale(-zoomScale, zoomScale);
+        // FULL SCREEN IMMERSION (No digital zoom out, just mirror)
+        ctx.scale(-1, 1);
+        ctx.translate(-canvas.width, 0);
 
         if (videoRef.current) {
             ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
@@ -60,11 +54,10 @@ const AITracker = ({ targetReps, onRepCount, onTargetReached, onClose }) => {
         if (results.poseLandmarks) {
             const landmarks = results.poseLandmarks;
 
-            // Map landmarks to the 0.5x scaled space for correct drawing & interaction
+            // Map landmarks to the full screen space (standard mirror)
             const mirroredLandmarks = landmarks.map(lm => ({
                 ...lm,
-                x: (offsetX + (1 - lm.x) * scaledW) / canvas.width,
-                y: (offsetY + lm.y * scaledH) / canvas.height
+                x: 1 - lm.x
             }));
 
             drawConnections(ctx, mirroredLandmarks, canvas.width, canvas.height);

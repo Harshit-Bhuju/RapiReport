@@ -167,7 +167,8 @@ const QuestMap = () => {
           />
         )}
 
-        {/* Footprint Trail (Path History) */}
+        {/* Footprint Trail (Path History) - HIDDEN for cleaner UI */}
+        {/*
         {pathHistory.length > 0 && pathHistory.map((pt, i) => (
           (pt && pt[0] != null && pt[1] != null) && (
             <Marker
@@ -178,12 +179,18 @@ const QuestMap = () => {
             />
           )
         ))}
+        */}
 
         {/* Navigation Lines REMOVED as per request */}
 
         {/* Quest Marker (Only show the engaged one for cleaner navigation) */}
-        {quests.map((q) => (
-          (q.lat && q.lng) && (
+        {quests.map((q) => {
+          // FILTER: If we are engaged in a quest, ONLY show that quest.
+          // If NOT engaged, show all available (or logic as desired).
+          // User said: "show one quest at a time that is started... dont show others"
+          if (engagedQuest && engagedQuest.id !== q.id) return null;
+
+          return (q.lat && q.lng) && (
             <Marker
               key={q.id}
               position={[q.lat, q.lng]}
@@ -215,8 +222,8 @@ const QuestMap = () => {
                 </Popup>
               )}
             </Marker>
-          )
-        ))}
+          );
+        })}
       </MapContainer>
 
       <div className="absolute top-4 right-4 z-[20] flex flex-col gap-2">

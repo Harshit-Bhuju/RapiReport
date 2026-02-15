@@ -32,6 +32,41 @@ const ConsultationRoom = () => {
     const signalPollInterval = useRef(null);
     const lastSignalId = useRef(0);
     const iceCandidateBuffer = useRef([]);
+    const outgoingAudioRef = useRef(null);
+    const incomingAudioRef = useRef(null);
+
+    // Ringtone audio (same as Family / ConsultationCallManager)
+    useEffect(() => {
+        if (typeof Audio !== "undefined") {
+            outgoingAudioRef.current = new Audio("/sounds/family_outgoing.mp3");
+            incomingAudioRef.current = new Audio("/sounds/family_incoming.mp3");
+            if (outgoingAudioRef.current) outgoingAudioRef.current.loop = true;
+            if (incomingAudioRef.current) incomingAudioRef.current.loop = true;
+        }
+        return () => {
+            if (outgoingAudioRef.current) {
+                outgoingAudioRef.current.pause();
+                outgoingAudioRef.current = null;
+            }
+            if (incomingAudioRef.current) {
+                incomingAudioRef.current.pause();
+                incomingAudioRef.current = null;
+            }
+        };
+    }, []);
+
+    const stopOutgoingRingtone = () => {
+        if (outgoingAudioRef.current) {
+            outgoingAudioRef.current.pause();
+            outgoingAudioRef.current.currentTime = 0;
+        }
+    };
+    const stopIncomingRingtone = () => {
+        if (incomingAudioRef.current) {
+            incomingAudioRef.current.pause();
+            incomingAudioRef.current.currentTime = 0;
+        }
+    };
 
     useEffect(() => {
         fetchDetails();
@@ -113,12 +148,16 @@ const ConsultationRoom = () => {
                 await pc.setLocalDescription(offer);
                 await sendSignal('offer', offer);
                 setStatus("Calling...");
+                if (outgoingAudioRef.current) outgoingAudioRef.current.play().catch(() => {});
             } else {
                 setStatus("Waiting for doctor...");
+                if (incomingAudioRef.current) incomingAudioRef.current.play().catch(() => {});
             }
 
         } catch (err) {
             console.error(err);
+            stopOutgoingRingtone();
+            stopIncomingRingtone();
             toast.error("Could not access camera/mic");
             setStatus("Media Error");
         }
@@ -169,6 +208,7 @@ const ConsultationRoom = () => {
 
     const handleOffer = async (offer) => {
         if (!pcRef.current) return;
+        stopIncomingRingtone();
         setStatus("Connected");
         await pcRef.current.setRemoteDescription(new RTCSessionDescription(offer));
         const answer = await pcRef.current.createAnswer();
@@ -181,6 +221,7 @@ const ConsultationRoom = () => {
 
     const handleAnswer = async (answer) => {
         if (!pcRef.current) return;
+        stopOutgoingRingtone();
         setStatus("Connected");
         await pcRef.current.setRemoteDescription(new RTCSessionDescription(answer));
         // Process buffered candidates
@@ -199,6 +240,8 @@ const ConsultationRoom = () => {
 
     const endCall = (askConfirm = true) => {
         const doEnd = () => {
+            stopOutgoingRingtone();
+            stopIncomingRingtone();
             if (signalPollInterval.current) clearInterval(signalPollInterval.current);
             if (localStreamRef.current) localStreamRef.current.getTracks().forEach(tr => tr.stop());
             if (pcRef.current) pcRef.current.close();

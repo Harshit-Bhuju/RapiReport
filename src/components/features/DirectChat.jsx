@@ -240,11 +240,11 @@ const DirectChat = ({
               <button
                 onClick={handleSend}
                 disabled={!inputValue.trim() || sending}
-                className="w-[54px] h-[54px] bg-primary-600 hover:bg-primary-700 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-primary-200 transition-all active:scale-90 disabled:opacity-50 disabled:cursor-not-allowed shrink-0">
+                className="w-16 h-16 bg-primary-600 hover:bg-primary-700 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-primary-200 transition-all active:scale-90 disabled:opacity-50 disabled:cursor-not-allowed shrink-0">
                 {sending ? (
-                  <Loader2 className="w-5 h-5 animate-spin text-white" />
+                  <Loader2 className="w-6 h-6 animate-spin text-white" />
                 ) : (
-                  <Send className="w-5 h-5" />
+                  <Send className="w-7 h-7" />
                 )}
               </button>
             </div>

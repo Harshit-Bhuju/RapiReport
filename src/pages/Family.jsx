@@ -1179,11 +1179,11 @@ const Family = () => {
               />
             </div>
             <Button
-              className="w-[54px] h-[54px] rounded-2xl bg-primary-600 hover:bg-primary-700 text-white shadow-lg shadow-primary-200 shrink-0 flex items-center justify-center transition-all active:scale-90"
+              className="w-16 h-16 rounded-2xl bg-primary-600 hover:bg-primary-700 text-white shadow-lg shadow-primary-200 shrink-0 flex items-center justify-center transition-all active:scale-90"
               onClick={handleSendChatMessage}
               disabled={!chatInput.trim() || chatSending}
               loading={chatSending}>
-              {!chatSending && <Send className="w-5 h-5" />}
+              {!chatSending && <Send className="w-7 h-7" />}
             </Button>
           </div>
         </div>

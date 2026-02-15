@@ -211,7 +211,9 @@ const ChatInterface = ({
       const part = [
         `I've just logged this symptom: "${initialSymptom.text}".`,
         `Severity: ${initialSymptom.severity || "mild"}.`,
-        initialSymptom.vitalsNote ? `Vitals/notes: ${initialSymptom.vitalsNote}.` : "",
+        initialSymptom.vitalsNote
+          ? `Vitals/notes: ${initialSymptom.vitalsNote}.`
+          : "",
         "Please ask me a few follow-up questions to better understand my condition, and advise whether I should see a doctor. If you think it could be serious, say so clearly and recommend booking a consultation.",
       ]
         .filter(Boolean)
@@ -285,10 +287,13 @@ const ChatInterface = ({
         <div className="mx-4 mb-3 p-4 rounded-2xl bg-primary-50 border border-primary-100">
           <div className="flex items-center gap-2 mb-2">
             <Stethoscope className="w-5 h-5 text-primary-600" />
-            <span className="font-black text-primary-900 text-sm">Consider seeing a doctor</span>
+            <span className="font-black text-primary-900 text-sm">
+              Consider seeing a doctor
+            </span>
           </div>
           <p className="text-xs text-primary-700 font-medium mb-3">
-            If the AI suggests your symptoms may need professional care, book a consultation.
+            If the AI suggests your symptoms may need professional care, book a
+            consultation.
           </p>
           <button
             type="button"
@@ -494,9 +499,9 @@ const ChatInterface = ({
                   : "bg-primary-600 text-white hover:bg-primary-700",
               )}>
               {isLoading ? (
-                <Loader2 className="w-6 h-6 animate-spin" />
+                <Loader2 className="w-8 h-8 animate-spin" />
               ) : (
-                <Send className="w-6 h-6" />
+                <Send className="w-8 h-8" />
               )}
             </button>
           </div>

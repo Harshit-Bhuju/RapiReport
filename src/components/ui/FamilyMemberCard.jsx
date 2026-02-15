@@ -36,7 +36,6 @@ export const FamilyMemberCard = ({
   };
 
   const conditions = health?.profile?.conditions;
-  const allergies = health?.profile?.allergies;
   const parentalHistory = health?.profile?.parentalHistory?.length || health?.profile?.customParentalHistory;
   const recentSymptoms = (health?.symptoms || []).slice(0, 3);
   const reportsCount = (health?.reports || []).length;
@@ -44,7 +43,6 @@ export const FamilyMemberCard = ({
   const hasHealthData =
     health &&
     (conditions ||
-      allergies ||
       parentalHistory ||
       recentSymptoms.length > 0 ||
       reportsCount > 0 ||
@@ -97,31 +95,18 @@ export const FamilyMemberCard = ({
 
         {/* Health Info Section */}
         <div className="space-y-3">
-          {/* Conditions / Allergies */}
-          {(conditions || allergies) && (
+          {/* Conditions (allergies removed) */}
+          {conditions && (
             <div className="space-y-2">
-              {conditions && (
-                <div className="flex items-start gap-2">
-                  <Heart className="w-3.5 h-3.5 text-primary-500 shrink-0 mt-0.5" />
-                  <p className="text-xs text-gray-600 leading-relaxed line-clamp-2">
-                    <span className="font-bold text-gray-800">
-                      {t("family.conditions") || "Conditions"}:{" "}
-                    </span>
-                    {conditions}
-                  </p>
-                </div>
-              )}
-              {allergies && (
-                <div className="flex items-start gap-2">
-                  <ShieldAlert className="w-3.5 h-3.5 text-warning-500 shrink-0 mt-0.5" />
-                  <p className="text-xs text-gray-600 leading-relaxed line-clamp-2">
-                    <span className="font-bold text-gray-800">
-                      {t("family.allergies") || "Allergies"}:{" "}
-                    </span>
-                    {allergies}
-                  </p>
-                </div>
-              )}
+              <div className="flex items-start gap-2">
+                <Heart className="w-3.5 h-3.5 text-primary-500 shrink-0 mt-0.5" />
+                <p className="text-xs text-gray-600 leading-relaxed line-clamp-2">
+                  <span className="font-bold text-gray-800">
+                    {t("family.conditions") || "Conditions"}:{" "}
+                  </span>
+                  {conditions}
+                </p>
+              </div>
             </div>
           )}
 

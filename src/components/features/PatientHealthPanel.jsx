@@ -11,9 +11,11 @@ import {
   Loader2,
   User,
   X,
+  ShieldAlert,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
+import Modal from "@/components/ui/Modal";
 
 const Section = ({ title, icon: Icon, children, defaultOpen = true }) => {
   const [open, setOpen] = useState(defaultOpen);
@@ -38,6 +40,8 @@ const PatientHealthPanel = ({ patientId, patientName, onClose, isOpen }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [view, setView] = useState("summary"); // "summary" | "detailed"
+  const [selectedReport, setSelectedReport] = useState(null);
+  const [selectedPrescription, setSelectedPrescription] = useState(null);
 
   useEffect(() => {
     if (!patientId || !isOpen) return;
@@ -121,7 +125,6 @@ const PatientHealthPanel = ({ patientId, patientName, onClose, isOpen }) => {
                   {data.profile.gender && <p><span className="font-bold text-gray-500">Gender:</span> {data.profile.gender}</p>}
                   {data.profile.bloodGroup && <p><span className="font-bold text-gray-500">Blood group:</span> {data.profile.bloodGroup}</p>}
                   {data.profile.conditions && <p><span className="font-bold text-gray-500">Conditions:</span> {data.profile.conditions}</p>}
-                  {data.profile.allergies && <p><span className="font-bold text-gray-500">Allergies:</span> {data.profile.allergies}</p>}
                   {data.profile.customParentalHistory && <p><span className="font-bold text-gray-500">Family history:</span> {data.profile.customParentalHistory}</p>}
                 </div>
               </Section>
@@ -155,26 +158,48 @@ const PatientHealthPanel = ({ patientId, patientName, onClose, isOpen }) => {
               )}
             </Section>
 
-            {/* Prescriptions */}
+            {/* Prescriptions - click to view full image & details */}
             <Section title={`Prescriptions (${data.prescriptions?.length ?? 0})`} icon={Pill}>
               {!data.prescriptions?.length ? (
                 <p className="text-sm text-gray-500">No prescriptions on file.</p>
               ) : (
                 <ul className="space-y-4 max-h-72 overflow-y-auto">
                   {(view === "summary" ? data.prescriptions.slice(0, 3) : data.prescriptions).map((rx) => (
-                    <li key={rx.id} className="border border-gray-100 rounded-lg p-3 bg-gray-50/50">
-                      <p className="text-xs font-bold text-gray-500 mb-1">{rx.createdAt && format(new Date(rx.createdAt), "MMM d, yyyy")}</p>
-                      {rx.note && <p className="text-sm text-gray-700 mb-2">{rx.note}</p>}
-                      <ul className="text-sm space-y-1">
-                        {rx.meds?.map((m, i) => (
-                          <li key={i} className="font-medium text-gray-900">
-                            {m.name}
-                            {m.dose && ` — ${m.dose}`}
-                            {m.frequency && `, ${m.frequency}`}
-                            {m.duration && `, ${m.duration}`}
-                          </li>
-                        ))}
-                      </ul>
+                    <li key={rx.id}>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedPrescription(rx)}
+                        className="w-full text-left border border-gray-100 rounded-lg p-3 bg-gray-50/50 hover:border-primary-200 hover:shadow-sm transition-all cursor-pointer">
+                        <div className="flex gap-3">
+                          {rx.imagePath ? (
+                            <div className="shrink-0 w-12 h-12 rounded-lg overflow-hidden border border-gray-200">
+                              <img
+                                src={API.PRESCRIPTION_IMAGE(rx.imagePath)}
+                                alt="Prescription"
+                                className="w-full h-full object-cover"
+                                crossOrigin="use-credentials"
+                              />
+                            </div>
+                          ) : (
+                            <div className="shrink-0 w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center">
+                              <ShieldAlert className="w-5 h-5 text-gray-400" />
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-bold text-gray-500 mb-1">{rx.createdAt && format(new Date(rx.createdAt), "MMM d, yyyy")}</p>
+                            {rx.note && <p className="text-sm text-gray-700 line-clamp-2 mb-1">{rx.note}</p>}
+                            <p className="text-xs text-primary-600 font-bold">Click to view full prescription & image</p>
+                          </div>
+                        </div>
+                        <ul className="text-sm space-y-1 mt-2 flex flex-wrap gap-1">
+                          {rx.meds?.slice(0, 3).map((m, i) => (
+                            <li key={i} className="font-medium text-gray-900 text-xs">
+                              {m.name}{m.dose && ` (${m.dose})`}
+                            </li>
+                          ))}
+                          {rx.meds?.length > 3 && <li className="text-xs text-gray-500">+{rx.meds.length - 3} more</li>}
+                        </ul>
+                      </button>
                     </li>
                   ))}
                 </ul>
@@ -184,32 +209,25 @@ const PatientHealthPanel = ({ patientId, patientName, onClose, isOpen }) => {
               )}
             </Section>
 
-            {/* Reports */}
+            {/* Reports - click to view full report with image */}
             <Section title={`Reports (${data.reports?.length ?? 0})`} icon={FileText}>
               {!data.reports?.length ? (
                 <p className="text-sm text-gray-500">No reports on file.</p>
               ) : (
                 <ul className="space-y-4 max-h-72 overflow-y-auto">
                   {(view === "summary" ? data.reports.slice(0, 3) : data.reports).map((r) => (
-                    <li key={r.id} className="border border-gray-100 rounded-lg p-3 bg-gray-50/50">
-                      <div className="flex justify-between items-start gap-2 mb-1">
-                        <p className="text-sm font-bold text-gray-900">{r.type || r.lab}</p>
-                        <span className="text-xs font-medium text-gray-500">{r.date}</span>
-                      </div>
-                      {r.summary && <p className="text-sm text-gray-700 mb-2">{r.summary}</p>}
-                      {view === "detailed" && r.tests?.length > 0 && (
-                        <div className="mt-2 pt-2 border-t border-gray-100">
-                          <p className="text-xs font-bold text-gray-500 mb-1">Tests</p>
-                          <ul className="text-xs space-y-0.5">
-                            {r.tests.map((t, i) => (
-                              <li key={i}>
-                                {t.name}: {t.result} {t.unit && ` ${t.unit}`}
-                                {t.range && ` (ref: ${t.range})`} {t.status && `[${t.status}]`}
-                              </li>
-                            ))}
-                          </ul>
+                    <li key={r.id}>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedReport(r)}
+                        className="w-full text-left border border-gray-100 rounded-lg p-3 bg-gray-50/50 hover:border-primary-200 hover:shadow-sm transition-all cursor-pointer">
+                        <div className="flex justify-between items-start gap-2 mb-1">
+                          <p className="text-sm font-bold text-gray-900">{r.type || r.lab}</p>
+                          <span className="text-xs font-medium text-gray-500">{r.date}</span>
                         </div>
-                      )}
+                        {r.summary && <p className="text-sm text-gray-700 line-clamp-2 mb-2">{r.summary}</p>}
+                        <span className="text-xs font-bold text-primary-600">Click to view full report & image</span>
+                      </button>
                     </li>
                   ))}
                 </ul>
@@ -221,6 +239,142 @@ const PatientHealthPanel = ({ patientId, patientName, onClose, isOpen }) => {
           </>
         )}
       </div>
+
+      {/* Report Detail Modal */}
+      <Modal
+        isOpen={!!selectedReport}
+        onClose={() => setSelectedReport(null)}
+        title={selectedReport ? `${selectedReport.lab || "Report"} - ${selectedReport.type || "Lab"}` : ""}
+        size="lg">
+        {selectedReport && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 text-sm text-gray-500">
+              <span>{selectedReport.date && format(new Date(selectedReport.date), "MMM d, yyyy")}</span>
+              <span
+                className={cn(
+                  "px-2 py-0.5 rounded-md text-xs font-bold",
+                  selectedReport.status === "Critical"
+                    ? "bg-red-100 text-red-700"
+                    : selectedReport.status === "Abnormal"
+                      ? "bg-amber-100 text-amber-700"
+                      : "bg-green-100 text-green-700",
+                )}>
+                {selectedReport.status || "Normal"}
+              </span>
+            </div>
+
+            {selectedReport.imagePath && (
+              <div className="rounded-xl overflow-hidden border border-gray-200">
+                <a
+                  href={API.REPORT_IMAGE(selectedReport.imagePath)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block">
+                  <img
+                    src={API.REPORT_IMAGE(selectedReport.imagePath)}
+                    alt="Report"
+                    className="w-full max-h-[400px] object-contain bg-gray-50"
+                    crossOrigin="use-credentials"
+                  />
+                </a>
+              </div>
+            )}
+
+            {selectedReport.summary && (
+              <div>
+                <h4 className="text-sm font-bold text-gray-800 mb-2">AI Summary</h4>
+                <p className="text-sm text-gray-700 leading-relaxed">{selectedReport.summary}</p>
+              </div>
+            )}
+
+            {selectedReport.tests?.length > 0 && (
+              <div>
+                <h4 className="text-sm font-bold text-gray-800 mb-2">Tests</h4>
+                <ul className="text-xs space-y-1 max-h-48 overflow-y-auto">
+                  {selectedReport.tests.map((t, i) => (
+                    <li key={i} className="border-b border-gray-50 pb-1">
+                      {t.name}: {t.result} {t.unit && t.unit}
+                      {t.range && ` (ref: ${t.range})`} {t.status && `[${t.status}]`}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {selectedReport.rawText && (
+              <div>
+                <h4 className="text-sm font-bold text-gray-800 mb-2">Full Report</h4>
+                <pre className="text-xs text-gray-700 bg-gray-50 p-4 rounded-xl overflow-auto max-h-64 whitespace-pre-wrap font-sans">
+                  {selectedReport.rawText}
+                </pre>
+              </div>
+            )}
+
+            {!selectedReport.summary && !selectedReport.rawText && !selectedReport.imagePath && (!selectedReport.tests?.length) && (
+              <p className="text-sm text-gray-500 italic">No additional details available.</p>
+            )}
+          </div>
+        )}
+      </Modal>
+
+      {/* Prescription Detail Modal */}
+      <Modal
+        isOpen={!!selectedPrescription}
+        onClose={() => setSelectedPrescription(null)}
+        title="Prescription Details"
+        size="lg">
+        {selectedPrescription && (
+          <div className="space-y-4">
+            <div className="text-sm text-gray-500">
+              {selectedPrescription.createdAt && format(new Date(selectedPrescription.createdAt), "MMM d, yyyy")}
+            </div>
+
+            {selectedPrescription.imagePath && (
+              <div className="rounded-xl overflow-hidden border border-gray-200 bg-gray-50">
+                <a
+                  href={API.PRESCRIPTION_IMAGE(selectedPrescription.imagePath)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block">
+                  <img
+                    src={API.PRESCRIPTION_IMAGE(selectedPrescription.imagePath)}
+                    alt="Prescription"
+                    className="w-full max-h-[500px] object-contain"
+                    crossOrigin="use-credentials"
+                  />
+                </a>
+              </div>
+            )}
+
+            <div>
+              <h4 className="text-sm font-bold text-gray-800 mb-2">Medicines</h4>
+              <div className="flex flex-wrap gap-2">
+                {selectedPrescription.meds?.map((m, idx) => (
+                  <span
+                    key={idx}
+                    className="text-sm font-bold px-3 py-1.5 rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-100">
+                    {m.name} {m.dose && `(${m.dose})`}
+                    {m.frequency && ` - ${m.frequency}`}
+                    {m.duration && ` - ${m.duration}`}
+                  </span>
+                ))}
+                {(!selectedPrescription.meds || selectedPrescription.meds.length === 0) && (
+                  <span className="text-sm text-gray-500">No medicines listed</span>
+                )}
+              </div>
+            </div>
+
+            {(selectedPrescription.note || selectedPrescription.rawText) && (
+              <div>
+                <h4 className="text-sm font-bold text-gray-800 mb-2">Notes</h4>
+                <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                  {selectedPrescription.note || selectedPrescription.rawText}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+      </Modal>
     </div>
   );
 };

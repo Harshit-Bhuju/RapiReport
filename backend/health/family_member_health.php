@@ -99,7 +99,7 @@ try {
     $tableCheck = $conn->query("SHOW TABLES LIKE 'reports'");
     if ($tableCheck && $tableCheck->num_rows > 0) {
         $repStmt = $conn->prepare("
-            SELECT id, lab_name, report_type, report_date, overall_status, ai_summary_en, created_at
+            SELECT id, lab_name, report_type, report_date, overall_status, ai_summary_en, raw_text, image_path, created_at
             FROM reports WHERE user_id = ?
             ORDER BY created_at DESC LIMIT 10
         ");
@@ -126,6 +126,8 @@ try {
                     'date' => $row['report_date'],
                     'status' => $row['overall_status'],
                     'summary' => $row['ai_summary_en'],
+                    'rawText' => $row['raw_text'] ?? null,
+                    'imagePath' => $row['image_path'] ?? null,
                     'testCount' => $testCount,
                     'createdAt' => $row['created_at'],
                 ];

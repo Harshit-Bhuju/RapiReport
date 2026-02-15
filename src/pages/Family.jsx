@@ -70,6 +70,8 @@ const Family = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [historyAnalysis, setHistoryAnalysis] = useState(null);
   const [isRefreshingHealth, setIsRefreshingHealth] = useState(false);
+  const [selectedReport, setSelectedReport] = useState(null);
+  const [selectedPrescription, setSelectedPrescription] = useState(null);
 
   // WebRTC refs
   const localVideoRef = useRef(null);
@@ -1459,41 +1461,21 @@ const Family = () => {
               )}
             </div>
 
-            {/* Medical Profile Section */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Conditions */}
-              <div className="bg-white border border-gray-100 p-4 rounded-2xl shadow-sm">
-                <div className="flex items-center gap-2 mb-3 text-gray-900 font-black">
-                  <Heart className="w-4 h-4 text-primary-500" />
-                  {t("family.conditions")}
-                </div>
-                {healthModalMember.health.profile?.conditions ? (
-                  <p className="text-sm text-gray-600 leading-relaxed">
-                    {healthModalMember.health.profile.conditions}
-                  </p>
-                ) : (
-                  <p className="text-xs text-gray-400 italic">
-                    {t("family.noneListed")}
-                  </p>
-                )}
+            {/* Medical Profile Section - Conditions only (allergies removed) */}
+            <div className="bg-white border border-gray-100 p-4 rounded-2xl shadow-sm">
+              <div className="flex items-center gap-2 mb-3 text-gray-900 font-black">
+                <Heart className="w-4 h-4 text-primary-500" />
+                {t("family.conditions")}
               </div>
-
-              {/* Allergies */}
-              <div className="bg-white border border-gray-100 p-4 rounded-2xl shadow-sm">
-                <div className="flex items-center gap-2 mb-3 text-gray-900 font-black">
-                  <ShieldAlert className="w-4 h-4 text-warning-500" />
-                  {t("family.allergies")}
-                </div>
-                {healthModalMember.health.profile?.allergies ? (
-                  <p className="text-sm text-gray-600 leading-relaxed">
-                    {healthModalMember.health.profile.allergies}
-                  </p>
-                ) : (
-                  <p className="text-xs text-gray-400 italic">
-                    {t("family.noneListed")}
-                  </p>
-                )}
-              </div>
+              {healthModalMember.health.profile?.conditions ? (
+                <p className="text-sm text-gray-600 leading-relaxed">
+                  {healthModalMember.health.profile.conditions}
+                </p>
+              ) : (
+                <p className="text-xs text-gray-400 italic">
+                  {t("family.noneListed")}
+                </p>
+              )}
             </div>
 
             {/* Parental History (Full width) */}
@@ -1600,9 +1582,11 @@ const Family = () => {
                 healthModalMember.health.reports.length > 0 ? (
                 <div className="space-y-3">
                   {healthModalMember.health.reports.map((r) => (
-                    <div
+                    <button
                       key={r.id}
-                      className="bg-white border border-gray-100 p-3 rounded-xl shadow-sm hover:border-primary-200 transition-colors">
+                      type="button"
+                      onClick={() => setSelectedReport(r)}
+                      className="w-full text-left bg-white border border-gray-100 p-3 rounded-xl shadow-sm hover:border-primary-300 hover:shadow-md transition-all cursor-pointer">
                       <div className="flex justify-between items-start mb-2">
                         <div>
                           <h4 className="text-sm font-bold text-gray-800">
@@ -1617,7 +1601,7 @@ const Family = () => {
                         </span>
                       </div>
 
-                      {/* AI Summary Preview if available */}
+                      {/* AI Summary Preview */}
                       {r.summary && (
                         <div className="bg-primary-50/50 p-2 rounded-lg border border-primary-100/50 mb-2">
                           <p className="text-xs text-gray-600 line-clamp-2">
@@ -1639,10 +1623,10 @@ const Family = () => {
                           {r.status || "Normal"}
                         </span>
                         <span className="text-[10px] font-medium text-gray-400">
-                          {r.testCount} tests
+                          {r.testCount} tests • Click to view full report
                         </span>
                       </div>
-                    </div>
+                    </button>
                   ))}
                 </div>
               ) : (
@@ -1672,23 +1656,25 @@ const Family = () => {
                 healthModalMember.health.prescriptions.length > 0 ? (
                 <div className="space-y-3">
                   {healthModalMember.health.prescriptions.map((rx) => (
-                    <div
+                    <button
                       key={rx.id}
-                      className="bg-white border border-gray-100 p-3 rounded-xl shadow-sm">
+                      type="button"
+                      onClick={() => setSelectedPrescription(rx)}
+                      className="w-full text-left bg-white border border-gray-100 p-3 rounded-xl shadow-sm hover:border-primary-300 hover:shadow-md transition-all cursor-pointer">
                       <div className="flex gap-3 justify-between items-start mb-2">
-                        {rx.imagePath && (
-                          <a
-                            href={API.PRESCRIPTION_IMAGE(rx.imagePath)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="shrink-0 w-14 h-14 rounded-lg overflow-hidden border border-gray-200 hover:opacity-90 transition-opacity">
+                        {rx.imagePath ? (
+                          <div className="shrink-0 w-14 h-14 rounded-lg overflow-hidden border border-gray-200">
                             <img
                               src={API.PRESCRIPTION_IMAGE(rx.imagePath)}
                               alt="Prescription"
                               className="w-full h-full object-cover"
                               crossOrigin="use-credentials"
                             />
-                          </a>
+                          </div>
+                        ) : (
+                          <div className="shrink-0 w-14 h-14 rounded-lg bg-gray-100 flex items-center justify-center">
+                            <ShieldAlert className="w-6 h-6 text-gray-400" />
+                          </div>
                         )}
                         <div className="flex-1 min-w-0">
                           <h4 className="text-sm font-bold text-gray-800 line-clamp-1">
@@ -1712,7 +1698,8 @@ const Family = () => {
                           </span>
                         ))}
                       </div>
-                    </div>
+                      <p className="text-[10px] text-primary-600 font-bold mt-2">Click to view full prescription & image</p>
+                    </button>
                   ))}
                 </div>
               ) : (
@@ -1728,6 +1715,127 @@ const Family = () => {
         )}
       </Modal>
 
+      {/* Report Detail Modal - full report on click */}
+      <Modal
+        isOpen={!!selectedReport}
+        onClose={() => setSelectedReport(null)}
+        title={selectedReport ? `${selectedReport.lab} - ${selectedReport.type}` : ""}
+        size="lg">
+        {selectedReport && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 text-sm text-gray-500">
+              <span>{new Date(selectedReport.date).toLocaleDateString()}</span>
+              <span
+                className={cn(
+                  "px-2 py-0.5 rounded-md text-xs font-bold",
+                  selectedReport.status === "Critical"
+                    ? "bg-error-100 text-error-700"
+                    : selectedReport.status === "Abnormal"
+                      ? "bg-warning-100 text-warning-700"
+                      : "bg-success-100 text-success-700",
+                )}>
+                {selectedReport.status || "Normal"}
+              </span>
+            </div>
+
+            {selectedReport.imagePath && (
+              <div className="rounded-xl overflow-hidden border border-gray-200">
+                <a
+                  href={API.REPORT_IMAGE(selectedReport.imagePath)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block">
+                  <img
+                    src={API.REPORT_IMAGE(selectedReport.imagePath)}
+                    alt="Report"
+                    className="w-full max-h-[400px] object-contain bg-gray-50"
+                    crossOrigin="use-credentials"
+                  />
+                </a>
+              </div>
+            )}
+
+            {selectedReport.summary && (
+              <div>
+                <h4 className="text-sm font-bold text-gray-800 mb-2">AI Summary</h4>
+                <p className="text-sm text-gray-700 leading-relaxed">{selectedReport.summary}</p>
+              </div>
+            )}
+
+            {selectedReport.rawText && (
+              <div>
+                <h4 className="text-sm font-bold text-gray-800 mb-2">Full Report</h4>
+                <pre className="text-xs text-gray-700 bg-gray-50 p-4 rounded-xl overflow-auto max-h-64 whitespace-pre-wrap font-sans">
+                  {selectedReport.rawText}
+                </pre>
+              </div>
+            )}
+
+            {!selectedReport.summary && !selectedReport.rawText && !selectedReport.imagePath && (
+              <p className="text-sm text-gray-500 italic">No additional details available.</p>
+            )}
+          </div>
+        )}
+      </Modal>
+
+      {/* Prescription Detail Modal - full image on click */}
+      <Modal
+        isOpen={!!selectedPrescription}
+        onClose={() => setSelectedPrescription(null)}
+        title={selectedPrescription ? "Prescription Details" : ""}
+        size="lg">
+        {selectedPrescription && (
+          <div className="space-y-4">
+            <div className="text-sm text-gray-500">
+              {new Date(selectedPrescription.createdAt).toLocaleDateString()}
+            </div>
+
+            {selectedPrescription.imagePath && (
+              <div className="rounded-xl overflow-hidden border border-gray-200 bg-gray-50">
+                <a
+                  href={API.PRESCRIPTION_IMAGE(selectedPrescription.imagePath)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block">
+                  <img
+                    src={API.PRESCRIPTION_IMAGE(selectedPrescription.imagePath)}
+                    alt="Prescription"
+                    className="w-full max-h-[500px] object-contain"
+                    crossOrigin="use-credentials"
+                  />
+                </a>
+              </div>
+            )}
+
+            <div>
+              <h4 className="text-sm font-bold text-gray-800 mb-2">Medicines</h4>
+              <div className="flex flex-wrap gap-2">
+                {selectedPrescription.meds?.map((m, idx) => (
+                  <span
+                    key={idx}
+                    className="text-sm font-bold px-3 py-1.5 rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-100">
+                    {m.name} {m.dose && `(${m.dose})`}
+                    {m.frequency && ` - ${m.frequency}`}
+                    {m.duration && ` - ${m.duration}`}
+                  </span>
+                ))}
+                {(!selectedPrescription.meds || selectedPrescription.meds.length === 0) && (
+                  <span className="text-sm text-gray-500">No medicines listed</span>
+                )}
+              </div>
+            </div>
+
+            {(selectedPrescription.note || selectedPrescription.rawText) && (
+              <div>
+                <h4 className="text-sm font-bold text-gray-800 mb-2">Notes</h4>
+                <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                  {selectedPrescription.note || selectedPrescription.rawText}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+      </Modal>
     </div>
   );
 };

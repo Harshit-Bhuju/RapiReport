@@ -483,21 +483,13 @@ const MedicalHistory = () => {
 
                     {isExpanded && health && (
                       <div className="px-4 pb-4 pt-0 space-y-3 border-t border-gray-50">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+                        <div className="mt-3">
                           <div className="bg-gray-50/70 p-3 rounded-lg">
                             <p className="text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1">
                               Conditions
                             </p>
                             <p className="text-sm text-gray-700">
                               {health.profile?.conditions || "None listed"}
-                            </p>
-                          </div>
-                          <div className="bg-gray-50/70 p-3 rounded-lg">
-                            <p className="text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1">
-                              Allergies
-                            </p>
-                            <p className="text-sm text-gray-700">
-                              {health.profile?.allergies || "None listed"}
                             </p>
                           </div>
                         </div>

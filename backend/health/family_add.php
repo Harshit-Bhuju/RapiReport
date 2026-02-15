@@ -101,11 +101,10 @@ $stmt3->execute();
 $invite_id = $stmt3->insert_id;
 
 // 5. Send invitation email
-$protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? "https" : "http";
-$host = $_SERVER['HTTP_HOST'];
+$base_url = "https://api.harmanbhuju.com.np/health";
 
-$acceptLink = "$protocol://$host/RapiReport/backend/health/family_accept.php?token=$token&action=accept";
-$rejectLink = "$protocol://$host/RapiReport/backend/health/family_accept.php?token=$token&action=reject";
+$acceptLink = "$base_url/family_accept.php?token=$token&action=accept";
+$rejectLink = "$base_url/family_accept.php?token=$token&action=reject";
 
 // Send response immediately and then send email in the background
 sendResponseAndContinue([

@@ -80,35 +80,55 @@ function sendFamilyInvitationEmail($email, $inviterName, $relation, $acceptLink,
 {
     $subject = "Family Invitation from $inviterName on RapiReport";
     $body = "
+    <!DOCTYPE html>
     <html>
     <head>
+        <meta name='viewport' content='width=device-width, initial-scale=1.0'>
         <style>
-            .container { font-family: Arial, sans-serif; line-height: 1.6; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px; }
-            .header { color: #4a90e2; font-size: 24px; font-weight: bold; text-align: center; }
-            .content { margin-top: 20px; text-align: center; }
-            .btn-container { margin: 30px 0; }
-            .button { display: inline-block; padding: 12px 24px; color: #fff; text-decoration: none; border-radius: 5px; font-weight: bold; margin: 0 10px; }
-            .accept { background-color: #28a745; }
-            .reject { background-color: #dc3545; }
-            .footer { margin-top: 30px; font-size: 12px; color: #777; text-align: center; }
+            body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 0; background-color: #f8fafc; color: #334155; }
+            .wrapper { width: 100%; table-layout: fixed; background-color: #f8fafc; padding-bottom: 40px; }
+            .main { background-color: #ffffff; margin: 0 auto; width: 100%; max-width: 600px; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); margin-top: 40px; }
+            .header { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); padding: 30px; text-align: center; }
+            .header h1 { color: #ffffff; margin: 0; font-size: 24px; letter-spacing: 1px; }
+            .content { padding: 40px 30px; text-align: center; }
+            .content p { font-size: 16px; line-height: 1.6; color: #475569; margin-bottom: 20px; }
+            .inviter-box { background-color: #f1f5f9; padding: 20px; border-radius: 8px; margin-bottom: 30px; }
+            .inviter-box h2 { margin: 0; font-size: 18px; color: #1e293b; }
+            .inviter-box span { color: #3b82f6; font-weight: bold; }
+            .btn-group { margin-top: 30px; display: flex; justify-content: center; gap: 15px; }
+            .btn { display: inline-block; padding: 14px 28px; border-radius: 8px; font-weight: 600; text-decoration: none; transition: background-color 0.2s; font-size: 15px; }
+            .btn-accept { background-color: #10b981; color: #ffffff; }
+            .btn-accept:hover { background-color: #059669; }
+            .btn-reject { background-color: #ef4444; color: #ffffff; }
+            .btn-reject:hover { background-color: #dc2626; }
+            .footer { text-align: center; padding: 25px; font-size: 13px; color: #94a3b8; }
+            .footer p { margin: 5px 0; }
         </style>
     </head>
     <body>
-        <div class='container'>
-            <div class='header'>RapiReport Family</div>
-            <div class='content'>
-                <p>Hello,</p>
-                <p><strong>$inviterName</strong> has invited you to join their family on RapiReport as their <strong>$relation</strong>.</p>
-                <p>By joining, you'll be able to share health reports and keep track of each other's wellness.</p>
-                
-                <div class='btn-container'>
-                    <a href='$acceptLink' class='button accept'>Accept Invitation</a>
-                    <a href='$rejectLink' class='button reject'>Reject</a>
+        <div class='wrapper'>
+            <div class='main'>
+                <div class='header'>
+                    <h1>RAPIREPORT</h1>
                 </div>
-            </div>
-            <div class='footer'>
-                If you didn't expect this invitation, you can safely ignore this email.<br>
-                &copy; 2026 RapiReport Team
+                <div class='content'>
+                    <div class='inviter-box'>
+                        <h2><span>$inviterName</span> want to add you to their family!</h2>
+                    </div>
+                    <p>Hello there,</p>
+                    <p>You've been invited as a <strong>$relation</strong>. Joining a family on RapiReport allows you to securely share health records and monitor the wellbeing of your loved ones in real-time.</p>
+                    
+                    <div class='btn-group'>
+                        <a href='$acceptLink' class='btn btn-accept'>Accept Invitation</a>
+                        <a href='$rejectLink' class='btn btn-reject'>Decline</a>
+                    </div>
+                    
+                    <p style='margin-top: 30px; font-size: 14px; color: #64748b;'>Need help? Visit our <a href='https://harmanbhuju.com.np' style='color: #3b82f6;'>Help Center</a></p>
+                </div>
+                <div class='footer'>
+                    <p>&copy; 2026 RapiReport. All rights reserved.</p>
+                    <p>This invitation was sent because someone cares about your health.</p>
+                </div>
             </div>
         </div>
     </body>

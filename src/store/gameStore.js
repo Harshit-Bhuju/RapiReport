@@ -176,6 +176,10 @@ function questMatchesProfile(q, profile) {
 }
 
 export const useGameStore = create((set, get) => ({
+  // Set from QuestGame so API calls use logged-in user
+  authUserId: null,
+  setAuthUserId: (id) => set({ authUserId: id }),
+
   user: {
     name: "You",
     pointsToday: 0,
@@ -364,12 +368,13 @@ export const useGameStore = create((set, get) => ({
       );
 
       // Sync with backend
+      const userId = get().authUserId ?? 1;
       try {
         await fetch(`${getAPIBaseUrl()}/complete_quest.php`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            user_id: 1, // In a real app, this comes from authStore
+            user_id: userId,
             quest_id: questId,
             points: quest.points,
           }),
@@ -418,12 +423,13 @@ export const useGameStore = create((set, get) => ({
       );
 
       // Sync with backend (0 points for skip)
+      const userId = get().authUserId ?? 1;
       try {
         await fetch(`${getAPIBaseUrl()}/complete_quest.php`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            user_id: 1,
+            user_id: userId,
             quest_id: questId,
             points: -5,
             skipped: true,
@@ -463,8 +469,9 @@ export const useGameStore = create((set, get) => ({
   setViewingQuestId: (id) => set({ viewingQuestId: id }),
 
   fetchUserStats: async () => {
+    const userId = get().authUserId ?? 1;
     try {
-      const res = await fetch(`${getAPIBaseUrl()}/get_user_stats.php`);
+      const res = await fetch(`${getAPIBaseUrl()}/get_user_stats.php?user_id=${encodeURIComponent(userId)}`);
       const json = await res.json();
       if (json.status === "success") {
         set((s) => ({
@@ -534,8 +541,9 @@ export const useGameStore = create((set, get) => ({
   },
 
   fetchQuests: async () => {
+    const userId = get().authUserId ?? 1;
     try {
-      const res = await fetch(`${getAPIBaseUrl()}/get_quest_status.php`);
+      const res = await fetch(`${getAPIBaseUrl()}/get_quest_status.php?user_id=${encodeURIComponent(userId)}`);
       const json = await res.json();
       if (json.status === "success") {
         const { user, currentLocation } = get();

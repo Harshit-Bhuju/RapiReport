@@ -12,20 +12,30 @@ require __DIR__ . '/php_mailer/SMTP.php';
 
 function sendResponseAndContinue($data)
 {
+    // If fastcgi_finish_request is available, it's the cleanest way
+    if (function_exists('fastcgi_finish_request')) {
+        echo json_encode($data);
+        session_write_close(); // Important to release session lock
+        fastcgi_finish_request();
+        return;
+    }
+
+    // Fallback for non-FastCGI environments
     $response = json_encode($data);
 
+    ignore_user_abort(true);
+    set_time_limit(0);
+
+    ob_start();
+    echo $response;
+    $size = ob_get_length();
+    header("Content-Length: $size");
     header("Connection: close");
     header("Content-Type: application/json");
-    header("Content-Length: " . strlen($response));
-
-    echo $response;
-
-    if (ob_get_level() > 0) {
-        ob_end_flush();
-    }
+    ob_end_flush();
     flush();
 
-    ignore_user_abort(true);
+    if (session_id()) session_write_close();
 }
 
 function sendEmail($email, $subject, $custom_template)

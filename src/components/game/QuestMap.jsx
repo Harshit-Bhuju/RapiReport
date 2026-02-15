@@ -54,14 +54,14 @@ const FitBounds = ({ points, distance }) => {
   const map = useMap();
   useEffect(() => {
     if (points && points.length > 0) {
-      // Filter out invalid points
       const validPoints = points.filter(p => p && p[0] != null && p[1] != null);
       if (validPoints.length > 0) {
         const bounds = L.latLngBounds(validPoints);
-        // If we are very close to the quest, zoom in much more
-        const padding = distance < 20 ? [100, 100] : [50, 50];
-        const maxZoom = distance < 10 ? 20 : (distance < 30 ? 19 : 18);
-        map.fitBounds(bounds, { padding, maxZoom });
+        const padding = [40, 40];
+        // Zoom in when close; cap zoom-out so path stays visible at any distance
+        const maxZoom = distance < 10 ? 20 : (distance < 50 ? 19 : 18);
+        const minZoom = 12;
+        map.fitBounds(bounds, { padding, maxZoom, minZoom });
       }
     }
   }, [points, map, distance]);
@@ -248,18 +248,18 @@ const QuestMap = () => {
         </button>
       </div>
 
-      <div className="absolute bottom-6 left-6 right-6 lg:right-auto z-[20] flex flex-wrap items-center gap-x-4 gap-y-2 bg-white/95 px-4 py-3 rounded-2xl border border-gray-100 shadow-lg">
-        <div className="flex items-center gap-2">
-          <div className="w-5 h-5 rounded-full bg-indigo-600 shadow-sm flex items-center justify-center text-white" dangerouslySetInnerHTML={{ __html: QUEST_ICONS.pin }} />
-          <span className="text-[9px] font-black text-gray-700 uppercase tracking-tight">Objective</span>
+      <div className="absolute bottom-4 left-3 right-3 sm:left-4 sm:right-4 lg:right-auto z-[20] flex flex-wrap items-center gap-x-3 gap-y-1.5 bg-white/95 px-3 py-2 rounded-xl border border-gray-100 shadow-lg">
+        <div className="flex items-center gap-1.5">
+          <div className="w-4 h-4 rounded-full bg-indigo-600 shadow-sm flex items-center justify-center text-white" dangerouslySetInnerHTML={{ __html: QUEST_ICONS.pin }} />
+          <span className="text-[8px] font-black text-gray-700 uppercase tracking-tight">Quest</span>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-red-500 border border-white" />
-          <span className="text-[9px] font-black text-gray-700 uppercase tracking-tight">Me</span>
+        <div className="flex items-center gap-1.5">
+          <div className="w-2.5 h-2.5 rounded-full bg-red-500 border border-white" />
+          <span className="text-[8px] font-black text-gray-700 uppercase tracking-tight">Me</span>
         </div>
-        <div className="flex items-center gap-2" title="Your walking path (footprints as you move)">
-          <div className="w-2 h-2 rounded-full bg-indigo-400 opacity-60" />
-          <span className="text-[9px] font-black text-gray-700 uppercase tracking-tight">Your Path</span>
+        <div className="flex items-center gap-1.5" title="Trail: your walking path (footprints as you move)">
+          <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 opacity-60" />
+          <span className="text-[8px] font-black text-gray-700 uppercase tracking-tight">Trail</span>
         </div>
       </div>
     </div>

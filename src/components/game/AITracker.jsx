@@ -154,10 +154,11 @@ const AITracker = ({ targetReps, onRepCount, onTargetReached, onClose }) => {
                 drawAngle(ctx, rElbow, rightArmAngle);
                 drawAngle(ctx, lElbow, leftArmAngle);
 
-                // PUSHUP DETECTION
+                // PUSHUP DETECTION (faster: 400ms cooldown, complete immediately)
                 const now = Date.now();
                 const currentDirection = directionRef.current;
                 const currentReps = repsRef.current;
+                const repCooldownMs = 400;
 
                 let feedback = '';
 
@@ -168,9 +169,8 @@ const AITracker = ({ targetReps, onRepCount, onTargetReached, onClose }) => {
                 } else {
                     if (avgArmAngle < 90 &&
                         currentDirection === 0 &&
-                        now - lastRepTime.current > 600) {
+                        now - lastRepTime.current > repCooldownMs) {
 
-                        console.log('DOWN detected! Angle:', avgArmAngle);
                         setDirection(1);
                         directionRef.current = 1;
                         feedback = '✓ Going down...';
@@ -178,16 +178,14 @@ const AITracker = ({ targetReps, onRepCount, onTargetReached, onClose }) => {
                     }
                     else if (avgArmAngle > 160 &&
                         currentDirection === 1 &&
-                        now - lastRepTime.current > 600 &&
-                        currentReps < targetReps) { // Don't count beyond target
+                        now - lastRepTime.current > repCooldownMs &&
+                        currentReps < targetReps) {
 
-                        console.log('UP detected! Counting rep. Angle:', avgArmAngle);
                         setDirection(0);
                         directionRef.current = 0;
                         lastRepTime.current = now;
 
                         const newReps = currentReps + 1;
-                        console.log('Rep counted! New reps:', newReps);
                         setReps(newReps);
                         repsRef.current = newReps;
                         onRepCount(newReps);
@@ -200,13 +198,10 @@ const AITracker = ({ targetReps, onRepCount, onTargetReached, onClose }) => {
                         if (newReps >= targetReps) {
                             setIsCompleted(true);
                             setFormFeedback('🎉 TARGET REACHED!');
-                            // Give user time to see the success state
-                            setTimeout(() => {
-                                onTargetReached();
-                            }, 2000);
+                            onTargetReached();
                         }
                     } else if (currentReps >= targetReps) {
-                        feedback = '🎉 QUEST COMPLETED! Closing...';
+                        feedback = '🎉 QUEST COMPLETED!';
                         setFormFeedback(feedback);
                     } else if (currentDirection === 1) {
                         feedback = '↑ Push up!';
@@ -269,7 +264,7 @@ const AITracker = ({ targetReps, onRepCount, onTargetReached, onClose }) => {
                         enableSegmentation: false,
                         smoothSegmentation: false,
                         minDetectionConfidence: 0.5,
-                        minTrackingConfidence: 0.5
+                        minTrackingConfidence: 0.6
                     });
 
                     pose.onResults(onResults);

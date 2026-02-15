@@ -66,12 +66,20 @@ export const useHealthStore = create(
         if (j?.status === "success") set({ ocrHistory: j.data ?? [] });
       },
 
-      fetchHistoryAnalysis: async () => {
-        const res = await apiPost(API.AI_ANALYZE_HISTORY, {});
-        if (res?.ok) {
-          const json = await res.json();
-          set({ historyAnalysis: json.analysis });
+      fetchHistoryAnalysis: async (memberId = null) => {
+        const body = memberId ? { member_id: memberId } : {};
+        const res = await apiPost(API.AI_ANALYZE_HISTORY, body);
+        let json = null;
+        try {
+          json = await res?.json?.();
+        } catch {
+          json = {};
         }
+        if (json?.status === "success" && json?.analysis) {
+          set({ historyAnalysis: json.analysis });
+          return json.analysis;
+        }
+        throw new Error(json?.message || "Analysis failed");
       },
       fetchHealthData: async () => {
         const g = get();

@@ -55,22 +55,50 @@ $userProfile = $stmt->get_result()->fetch_assoc();
 $stmt->close();
 
 // 2. Fetch Past Prescriptions (OCR and Saved)
-// OCR History
-$stmt = $conn->prepare("SELECT raw_text, created_at FROM ocr_history WHERE user_id = ? ORDER BY created_at DESC LIMIT 20");
+// OCR History - full text, no truncation
+$stmt = $conn->prepare("SELECT raw_text, refined_text, created_at FROM ocr_history WHERE user_id = ? ORDER BY created_at DESC LIMIT 50");
 $stmt->bind_param("i", $target_user_id);
 $stmt->execute();
 $ocrHistory = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 $stmt->close();
 
-// Saved Prescriptions
-$stmt = $conn->prepare("SELECT note, meds, created_at FROM prescriptions WHERE user_id = ? ORDER BY created_at DESC LIMIT 20");
+// Saved Prescriptions with medicines from prescription_medicines
+$stmt = $conn->prepare("SELECT id, note, raw_text, created_at FROM prescriptions WHERE user_id = ? ORDER BY created_at DESC LIMIT 50");
 $stmt->bind_param("i", $target_user_id);
 $stmt->execute();
-$savedPrescriptions = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+$prescriptionRows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 $stmt->close();
+$savedPrescriptions = [];
+foreach ($prescriptionRows as $p) {
+    $medsStmt = $conn->prepare("SELECT name, dose, frequency, duration FROM prescription_medicines WHERE prescription_id = ?");
+    $medsStmt->bind_param("i", $p['id']);
+    $medsStmt->execute();
+    $meds = $medsStmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    $medsStmt->close();
+    $medsStr = implode(", ", array_map(fn($m) => ($m['name'] ?? '') . ($m['dose'] ? " ({$m['dose']})" : ''), $meds));
+    $savedPrescriptions[] = [
+        'note' => $p['note'],
+        'raw_text' => $p['raw_text'],
+        'meds' => $medsStr,
+        'created_at' => $p['created_at'],
+    ];
+}
 
-// 3. Fetch Recent Symptoms
-$stmt = $conn->prepare("SELECT text, severity, date FROM symptoms WHERE user_id = ? ORDER BY date DESC LIMIT 30");
+// 3. Fetch Lab Reports
+$reports = [];
+$tableCheck = $conn->query("SHOW TABLES LIKE 'reports'");
+if ($tableCheck && $tableCheck->num_rows > 0) {
+    $stmt = $conn->prepare("SELECT lab_name, report_type, report_date, ai_summary_en, raw_text, overall_status, created_at FROM reports WHERE user_id = ? ORDER BY created_at DESC LIMIT 30");
+    if ($stmt) {
+        $stmt->bind_param("i", $target_user_id);
+        $stmt->execute();
+        $reports = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+        $stmt->close();
+    }
+}
+
+// 5. Fetch Recent Symptoms
+$stmt = $conn->prepare("SELECT text, severity, log_date AS date, vitals_json FROM symptoms WHERE user_id = ? ORDER BY log_date DESC LIMIT 50");
 $stmt->bind_param("i", $target_user_id);
 $stmt->execute();
 $symptoms = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
@@ -88,19 +116,32 @@ $historyContext .= "- Existing Conditions: " . ($userProfile['conditions'] ?? 'N
 $historyContext .= "- Other/Custom: " . ($userProfile['custom_conditions'] ?? 'None') . "\n";
 $historyContext .= "- Family History: " . ($userProfile['parental_history'] ?? 'None') . "\n\n";
 
-$historyContext .= "Recent Prescriptions (Saved):\n";
+$historyContext .= "Saved Prescriptions (with parsed medicines):\n";
 foreach ($savedPrescriptions as $p) {
-    $historyContext .= "- [" . $p['created_at'] . "] Note: " . $p['note'] . " | Meds: " . $p['meds'] . "\n";
+    $note = $p['note'] ?? $p['raw_text'] ?? 'No notes';
+    $meds = $p['meds'] ?? 'No meds listed';
+    $historyContext .= "- [" . $p['created_at'] . "] Note: " . $note . " | Medicines: " . $meds . "\n";
 }
 
-$historyContext .= "\nRecent Scanned Prescriptions (OCR):\n";
+$historyContext .= "\nScanned Documents (OCR - full text):\n";
 foreach ($ocrHistory as $o) {
-    $historyContext .= "- [" . $o['created_at'] . "] Raw Text: " . substr($o['raw_text'], 0, 200) . "...\n";
+    $text = $o['refined_text'] ?? $o['raw_text'] ?? 'No text';
+    $historyContext .= "--- [Date: " . $o['created_at'] . "] ---\n" . $text . "\n\n";
 }
 
-$historyContext .= "\nRecent Symptoms logged by user:\n";
+$historyContext .= "\nLab/Diagnostic Reports:\n";
+foreach ($reports as $r) {
+    $summary = $r['ai_summary_en'] ?? $r['raw_text'] ?? 'No summary';
+    if (strlen($summary) > 1500) $summary = substr($summary, 0, 1500) . '...';
+    $historyContext .= "- [" . ($r['report_date'] ?? $r['created_at']) . "] " . ($r['report_type'] ?? 'Report') . " (" . ($r['lab_name'] ?? 'Lab') . ") - Status: " . ($r['overall_status'] ?? 'N/A') . "\n";
+    $historyContext .= "  Summary: " . $summary . "\n\n";
+}
+
+$historyContext .= "\nSymptoms logged by user:\n";
 foreach ($symptoms as $s) {
-    $historyContext .= "- [" . $s['date'] . "] " . $s['text'] . " (Severity: " . $s['severity'] . ")\n";
+    $vitals = $s['vitals_json'] ? json_decode($s['vitals_json'], true) : null;
+    $vitalsStr = $vitals && isset($vitals['temp']) ? " (Temp: {$vitals['temp']}°C)" : "";
+    $historyContext .= "- [" . $s['date'] . "] " . $s['text'] . " (Severity: " . $s['severity'] . ")" . $vitalsStr . "\n";
 }
 
 $prompt = "

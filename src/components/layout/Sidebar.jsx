@@ -120,14 +120,14 @@ const Sidebar = ({ isOpen, onClose }) => {
       {/* Mobile Overlay */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-40 lg:hidden"
+          className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-40 lg:hidden print:hidden"
           onClick={onClose}
         />
       )}
 
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 w-64 bg-white border-r border-gray-100 z-50 transition-all duration-300",
+          "fixed inset-y-0 left-0 w-64 bg-white border-r border-gray-100 z-50 transition-all duration-300 print:hidden",
           "lg:translate-x-0",
           isOpen ? "translate-x-0" : "-translate-x-full",
         )}>

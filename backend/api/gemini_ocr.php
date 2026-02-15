@@ -157,11 +157,29 @@ $text = preg_replace('/^```\w*\s*|\s*```$/m', '', trim($text));
 $parsed = json_decode($text, true);
 
 if (!is_array($parsed)) {
-    // If Gemini didn't return valid JSON, return the raw text
+    // If Gemini didn't return valid JSON, still save OCR image and return the raw text
+    $image_path = '';
+    $upload_dir = __DIR__ . '/../uploads/ocr/';
+    if (!is_dir($upload_dir)) {
+        mkdir($upload_dir, 0755, true);
+    }
+    $decoded = base64_decode($imageBase64, true);
+    if ($decoded !== false && strlen($decoded) > 0) {
+        $ext = (strpos($mimeType, 'png') !== false) ? 'png' : 'jpg';
+        $filename = 'ocr_' . uniqid('', true) . '.' . $ext;
+        if (file_put_contents($upload_dir . $filename, $decoded) !== false) {
+            $image_path = $filename;
+        }
+    }
+    $stmt = $conn->prepare("INSERT INTO ocr_history (user_id, image_path, raw_text) VALUES (?, ?, ?)");
+    $stmt->bind_param("iss", $user_id, $image_path, $text);
+    $stmt->execute();
     echo json_encode([
         'status' => 'success',
         'rawText' => $text,
-        'meds' => []
+        'meds' => [],
+        'historyId' => $stmt->insert_id,
+        'imagePath' => $image_path
     ]);
     exit;
 }
@@ -169,15 +187,32 @@ if (!is_array($parsed)) {
 $rawText = $parsed['rawText'] ?? $text;
 $meds = $parsed['meds'] ?? [];
 
-// Save to OCR history
-$sql = "INSERT INTO ocr_history (user_id, image_path, raw_text) VALUES (?, '', ?)";
+// Save OCR image to uploads/ocr/
+$image_path = '';
+$upload_dir = __DIR__ . '/../uploads/ocr/';
+if (!is_dir($upload_dir)) {
+    mkdir($upload_dir, 0755, true);
+}
+$decoded = base64_decode($imageBase64, true);
+if ($decoded !== false && strlen($decoded) > 0) {
+    $ext = (strpos($mimeType, 'png') !== false) ? 'png' : 'jpg';
+    $filename = 'ocr_' . uniqid('', true) . '.' . $ext;
+    $full_path = $upload_dir . $filename;
+    if (file_put_contents($full_path, $decoded) !== false) {
+        $image_path = $filename;
+    }
+}
+
+// Save to OCR history with image path
+$sql = "INSERT INTO ocr_history (user_id, image_path, raw_text) VALUES (?, ?, ?)";
 $stmt = $conn->prepare($sql);
-$stmt->bind_param("is", $user_id, $rawText);
+$stmt->bind_param("iss", $user_id, $image_path, $rawText);
 $stmt->execute();
 
 echo json_encode([
     'status' => 'success',
     'rawText' => $rawText,
     'meds' => $meds,
-    'historyId' => $stmt->insert_id
+    'historyId' => $stmt->insert_id,
+    'imagePath' => $image_path
 ]);

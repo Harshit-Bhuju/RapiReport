@@ -400,7 +400,7 @@ const PrescriptionScan = () => {
                       key={`ocr-${item.id}`}
                       className="group rounded-3xl border border-gray-100 bg-white p-5 hover:border-primary-100 hover:shadow-lg transition-all">
                       <div className="flex items-start justify-between gap-4 mb-4">
-                        <div className="flex flex-col gap-1">
+                        <div className="flex flex-col gap-1 flex-1 min-w-0">
                           <div className="flex items-center gap-2">
                             <span className="text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full bg-primary-50 text-primary-600 border border-primary-100">
                               AI Scan
@@ -409,6 +409,19 @@ const PrescriptionScan = () => {
                               {new Date(item.created_at).toLocaleString()}
                             </span>
                           </div>
+                          {(item.image_path && API.OCR_IMAGE(item.image_path)) ? (
+                            <a
+                              href={API.OCR_IMAGE(item.image_path)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="mt-2 block w-fit rounded-xl overflow-hidden border border-gray-100 hover:border-primary-200 transition-colors">
+                              <img
+                                src={API.OCR_IMAGE(item.image_path)}
+                                alt="OCR scan"
+                                className="max-h-32 object-cover"
+                              />
+                            </a>
+                          ) : null}
                           <p className="text-sm font-bold text-gray-700 mt-2 line-clamp-2 leading-relaxed">
                             {item.raw_text || "No text extracted"}
                           </p>

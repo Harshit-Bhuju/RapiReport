@@ -85,6 +85,11 @@ const API = {
   OCR_HISTORY_LIST: `${BASE_URL}/health/ocr_history_list.php`,
   OCR_HISTORY_DELETE: `${BASE_URL}/health/ocr_history_delete.php`,
   OCR_HISTORY_SAVE: `${BASE_URL}/health/ocr_history_save.php`,
+  OCR_IMAGE: (imagePath) => {
+    if (!imagePath) return null;
+    const filename = imagePath.split("/").pop();
+    return `${BASE_URL}/health/get_ocr_image.php?file=${encodeURIComponent(filename)}`;
+  },
   GEMINI_OCR: `${BASE_URL}/api/gemini_ocr.php`,
   GEMINI_ANALYZE_REPORT: `${BASE_URL}/api/gemini_analyze_report.php`,
   AI_ANALYZE_HISTORY: `${BASE_URL}/api/ai_analyze_history.php`,

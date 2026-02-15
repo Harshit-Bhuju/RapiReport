@@ -1,6 +1,7 @@
 import logging
 import os
 import shutil
+import uuid
 import mysql.connector
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -48,6 +49,9 @@ app.add_middleware(
 BASE_DIR = Path(__file__).resolve().parent
 TEMP_DIR = BASE_DIR / "temp"
 TEMP_DIR.mkdir(parents=True, exist_ok=True)
+# OCR images saved here (relative to backend root)
+UPLOAD_DIR = BASE_DIR.parent / "uploads" / "ocr"
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 @app.get("/health")
 async def health_check():
@@ -62,13 +66,16 @@ async def upload_image(
     if not (file.content_type or "").startswith("image/"):
         raise HTTPException(400, "Invalid image file. Please upload an image.")
 
-    filename = (file.filename or "upload").replace("\\", "_").replace("/", "_")
-    temp_path = TEMP_DIR / filename
+    ext = Path(file.filename or "upload.jpg").suffix.lower() or ".jpg"
+    if ext not in (".jpg", ".jpeg", ".png"):
+        ext = ".jpg"
+    saved_filename = f"ocr_{uuid.uuid4().hex}{ext}"
+    temp_path = TEMP_DIR / saved_filename
 
     with temp_path.open("wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
-    logger.info(f"Processing image for user {user_id}: {filename}")
+    logger.info(f"Processing image for user {user_id}: {saved_filename}")
 
     try:
         # 1. Run OCR
@@ -78,15 +85,19 @@ async def upload_image(
 
         # 2. Refine with AI
         refined_report = refine_text(raw_text, str(temp_path))
-        
-        # 3. Store in Database if user_id is provided
+
+        # 3. Save OCR image to uploads/ocr/ (keep for display)
+        full_upload_path = UPLOAD_DIR / saved_filename
+        shutil.copy2(temp_path, full_upload_path)
+
+        # 4. Store in Database if user_id is provided
         if user_id:
             conn = get_db_connection()
             if conn:
                 try:
                     cursor = conn.cursor()
                     sql = "INSERT INTO ocr_history (user_id, image_path, raw_text, refined_text) VALUES (%s, %s, %s, %s)"
-                    cursor.execute(sql, (user_id, filename, raw_text, refined_report))
+                    cursor.execute(sql, (user_id, saved_filename, raw_text, refined_report))
                     conn.commit()
                     logger.info(f"Stored OCR history for user {user_id}")
                 except Exception as db_err:
@@ -94,7 +105,7 @@ async def upload_image(
                 finally:
                     conn.close()
 
-        return {"raw": raw_text, "refined": refined_report}
+        return {"raw": raw_text, "refined": refined_report, "imagePath": saved_filename}
     except Exception as e:
         logger.error(f"Processing failed: {str(e)}")
         raise HTTPException(500, str(e))

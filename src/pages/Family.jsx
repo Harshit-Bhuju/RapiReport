@@ -26,7 +26,9 @@ import {
   Brain,
   BrainCircuit,
   Sparkles,
+  Send,
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import Button from "@/components/ui/Button";
@@ -36,6 +38,7 @@ import { FamilyMemberCard } from "@/components/ui/FamilyMemberCard";
 import WebRTCCallUI from "@/components/ui/WebRTCCallUI";
 import { toast } from "react-hot-toast";
 import API from "@/Configs/ApiEndpoints";
+import { useConfirmStore } from "@/store/confirmStore";
 import { cn } from "@/lib/utils";
 
 const Family = () => {
@@ -103,7 +106,7 @@ const Family = () => {
 
   const startIncomingRingtone = () => {
     if (incomingAudioRef.current) {
-      incomingAudioRef.current.play().catch(() => { });
+      incomingAudioRef.current.play().catch(() => {});
     }
   };
 
@@ -116,7 +119,7 @@ const Family = () => {
 
   const startOutgoingRingtone = () => {
     if (outgoingAudioRef.current) {
-      outgoingAudioRef.current.play().catch(() => { });
+      outgoingAudioRef.current.play().catch(() => {});
     }
   };
 
@@ -518,30 +521,32 @@ const Family = () => {
     }
   };
 
-  const handleRemoveMember = async (linkId) => {
-    if (
-      !window.confirm(
+  const openConfirm = useConfirmStore((s) => s.openConfirm);
+
+  const handleRemoveMember = (linkId) => {
+    openConfirm({
+      title: t("confirm.remove") || "Remove member",
+      message:
+        t("confirm.removeMember") ||
         t("family.confirmRemove") ||
         "Are you sure you want to remove this family member?",
-      )
-    ) {
-      return;
-    }
-    try {
-      const res = await axios.post(
-        API.FAMILY_REMOVE,
-        { id: linkId },
-        { withCredentials: true },
-      );
-      if (res.data?.status === "success") {
-        toast.success("Member removed.");
-        setMembers((prev) => prev.filter((m) => m.link_id !== linkId));
-      } else {
-        toast.error(res.data?.message || "Remove failed.");
-      }
-    } catch (err) {
-      toast.error("Error removing member.");
-    }
+      confirmLabel: t("confirm.remove") || "Remove",
+      cancelLabel: t("confirm.cancel") || "Cancel",
+      variant: "danger",
+      onConfirm: async () => {
+        const res = await axios.post(
+          API.FAMILY_REMOVE,
+          { id: linkId },
+          { withCredentials: true },
+        );
+        if (res.data?.status === "success") {
+          toast.success("Member removed.");
+          setMembers((prev) => prev.filter((m) => m.link_id !== linkId));
+        } else {
+          toast.error(res.data?.message || "Remove failed.");
+        }
+      },
+    });
   };
 
   const handleChat = (member) => {
@@ -552,25 +557,29 @@ const Family = () => {
     setChatCurrentUserId(null);
   };
 
-  const fetchChatMessages = useCallback(async (linkId, isInitial = false) => {
-    if (!linkId) return;
-    try {
-      if (isInitial) setChatLoading(true);
-      const res = await axios.get(API.FAMILY_CHAT, {
-        params: { link_id: linkId },
-        withCredentials: true,
-      });
-      if (res.data?.status === "success") {
-        setChatMessages(res.data.messages || []);
-        setChatCurrentUserId(res.data.current_user_id || null);
+  const fetchChatMessages = useCallback(
+    async (linkId, isInitial = false) => {
+      if (!linkId) return;
+      try {
+        if (isInitial) setChatLoading(true);
+        const res = await axios.get(API.FAMILY_CHAT, {
+          params: { link_id: linkId },
+          withCredentials: true,
+        });
+        if (res.data?.status === "success") {
+          setChatMessages(res.data.messages || []);
+          setChatCurrentUserId(res.data.current_user_id || null);
+        }
+      } catch (err) {
+        console.error("Failed to load family chat", err);
+        if (isInitial)
+          toast.error(t("family.chatLoadFailed") || "Failed to load messages.");
+      } finally {
+        if (isInitial) setChatLoading(false);
       }
-    } catch (err) {
-      console.error("Failed to load family chat", err);
-      if (isInitial) toast.error(t("family.chatLoadFailed") || "Failed to load messages.");
-    } finally {
-      if (isInitial) setChatLoading(false);
-    }
-  }, [t]);
+    },
+    [t],
+  );
 
   useEffect(() => {
     if (!isChatModalOpen || !activeMember?.link_id) {
@@ -650,7 +659,7 @@ const Family = () => {
       if (res.data?.status !== "success" || !res.data.call) {
         toast.error(
           res.data?.message ||
-          t("family.callFailed", { name: member.username }),
+            t("family.callFailed", { name: member.username }),
         );
         return;
       }
@@ -768,27 +777,36 @@ const Family = () => {
     }
   };
 
-  const handleRejectInvite = async (linkId) => {
-    if (!window.confirm("Are you sure you want to decline this invitation?"))
-      return;
-    try {
-      setIsLoading(true);
-      const res = await axios.post(
-        API.FAMILY_ACTION,
-        { link_id: linkId, action: "reject" },
-        { withCredentials: true },
-      );
-      if (res.data?.status === "success") {
-        toast.success("Invitation declined");
-        fetchMembers();
-      } else {
-        toast.error(res.data?.message || "Failed to decline invitation");
-      }
-    } catch (err) {
-      toast.error("Error declining invitation");
-    } finally {
-      setIsLoading(false);
-    }
+  const handleRejectInvite = (linkId) => {
+    openConfirm({
+      title: t("confirm.decline") || "Decline invitation",
+      message:
+        t("confirm.declineInvite") ||
+        "Are you sure you want to decline this invitation?",
+      confirmLabel: t("confirm.decline") || "Decline",
+      cancelLabel: t("confirm.cancel") || "Cancel",
+      variant: "warning",
+      onConfirm: async () => {
+        setIsLoading(true);
+        try {
+          const res = await axios.post(
+            API.FAMILY_ACTION,
+            { link_id: linkId, action: "reject" },
+            { withCredentials: true },
+          );
+          if (res.data?.status === "success") {
+            toast.success("Invitation declined");
+            fetchMembers();
+          } else {
+            toast.error(res.data?.message || "Failed to decline invitation");
+          }
+        } catch (err) {
+          toast.error("Error declining invitation");
+        } finally {
+          setIsLoading(false);
+        }
+      },
+    });
   };
 
   const toggleCamera = () => {
@@ -830,14 +848,26 @@ const Family = () => {
             // Set error state to stop spinner
             setMemberHealthData((prev) => ({
               ...prev,
-              [m.member_id]: { profile: null, symptoms: [], reports: [], prescriptions: [], error: true },
+              [m.member_id]: {
+                profile: null,
+                symptoms: [],
+                reports: [],
+                prescriptions: [],
+                error: true,
+              },
             }));
           }
         } catch (err) {
           console.error("Failed to fetch health for member", m.member_id, err);
           setMemberHealthData((prev) => ({
             ...prev,
-            [m.member_id]: { profile: null, symptoms: [], reports: [], prescriptions: [], error: true },
+            [m.member_id]: {
+              profile: null,
+              symptoms: [],
+              reports: [],
+              prescriptions: [],
+              error: true,
+            },
           }));
         }
       }
@@ -865,7 +895,7 @@ const Family = () => {
       const res = await axios.post(
         API.AI_ANALYZE_HISTORY,
         { member_id: memberId },
-        { withCredentials: true }
+        { withCredentials: true },
       );
       if (res.data?.status === "success") {
         setHistoryAnalysis(res.data.analysis);
@@ -1051,85 +1081,109 @@ const Family = () => {
       </Modal>
 
       {/* Chat Modal (direct family chat, not AI) */}
+      {/* Chat Modal (direct family chat, not AI) */}
       <Modal
         isOpen={isChatModalOpen}
         onClose={() => setIsChatModalOpen(false)}
         title={
           activeMember
             ? t("family.chatWith", {
-              name: activeMember.username || activeMember.email,
-            })
+                name: activeMember.username || activeMember.email,
+              })
             : t("family.chat")
         }
         size="full">
-        <div className="flex flex-col h-[70vh] max-h-[600px] overflow-hidden">
+        <div className="flex flex-col h-[75vh] max-h-[700px] overflow-hidden">
           <div
             ref={chatScrollRef}
-            className="flex-1 border border-gray-100 rounded-2xl p-3 mb-3 overflow-y-auto overflow-x-hidden bg-gray-50/60 text-xs">
+            className="flex-1 border border-gray-100 rounded-[2rem] p-5 mb-4 overflow-y-auto overflow-x-hidden bg-gradient-to-b from-gray-50/50 to-white scrollbar-hide">
             {chatLoading && !chatMessages.length ? (
-              <div className="w-full h-full flex items-center justify-center text-gray-400">
-                {t("common.loading")}
+              <div className="w-full h-full flex flex-col items-center justify-center text-gray-400">
+                <Loader2 className="w-8 h-8 animate-spin text-primary-400 mb-2" />
+                <p className="text-xs font-bold uppercase tracking-widest">
+                  {t("common.loading")}
+                </p>
               </div>
             ) : chatMessages.length ? (
-              chatMessages.map((m) => {
-                const isMe =
-                  chatCurrentUserId != null &&
-                  m.from_user_id === chatCurrentUserId;
-                const time = m.created_at
-                  ? new Date(m.created_at).toLocaleTimeString(undefined, {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })
-                  : "";
-                return (
-                  <div
-                    key={m.id}
-                    className={`flex mb-2 ${isMe ? "justify-end" : "justify-start"}`}>
-                    <div className={`flex flex-col max-w-[75%] ${isMe ? "items-end" : "items-start"}`}>
-                      <span
-                        className={`px-2 py-1 rounded-xl break-words overflow-wrap-anywhere ${isMe
-                          ? "bg-primary-100 text-primary-900"
-                          : "bg-white border border-gray-100 text-gray-800"
-                          }`}>
-                        {m.message}
-                      </span>
-                      {time && (
-                        <span className="text-[10px] text-gray-400 mt-0.5">
-                          {time}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                );
-              })
+              <div className="space-y-6">
+                {chatMessages.map((m, idx) => {
+                  const isMe =
+                    chatCurrentUserId != null &&
+                    m.from_user_id === chatCurrentUserId;
+                  const time = m.created_at
+                    ? new Date(m.created_at).toLocaleTimeString(undefined, {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })
+                    : "";
+                  return (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      transition={{ duration: 0.25 }}
+                      key={m.id}
+                      className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
+                      <div
+                        className={`flex flex-col max-w-[80%] ${isMe ? "items-end" : "items-start"}`}>
+                        <div
+                          className={cn(
+                            "px-5 py-3.5 rounded-2xl text-[1.05rem] font-medium leading-relaxed shadow-sm",
+                            isMe
+                              ? "bg-gradient-to-br from-primary-600 to-primary-700 text-white rounded-br-none"
+                              : "bg-white border border-gray-100 text-gray-800 rounded-bl-none",
+                          )}>
+                          {m.message}
+                        </div>
+                        {time && (
+                          <span className="text-[10px] font-black text-gray-400 mt-1.5 uppercase tracking-wider">
+                            {time}
+                          </span>
+                        )}
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-gray-400">
-                {t("family.chatEmpty") ||
-                  "No messages yet. Start the conversation with your family member."}
+              <div className="w-full h-full flex flex-col items-center justify-center text-center px-10">
+                <div className="w-16 h-16 bg-primary-50 rounded-3xl flex items-center justify-center mb-4">
+                  <MessageSquare className="w-8 h-8 text-primary-500 opacity-30" />
+                </div>
+                <h4 className="text-gray-900 font-black text-lg mb-1">
+                  Start Conversation
+                </h4>
+                <p className="text-gray-500 text-sm font-medium">
+                  {t("family.chatEmpty") ||
+                    "No messages yet. Send a message to start the conversation."}
+                </p>
               </div>
             )}
           </div>
-          <div className="flex items-center gap-2">
-            <input
-              type="text"
-              value={chatInput}
-              onChange={(e) => setChatInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSendChatMessage();
+          <div className="flex items-center gap-3 p-1">
+            <div className="relative flex-1">
+              <input
+                type="text"
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSendChatMessage();
+                  }
+                }}
+                placeholder={
+                  t("family.chatPlaceholder") || "Type your message..."
                 }
-              }}
-              placeholder={t("family.chatPlaceholder") || "Type a message..."}
-              className="flex-1 text-sm px-3 py-2 rounded-xl border border-gray-200 bg-white text-gray-700"
-              disabled={chatSending}
-            />
+                className="w-full text-base px-5 py-3.5 rounded-2xl border-2 border-transparent bg-gray-50 focus:bg-white focus:border-primary-100 outline-none transition-all placeholder:text-gray-400 placeholder:font-bold"
+                disabled={chatSending}
+              />
+            </div>
             <Button
-              size="sm"
+              className="w-[54px] h-[54px] rounded-2xl bg-primary-600 hover:bg-primary-700 text-white shadow-lg shadow-primary-200 shrink-0 flex items-center justify-center transition-all active:scale-90"
               onClick={handleSendChatMessage}
               disabled={!chatInput.trim() || chatSending}
               loading={chatSending}>
-              {t("family.chatSend") || "Send"}
+              {!chatSending && <Send className="w-5 h-5" />}
             </Button>
           </div>
         </div>
@@ -1166,7 +1220,7 @@ const Family = () => {
       </Modal>
 
       {/* Minimized PIP overlay */}
-            {isInCall && isCallMinimized && callInfo && (
+      {isInCall && isCallMinimized && callInfo && (
         <WebRTCCallUI
           localVideoRef={localVideoRef}
           remoteVideoRef={remoteVideoRef}
@@ -1195,8 +1249,8 @@ const Family = () => {
         title={
           healthModalMember
             ? t("family.healthDetails", {
-              name: healthModalMember.name,
-            }) || `${healthModalMember.name}'s Health`
+                name: healthModalMember.name,
+              }) || `${healthModalMember.name}'s Health`
             : t("family.viewHealthDetails")
         }
         size="lg">
@@ -1369,7 +1423,7 @@ const Family = () => {
               </div>
 
               {healthModalMember.health.symptoms &&
-                healthModalMember.health.symptoms.length > 0 ? (
+              healthModalMember.health.symptoms.length > 0 ? (
                 <div className="space-y-3">
                   {healthModalMember.health.symptoms.map((s) => (
                     <div
@@ -1428,7 +1482,7 @@ const Family = () => {
               </div>
 
               {healthModalMember.health.reports &&
-                healthModalMember.health.reports.length > 0 ? (
+              healthModalMember.health.reports.length > 0 ? (
                 <div className="space-y-3">
                   {healthModalMember.health.reports.map((r) => (
                     <div
@@ -1494,12 +1548,13 @@ const Family = () => {
                   {t("family.prescriptions") || "Past Prescriptions"}
                 </div>
                 <span className="text-xs font-bold text-gray-400">
-                  Last {healthModalMember.health.prescriptions?.length || 0} entries
+                  Last {healthModalMember.health.prescriptions?.length || 0}{" "}
+                  entries
                 </span>
               </div>
 
               {healthModalMember.health.prescriptions &&
-                healthModalMember.health.prescriptions.length > 0 ? (
+              healthModalMember.health.prescriptions.length > 0 ? (
                 <div className="space-y-3">
                   {healthModalMember.health.prescriptions.map((rx) => (
                     <div
@@ -1511,8 +1566,7 @@ const Family = () => {
                             href={API.PRESCRIPTION_IMAGE(rx.imagePath)}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="shrink-0 w-14 h-14 rounded-lg overflow-hidden border border-gray-200 hover:opacity-90 transition-opacity"
-                          >
+                            className="shrink-0 w-14 h-14 rounded-lg overflow-hidden border border-gray-200 hover:opacity-90 transition-opacity">
                             <img
                               src={API.PRESCRIPTION_IMAGE(rx.imagePath)}
                               alt="Prescription"
@@ -1523,7 +1577,8 @@ const Family = () => {
                         )}
                         <div className="flex-1 min-w-0">
                           <h4 className="text-sm font-bold text-gray-800 line-clamp-1">
-                            {rx.meds?.map((m) => m.name).join(", ") || "No meds listed"}
+                            {rx.meds?.map((m) => m.name).join(", ") ||
+                              "No meds listed"}
                           </h4>
                           <p className="text-xs text-gray-500 font-medium mt-0.5 line-clamp-2">
                             {rx.note || rx.rawText || "No additional notes"}
@@ -1535,7 +1590,9 @@ const Family = () => {
                       </div>
                       <div className="flex flex-wrap gap-1.5">
                         {rx.meds?.map((m, idx) => (
-                          <span key={idx} className="text-[10px] font-bold px-2 py-0.5 rounded bg-indigo-50 text-indigo-600 border border-indigo-100">
+                          <span
+                            key={idx}
+                            className="text-[10px] font-bold px-2 py-0.5 rounded bg-indigo-50 text-indigo-600 border border-indigo-100">
                             {m.name} {m.dose && `(${m.dose})`}
                           </span>
                         ))}

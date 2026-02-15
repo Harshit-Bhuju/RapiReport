@@ -1,9 +1,12 @@
 import React, { useState, useMemo, useEffect } from "react";
+import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 import { Card, CardBody } from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import { useHealthStore } from "@/store/healthStore";
-import { Activity, Plus, TrendingUp } from "lucide-react";
+import { useConfirmStore } from "@/store/confirmStore";
+import { Plus, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import toast from "react-hot-toast";
 import { format, subDays } from "date-fns";
@@ -15,25 +18,42 @@ const SEVERITIES = [
 ];
 
 const Symptoms = () => {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
   const { symptoms, addSymptom, removeSymptom, fetchSymptoms } = useHealthStore();
+  const openConfirm = useConfirmStore((s) => s.openConfirm);
   useEffect(() => { fetchSymptoms(); }, [fetchSymptoms]);
   const [text, setText] = useState("");
   const [severity, setSeverity] = useState("mild");
   const [vitalsNote, setVitalsNote] = useState("");
+  const [adding, setAdding] = useState(false);
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!text.trim()) {
       toast.error("Describe your symptom.");
       return;
     }
-    addSymptom({
+    setAdding(true);
+    const entry = {
       text: text.trim(),
       severity,
       vitals: vitalsNote.trim() ? { note: vitalsNote } : undefined,
-    });
+    };
+    await addSymptom(entry);
     setText("");
     setVitalsNote("");
-    toast.success("Symptom logged.");
+    setAdding(false);
+    toast.success("Symptom saved. Redirecting to AI for follow-up...");
+    navigate("/consultation", {
+      state: {
+        fromSymptoms: true,
+        initialSymptom: {
+          text: entry.text,
+          severity: entry.severity,
+          vitalsNote: vitalsNote.trim() || null,
+        },
+      },
+    });
   };
 
   const last7 = useMemo(() => {
@@ -103,8 +123,8 @@ const Symptoms = () => {
                 onChange={(e) => setVitalsNote(e.target.value)}
                 placeholder="e.g. BP 120/80, temp 98.6"
               />
-              <Button onClick={handleAdd} className="w-full gap-2">
-                <Plus className="w-4 h-4" /> Add entry
+              <Button onClick={handleAdd} className="w-full gap-2" disabled={adding}>
+                <Plus className="w-4 h-4" /> {adding ? "Saving..." : "Add entry"}
               </Button>
             </div>
           </CardBody>
@@ -151,7 +171,19 @@ const Symptoms = () => {
                               {s.severity}
                             </span>
                             <button
-                              onClick={() => removeSymptom(s.id)}
+                              onClick={() => {
+                                openConfirm({
+                                  title: t("confirm.delete") + " symptom?",
+                                  message: t("confirm.removeSymptom"),
+                                  confirmLabel: t("confirm.delete"),
+                                  cancelLabel: t("confirm.cancel"),
+                                  variant: "danger",
+                                  onConfirm: async () => {
+                                    await removeSymptom(s.id);
+                                    toast.success("Symptom removed.");
+                                  },
+                                });
+                              }}
                               className="text-xs font-bold text-error-600 hover:bg-error-50 px-2 py-1 rounded-lg"
                             >
                               Delete

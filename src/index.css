@@ -105,4 +105,44 @@
       transform: translateY(-20px);
     }
   }
+
+  /* Chat markdown content - readable, larger text */
+  .markdown-content {
+    @apply text-base leading-relaxed;
+  }
+
+  .markdown-content p {
+    @apply mb-3 last:mb-0;
+  }
+
+  .markdown-content strong {
+    @apply font-bold;
+  }
+
+  .markdown-content ul,
+  .markdown-content ol {
+    @apply my-3 pl-6 space-y-1;
+  }
+
+  .markdown-content li {
+    @apply text-base;
+  }
+
+  .markdown-content h1,
+  .markdown-content h2,
+  .markdown-content h3 {
+    @apply font-bold mt-4 mb-2 first:mt-0;
+  }
+
+  .markdown-content code {
+    @apply text-sm bg-gray-100 px-1.5 py-0.5 rounded font-mono;
+  }
+
+  .markdown-content pre {
+    @apply my-3 p-4 rounded-xl bg-gray-100 overflow-x-auto;
+  }
+
+  .markdown-content pre code {
+    @apply bg-transparent p-0;
+  }
 }

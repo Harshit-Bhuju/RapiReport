@@ -23,6 +23,7 @@ import { Card, CardBody } from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
 import { formatDate, cn } from "@/lib/utils";
 import { useHealthStore } from "@/store/healthStore";
+import { useConfirmStore } from "@/store/confirmStore";
 import API from "@/Configs/ApiEndpoints";
 import toast from "react-hot-toast";
 
@@ -360,8 +361,17 @@ const Reports = () => {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          removeReport(report.id);
-                          toast.success(t("reports.removeSuccess"));
+                          useConfirmStore.getState().openConfirm({
+                            title: t("confirm.delete") + " report?",
+                            message: t("confirm.removeReport"),
+                            confirmLabel: t("confirm.delete"),
+                            cancelLabel: t("confirm.cancel"),
+                            variant: "danger",
+                            onConfirm: async () => {
+                              await removeReport(report.id);
+                              toast.success(t("reports.removeSuccess"));
+                            },
+                          });
                         }}
                         className="p-2 text-gray-300 hover:text-error-600 rounded-xl hover:bg-error-50 transition-colors">
                         <Trash2 className="w-4 h-4" />

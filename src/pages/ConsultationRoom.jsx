@@ -1,16 +1,21 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import axios from "axios";
 import { useAuthStore } from "@/store/authStore";
+import { useConfirmStore } from "@/store/confirmStore";
 import API from "@/Configs/ApiEndpoints";
 import Button from "@/components/ui/Button";
-import { Video, VideoOff, Mic, MicOff, PhoneOff, User, Loader2, ShieldCheck } from "lucide-react";
+import { Video, VideoOff, Mic, MicOff, PhoneOff, User, Loader2, ShieldCheck, FileText } from "lucide-react";
 import toast from "react-hot-toast";
+import PatientHealthPanel from "@/components/features/PatientHealthPanel";
 
 const ConsultationRoom = () => {
     const { roomId } = useParams();
     const navigate = useNavigate();
+    const { t } = useTranslation();
     const { user } = useAuthStore();
+    const openConfirm = useConfirmStore((s) => s.openConfirm);
 
     const [loading, setLoading] = useState(true);
     const [details, setDetails] = useState(null);
@@ -18,6 +23,7 @@ const ConsultationRoom = () => {
     const [cameraOn, setCameraOn] = useState(true);
     const [micOn, setMicOn] = useState(true);
     const [status, setStatus] = useState("Initializing...");
+    const [patientPanelOpen, setPatientPanelOpen] = useState(false);
 
     const localVideoRef = useRef(null);
     const remoteVideoRef = useRef(null);
@@ -191,15 +197,26 @@ const ConsultationRoom = () => {
         }
     };
 
-    const endCall = (confirm = true) => {
-        if (confirm && !window.confirm("End consultation?")) return;
-
-        if (signalPollInterval.current) clearInterval(signalPollInterval.current);
-        if (localStreamRef.current) localStreamRef.current.getTracks().forEach(t => t.stop());
-        if (pcRef.current) pcRef.current.close();
-
-        setIsInCall(false);
-        navigate("/dashboard");
+    const endCall = (askConfirm = true) => {
+        const doEnd = () => {
+            if (signalPollInterval.current) clearInterval(signalPollInterval.current);
+            if (localStreamRef.current) localStreamRef.current.getTracks().forEach(tr => tr.stop());
+            if (pcRef.current) pcRef.current.close();
+            setIsInCall(false);
+            navigate("/dashboard");
+        };
+        if (askConfirm) {
+            openConfirm({
+                title: t("confirm.endCall") || "End consultation?",
+                message: "You will leave the call.",
+                confirmLabel: t("confirm.endCall") || "End call",
+                cancelLabel: t("confirm.cancel") || "Cancel",
+                variant: "warning",
+                onConfirm: doEnd,
+            });
+        } else {
+            doEnd();
+        }
     };
 
     const toggleCamera = () => {
@@ -247,13 +264,36 @@ const ConsultationRoom = () => {
                         </div>
                     </div>
                 </div>
-                {details.appointment_time && (
-                    <div className="hidden sm:flex flex-col items-end">
-                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 mb-1">Appointment</p>
-                        <p className="font-black text-sm md:text-lg bg-white/10 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10">{details.appointment_time}</p>
-                    </div>
-                )}
+                <div className="flex items-center gap-2">
+                    {details.appointment_time && (
+                        <div className="hidden sm:flex flex-col items-end">
+                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 mb-1">Appointment</p>
+                            <p className="font-black text-sm md:text-lg bg-white/10 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10">{details.appointment_time}</p>
+                        </div>
+                    )}
+                    {details.is_doctor && (
+                        <button
+                            type="button"
+                            onClick={() => setPatientPanelOpen(true)}
+                            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold text-sm transition-colors"
+                            title="View patient file"
+                        >
+                            <FileText className="w-5 h-5" />
+                            Patient file
+                        </button>
+                    )}
+                </div>
             </div>
+
+            {/* Patient health panel (doctor only) */}
+            {details.is_doctor && (
+                <PatientHealthPanel
+                    patientId={details.other_party?.id}
+                    patientName={details.other_party?.name || "Patient"}
+                    isOpen={patientPanelOpen}
+                    onClose={() => setPatientPanelOpen(false)}
+                />
+            )}
 
             {/* Main Video Stage */}
             <div className="flex-1 relative bg-gray-900 overflow-hidden">

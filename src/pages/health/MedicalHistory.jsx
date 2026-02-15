@@ -1,8 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import axios from "axios";
 import { Card, CardBody } from "@/components/ui/Card";
 import { useAuthStore } from "@/store/authStore";
 import { useHealthStore } from "@/store/healthStore";
+import { useConfirmStore } from "@/store/confirmStore";
 import {
   FileText,
   AlertTriangle,
@@ -29,6 +31,8 @@ import remarkGfm from "remark-gfm";
 import API from "@/Configs/ApiEndpoints";
 
 const MedicalHistory = () => {
+  const { t } = useTranslation();
+  const openConfirm = useConfirmStore((s) => s.openConfirm);
   const { user } = useAuthStore();
   const {
     prescriptions,
@@ -173,8 +177,17 @@ const MedicalHistory = () => {
   };
 
   const removeCondition = (index) => {
-    const updated = conditions.filter((_, i) => i !== index);
-    handleUpdateField({ conditions: updated });
+    openConfirm({
+      title: t("confirm.removeCondition") || "Remove condition?",
+      message: "This will remove it from your medical history.",
+      confirmLabel: t("confirm.remove") || "Remove",
+      cancelLabel: t("confirm.cancel") || "Cancel",
+      variant: "danger",
+      onConfirm: () => {
+        const updated = conditions.filter((_, i) => i !== index);
+        handleUpdateField({ conditions: updated });
+      },
+    });
   };
 
   const addParental = () => {
@@ -185,8 +198,17 @@ const MedicalHistory = () => {
   };
 
   const removeParental = (index) => {
-    const updated = parentalHistory.filter((_, i) => i !== index);
-    handleUpdateField({ parentalHistory: updated });
+    openConfirm({
+      title: t("confirm.removeParental") || "Remove family history entry?",
+      message: "This will remove it from your family history.",
+      confirmLabel: t("confirm.remove") || "Remove",
+      cancelLabel: t("confirm.cancel") || "Cancel",
+      variant: "danger",
+      onConfirm: () => {
+        const updated = parentalHistory.filter((_, i) => i !== index);
+        handleUpdateField({ parentalHistory: updated });
+      },
+    });
   };
 
   const recentSymptoms = useMemo(

@@ -41,8 +41,15 @@ const AITracker = ({ targetReps, onRepCount, onTargetReached, onClose }) => {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
         ctx.save();
-        ctx.scale(-1, 1);
-        ctx.translate(-canvas.width, 0);
+        // DIGITAL ZOOM OUT (0.5x) - Scale and center the video frame
+        const zoomScale = 0.5;
+        const scaledW = canvas.width * zoomScale;
+        const scaledH = canvas.height * zoomScale;
+        const offsetX = (canvas.width - scaledW) / 2;
+        const offsetY = (canvas.height - scaledH) / 2;
+
+        ctx.translate(offsetX + scaledW, offsetY);
+        ctx.scale(-zoomScale, zoomScale);
 
         if (videoRef.current) {
             ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
@@ -53,9 +60,11 @@ const AITracker = ({ targetReps, onRepCount, onTargetReached, onClose }) => {
         if (results.poseLandmarks) {
             const landmarks = results.poseLandmarks;
 
+            // Map landmarks to the 0.5x scaled space for correct drawing & interaction
             const mirroredLandmarks = landmarks.map(lm => ({
                 ...lm,
-                x: 1 - lm.x
+                x: (offsetX + (1 - lm.x) * scaledW) / canvas.width,
+                y: (offsetY + lm.y * scaledH) / canvas.height
             }));
 
             drawConnections(ctx, mirroredLandmarks, canvas.width, canvas.height);
@@ -68,14 +77,8 @@ const AITracker = ({ targetReps, onRepCount, onTargetReached, onClose }) => {
             const leftElbow = mirroredLandmarks[13];
             const leftWrist = mirroredLandmarks[15];
 
-            // HIPS AND KNEES ARE OPTIONAL (for body angle check)
-            const rightHip = mirroredLandmarks[24];
-            const leftHip = mirroredLandmarks[23];
-            const rightKnee = mirroredLandmarks[26];
-            const leftKnee = mirroredLandmarks[25];
-
             // MINIMUM REQUIREMENT: Arms must be visible
-            const visibilityThreshold = 0.5;
+            const visibilityThreshold = 0.4; // Slightly more lenient
 
             const armsVisible =
                 rightShoulder?.visibility > visibilityThreshold &&
@@ -98,133 +101,70 @@ const AITracker = ({ targetReps, onRepCount, onTargetReached, onClose }) => {
                 const lElbow = toPixel(leftElbow);
                 const lWrist = toPixel(leftWrist);
 
-                // Calculate arm angles (ESSENTIAL)
+                // Calculate arm angles
                 const rightArmAngle = calculateAngle(rShoulder, rElbow, rWrist);
                 const leftArmAngle = calculateAngle(lShoulder, lElbow, lWrist);
                 const rawAvgAngle = (rightArmAngle + leftArmAngle) / 2;
-                // Smoothed angle for stable rep detection (reduces jitter)
+
                 const prev = smoothedAngleRef.current;
                 smoothedAngleRef.current = prev + SMOOTH_ALPHA * (rawAvgAngle - prev);
                 const avgArmAngle = smoothedAngleRef.current;
 
-                // Calculate body angle ONLY if hips are visible (OPTIONAL)
-                let avgBodyAngle = 170;
-                let isPlank = true; // Default to good form
-                let canCheckBodyAngle = false;
-
-                const hipsVisible =
-                    rightHip?.visibility > visibilityThreshold &&
-                    leftHip?.visibility > visibilityThreshold;
-
-                if (hipsVisible) {
-                    canCheckBodyAngle = true;
-                    const rHip = toPixel(rightHip);
-                    const lHip = toPixel(leftHip);
-
-                    if (rightKnee?.visibility > visibilityThreshold && leftKnee?.visibility > visibilityThreshold) {
-                        const rKnee = toPixel(rightKnee);
-                        const lKnee = toPixel(leftKnee);
-                        const rightBodyAngle = calculateAngle(rShoulder, rHip, rKnee);
-                        const leftBodyAngle = calculateAngle(lShoulder, lHip, lKnee);
-                        avgBodyAngle = (rightBodyAngle + leftBodyAngle) / 2;
-
-                        // Draw body angle indicator
-                        ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-                        ctx.fillRect(rHip.x - 40, rHip.y - 50, 80, 35);
-                        ctx.fillStyle = (avgBodyAngle > 140 && avgBodyAngle < 210) ? '#00FF00' : '#FF0000';
-                        ctx.font = 'bold 18px Arial';
-                        ctx.textAlign = 'center';
-                        ctx.fillText(Math.round(avgBodyAngle) + '°', rHip.x, rHip.y - 22);
-
-                        console.log('Body angle:', avgBodyAngle);
-                    } else {
-                        const shoulderMid = { x: (rShoulder.x + lShoulder.x) / 2, y: (rShoulder.y + lShoulder.y) / 2 };
-                        const hipMid = { x: (rHip.x + lHip.x) / 2, y: (rHip.y + lHip.y) / 2 };
-
-                        const torsoAngle = Math.abs(Math.atan2(hipMid.y - shoulderMid.y, hipMid.x - shoulderMid.x) * 180 / Math.PI);
-                        avgBodyAngle = 180 - torsoAngle;
-                        console.log('Torso-based body angle:', avgBodyAngle);
-                    }
-
-                    // More lenient body angle check - only warn if REALLY bad form
-                    isPlank = avgBodyAngle > 140 && avgBodyAngle < 210;
-                }
-
-                const avgShoulderY = (rShoulder.y + lShoulder.y) / 2;
-
-                if (!window.initialShoulderY) {
-                    window.initialShoulderY = avgShoulderY;
-                }
-
-                const verticalMovement = Math.abs(avgShoulderY - window.initialShoulderY);
-                const hasVerticalMovement = verticalMovement > 30;
-
-                drawAngle(ctx, rElbow, rightArmAngle);
-                drawAngle(ctx, lElbow, leftArmAngle);
-
-                // PUSHUP DETECTION: short cooldown + wider angles so fast reps count
+                // Accuracy Improvements: Wider thresholds for fast reps
                 const now = Date.now();
                 const currentDirection = directionRef.current;
                 const currentReps = repsRef.current;
-                const repCooldownMs = 250;
-                const angleDown = 100;  // Count "down" when arms bend past this (catches fast motion)
-                const angleUp = 150;   // Count "up" when arms extend past this
+                const repCooldownMs = 150; // Faster response
+                const angleDown = 110;  // More lenient (was 100)
+                const angleUp = 145;   // More lenient (was 150)
 
                 let feedback = '';
 
-                // Only show body angle warning if it's REALLY bad (< 130 or > 220) AND during active motion
-                if (canCheckBodyAngle && !isPlank && currentDirection === 1 && avgBodyAngle < 130) {
-                    feedback = '⚠️ Keep body straighter!';
+                if (avgArmAngle < angleDown &&
+                    currentDirection === 0 &&
+                    now - lastRepTime.current > repCooldownMs) {
+
+                    setDirection(1);
+                    directionRef.current = 1;
+                    feedback = '✓ Descending...';
+                    setFormFeedback(feedback);
+                }
+                else if (avgArmAngle > angleUp &&
+                    currentDirection === 1 &&
+                    now - lastRepTime.current > repCooldownMs &&
+                    currentReps < targetReps) {
+
+                    setDirection(0);
+                    directionRef.current = 0;
+                    lastRepTime.current = now;
+
+                    const newReps = currentReps + 1;
+                    setReps(newReps);
+                    repsRef.current = newReps;
+                    onRepCount(newReps);
+
+                    feedback = '✅ REP COUNTED!';
+                    setFormFeedback(feedback);
+
+                    if (newReps >= targetReps) {
+                        setIsCompleted(true);
+                        setFormFeedback('🎉 TARGET REACHED!');
+                        onTargetReached();
+                    }
+                } else if (currentReps >= targetReps) {
+                    feedback = '🎉 QUEST COMPLETED!';
+                    setFormFeedback(feedback);
+                } else if (currentDirection === 1) {
+                    feedback = '↑ Push up!';
                     setFormFeedback(feedback);
                 } else {
-                    if (avgArmAngle < angleDown &&
-                        currentDirection === 0 &&
-                        now - lastRepTime.current > repCooldownMs) {
-
-                        setDirection(1);
-                        directionRef.current = 1;
-                        feedback = '✓ Going down...';
-                        setFormFeedback(feedback);
-                    }
-                    else if (avgArmAngle > angleUp &&
-                        currentDirection === 1 &&
-                        now - lastRepTime.current > repCooldownMs &&
-                        currentReps < targetReps) {
-
-                        setDirection(0);
-                        directionRef.current = 0;
-                        lastRepTime.current = now;
-
-                        const newReps = currentReps + 1;
-                        setReps(newReps);
-                        repsRef.current = newReps;
-                        onRepCount(newReps);
-
-                        feedback = '✅ REP COUNTED!';
-                        setFormFeedback(feedback);
-
-                        window.initialShoulderY = avgShoulderY;
-
-                        if (newReps >= targetReps) {
-                            setIsCompleted(true);
-                            setFormFeedback('🎉 TARGET REACHED!');
-                            onTargetReached();
-                        }
-                    } else if (currentReps >= targetReps) {
-                        feedback = '🎉 QUEST COMPLETED!';
-                        setFormFeedback(feedback);
-                    } else if (currentDirection === 1) {
-                        feedback = '↑ Push up!';
-                        setFormFeedback(feedback);
-                    } else {
-                        feedback = 'Arms in view – lower chest to start';
-                        setFormFeedback(feedback);
-                    }
+                    feedback = 'Arms in view – bend to start';
+                    setFormFeedback(feedback);
                 }
 
-                drawProgressBar(ctx, canvas.width, canvas.height, avgArmAngle, isPlank);
+                drawProgressBar(ctx, canvas.width, canvas.height, avgArmAngle, true);
             } else {
-                setFormFeedback('⚠️ Show your arms and shoulders clearly');
+                setFormFeedback('⚠️ Fit your full body in the center box');
             }
         }
 

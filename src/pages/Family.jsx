@@ -58,7 +58,9 @@ const Family = () => {
   const [chatMessages, setChatMessages] = useState([]);
   const [chatInput, setChatInput] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
+  const [chatSending, setChatSending] = useState(false);
   const [chatCurrentUserId, setChatCurrentUserId] = useState(null);
+  const chatScrollRef = useRef(null);
   const [isCameraOn, setIsCameraOn] = useState(false);
   const [isMicOn, setIsMicOn] = useState(true);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -550,10 +552,10 @@ const Family = () => {
     setChatCurrentUserId(null);
   };
 
-  const fetchChatMessages = useCallback(async (linkId) => {
+  const fetchChatMessages = useCallback(async (linkId, isInitial = false) => {
     if (!linkId) return;
     try {
-      setChatLoading(true);
+      if (isInitial) setChatLoading(true);
       const res = await axios.get(API.FAMILY_CHAT, {
         params: { link_id: linkId },
         withCredentials: true,
@@ -564,10 +566,11 @@ const Family = () => {
       }
     } catch (err) {
       console.error("Failed to load family chat", err);
+      if (isInitial) toast.error(t("family.chatLoadFailed") || "Failed to load messages.");
     } finally {
-      setChatLoading(false);
+      if (isInitial) setChatLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     if (!isChatModalOpen || !activeMember?.link_id) {
@@ -575,36 +578,54 @@ const Family = () => {
       return;
     }
 
-    // Initial load
-    fetchChatMessages(activeMember.link_id);
+    // Initial load with loading state
+    fetchChatMessages(activeMember.link_id, true);
 
-    // Poll every 3s
+    // Poll every 3s (silent refresh, no loading spinner)
     if (!chatPollIntervalRef.current) {
       chatPollIntervalRef.current = setInterval(() => {
-        fetchChatMessages(activeMember.link_id);
+        fetchChatMessages(activeMember.link_id, false);
       }, 3000);
     }
 
     return () => {
       cleanupChatPolling();
     };
-  }, [isChatModalOpen, activeMember, fetchChatMessages]);
+  }, [isChatModalOpen, activeMember?.link_id, fetchChatMessages]);
+
+  useEffect(() => {
+    if (chatScrollRef.current && chatMessages.length) {
+      chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
+    }
+  }, [chatMessages]);
 
   const handleSendChatMessage = async () => {
     const text = chatInput.trim();
-    if (!text || !activeMember?.link_id) return;
+    if (!text || !activeMember?.link_id || chatSending) return;
+    setChatSending(true);
+    const optimisticMsg = {
+      id: `temp-${Date.now()}`,
+      from_user_id: chatCurrentUserId ?? 0,
+      message: text,
+      created_at: new Date().toISOString(),
+    };
+    setChatMessages((prev) => [...prev, optimisticMsg]);
+    setChatInput("");
     try {
       await axios.post(
         API.FAMILY_CHAT,
         { link_id: activeMember.link_id, message: text },
         { withCredentials: true },
       );
-      setChatInput("");
-      // Optimistic refresh
-      fetchChatMessages(activeMember.link_id);
+      // Refresh to get real message from server
+      fetchChatMessages(activeMember.link_id, false);
     } catch (err) {
       console.error("Failed to send chat message", err);
+      setChatMessages((prev) => prev.filter((m) => m.id !== optimisticMsg.id));
+      setChatInput(text);
       toast.error(t("family.chatSendFailed") || "Failed to send message.");
+    } finally {
+      setChatSending(false);
     }
   };
 
@@ -1042,7 +1063,9 @@ const Family = () => {
         }
         size="full">
         <div className="flex flex-col h-[70vh] max-h-[600px] overflow-hidden">
-          <div className="flex-1 border border-gray-100 rounded-2xl p-3 mb-3 overflow-y-auto overflow-x-hidden bg-gray-50/60 text-xs">
+          <div
+            ref={chatScrollRef}
+            className="flex-1 border border-gray-100 rounded-2xl p-3 mb-3 overflow-y-auto overflow-x-hidden bg-gray-50/60 text-xs">
             {chatLoading && !chatMessages.length ? (
               <div className="w-full h-full flex items-center justify-center text-gray-400">
                 {t("common.loading")}
@@ -1052,17 +1075,30 @@ const Family = () => {
                 const isMe =
                   chatCurrentUserId != null &&
                   m.from_user_id === chatCurrentUserId;
+                const time = m.created_at
+                  ? new Date(m.created_at).toLocaleTimeString(undefined, {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })
+                  : "";
                 return (
                   <div
                     key={m.id}
-                    className={`flex mb-1 ${isMe ? "justify-end" : "justify-start"}`}>
-                    <span
-                      className={`px-2 py-1 rounded-xl max-w-[75%] break-words overflow-wrap-anywhere ${isMe
-                        ? "bg-primary-100 text-primary-900"
-                        : "bg-white border border-gray-100 text-gray-800"
-                        }`}>
-                      {m.message}
-                    </span>
+                    className={`flex mb-2 ${isMe ? "justify-end" : "justify-start"}`}>
+                    <div className={`flex flex-col max-w-[75%] ${isMe ? "items-end" : "items-start"}`}>
+                      <span
+                        className={`px-2 py-1 rounded-xl break-words overflow-wrap-anywhere ${isMe
+                          ? "bg-primary-100 text-primary-900"
+                          : "bg-white border border-gray-100 text-gray-800"
+                          }`}>
+                        {m.message}
+                      </span>
+                      {time && (
+                        <span className="text-[10px] text-gray-400 mt-0.5">
+                          {time}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 );
               })
@@ -1078,14 +1114,21 @@ const Family = () => {
               type="text"
               value={chatInput}
               onChange={(e) => setChatInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSendChatMessage()}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSendChatMessage();
+                }
+              }}
               placeholder={t("family.chatPlaceholder") || "Type a message..."}
               className="flex-1 text-sm px-3 py-2 rounded-xl border border-gray-200 bg-white text-gray-700"
+              disabled={chatSending}
             />
             <Button
               size="sm"
               onClick={handleSendChatMessage}
-              disabled={!chatInput.trim()}>
+              disabled={!chatInput.trim() || chatSending}
+              loading={chatSending}>
               {t("family.chatSend") || "Send"}
             </Button>
           </div>

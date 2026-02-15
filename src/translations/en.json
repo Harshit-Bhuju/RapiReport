@@ -412,6 +412,7 @@
     "chatSend": "Send",
     "chatEmpty": "No messages yet. Start the conversation.",
     "chatSendFailed": "Failed to send message.",
+    "chatLoadFailed": "Failed to load messages.",
     "confirmRemove": "Are you sure you want to remove this family member?",
     "conditions": "Conditions",
     "allergies": "Allergies",

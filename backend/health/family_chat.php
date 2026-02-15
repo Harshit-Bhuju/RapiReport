@@ -3,7 +3,7 @@ require_once __DIR__ . '/../api/cors.php';
 require_once __DIR__ . '/../config/session_config.php';
 require_once __DIR__ . '/../config/dbconnect.php';
 
-header('Content-Type: application/json');
+header('Content-Type: application/json; charset=UTF-8');
 
 if (!isset($_SESSION['user_id'])) {
     echo json_encode(['status' => 'error', 'message' => 'Unauthorized']);

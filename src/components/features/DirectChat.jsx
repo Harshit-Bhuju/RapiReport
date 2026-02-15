@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
-import { MessageSquare, Send, X, User } from "lucide-react";
+import toast from "react-hot-toast";
+import { MessageSquare, Send, X, User, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import API from "@/Configs/ApiEndpoints";
 import { useAuthStore } from "@/store/authStore";
@@ -10,31 +11,37 @@ const DirectChat = ({ recipientId, recipientName, recipientAvatar, appointmentId
     const [messages, setMessages] = useState([]);
     const [inputValue, setInputValue] = useState("");
     const [loading, setLoading] = useState(false);
+    const [sending, setSending] = useState(false);
     const scrollRef = useRef(null);
     const pollInterval = useRef(null);
 
     const CHAT_ENDPOINT = API.CONSULTATION_CHAT;
+    const currentUserId = user?.id;
 
-    const fetchMessages = async () => {
+    const fetchMessages = async (isInitial = false) => {
         if (!recipientId && !appointmentId) return;
         try {
+            if (isInitial) setLoading(true);
             const params = appointmentId ? { appointment_id: appointmentId } : { user_id: recipientId };
             const res = await axios.get(CHAT_ENDPOINT, {
                 params,
                 withCredentials: true
             });
             if (res.data.status === "success") {
-                setMessages(res.data.messages);
+                setMessages(res.data.messages || []);
             }
         } catch (error) {
             console.error("Failed to fetch messages", error);
+            if (isInitial) toast.error("Failed to load messages.");
+        } finally {
+            if (isInitial) setLoading(false);
         }
     };
 
     useEffect(() => {
         if (isOpen && (recipientId || appointmentId)) {
-            fetchMessages();
-            pollInterval.current = setInterval(fetchMessages, 3000);
+            fetchMessages(true);
+            pollInterval.current = setInterval(() => fetchMessages(false), 3000);
         }
         return () => {
             if (pollInterval.current) clearInterval(pollInterval.current);
@@ -48,18 +55,19 @@ const DirectChat = ({ recipientId, recipientName, recipientAvatar, appointmentId
     }, [messages, isOpen]);
 
     const handleSend = async () => {
-        if (!inputValue.trim() || (!recipientId && !appointmentId)) return;
+        if (!inputValue.trim() || (!recipientId && !appointmentId) || sending) return;
         const text = inputValue;
         setInputValue("");
 
         const tempMsg = {
             id: "temp-" + Date.now(),
-            sender_id: user.id,
+            sender_id: currentUserId,
             message: text,
             created_at: new Date().toISOString(),
             is_me: true
         };
         setMessages(prev => [...prev, tempMsg]);
+        setSending(true);
 
         const payload = { message: text };
         if (appointmentId && recipientId) {
@@ -68,14 +76,20 @@ const DirectChat = ({ recipientId, recipientName, recipientAvatar, appointmentId
         } else if (recipientId) {
             payload.recipient_id = recipientId;
         } else {
-            return; // need at least one
+            setSending(false);
+            return;
         }
 
         try {
             await axios.post(CHAT_ENDPOINT, payload, { withCredentials: true });
-            fetchMessages(); // Refresh to get real ID
+            fetchMessages(false);
         } catch (error) {
             console.error("Failed to send", error);
+            setMessages(prev => prev.filter(m => m.id !== tempMsg.id));
+            setInputValue(text);
+            toast.error("Failed to send message.");
+        } finally {
+            setSending(false);
         }
     };
 
@@ -96,8 +110,8 @@ const DirectChat = ({ recipientId, recipientName, recipientAvatar, appointmentId
                     <div>
                         <h3 className="font-bold text-sm">{recipientName}</h3>
                         <span className="flex items-center gap-1.5 text-[10px] opacity-80">
-                            <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
-                            Online
+                            <span className="w-2 h-2 rounded-full bg-green-400"></span>
+                            Consultation chat
                         </span>
                     </div>
                 </div>
@@ -107,50 +121,75 @@ const DirectChat = ({ recipientId, recipientName, recipientAvatar, appointmentId
             </div>
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 from-gray-50 to-white" ref={scrollRef}>
-                {messages.length === 0 && (
+            <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50 from-gray-50 to-white" ref={scrollRef}>
+                {loading && messages.length === 0 ? (
+                    <div className="flex items-center justify-center py-12">
+                        <Loader2 className="w-6 h-6 text-primary-500 animate-spin" />
+                    </div>
+                ) : messages.length === 0 ? (
                     <div className="text-center text-gray-400 text-sm mt-10">
                         <MessageSquare className="w-8 h-8 mx-auto mb-2 opacity-20" />
-                        <p>Start conversation with {recipientName.split(" ")[0]}</p>
+                        <p>Start conversation with {recipientName?.split(" ")[0] || "doctor"}</p>
                     </div>
+                ) : (
+                    messages.map((msg) => {
+                        const time = msg.created_at
+                            ? new Date(msg.created_at).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })
+                            : "";
+                        return (
+                            <div
+                                key={msg.id}
+                                className={cn(
+                                    "flex w-full",
+                                    msg.is_me ? "justify-end" : "justify-start"
+                                )}
+                            >
+                                <div className={cn("flex flex-col max-w-[80%]", msg.is_me ? "items-end" : "items-start")}>
+                                    <div
+                                        className={cn(
+                                            "p-3 rounded-2xl text-sm",
+                                            msg.is_me
+                                                ? "bg-primary-600 text-white rounded-br-none"
+                                                : "bg-white border border-gray-200 text-gray-800 rounded-bl-none shadow-sm"
+                                        )}
+                                    >
+                                        <p>{msg.message}</p>
+                                    </div>
+                                    {time && (
+                                        <span className="text-[10px] text-gray-400 mt-0.5">{time}</span>
+                                    )}
+                                </div>
+                            </div>
+                        );
+                    })
                 )}
-                {messages.map((msg) => (
-                    <div
-                        key={msg.id}
-                        className={cn(
-                            "flex w-full",
-                            msg.is_me ? "justify-end" : "justify-start"
-                        )}
-                    >
-                        <div
-                            className={cn(
-                                "max-w-[80%] p-3 rounded-2xl text-sm mb-1",
-                                msg.is_me
-                                    ? "bg-primary-600 text-white rounded-br-none"
-                                    : "bg-white border border-gray-200 text-gray-800 rounded-bl-none shadow-sm"
-                            )}
-                        >
-                            <p>{msg.message}</p>
-                        </div>
-                    </div>
-                ))}
             </div>
 
             {/* Input */}
             <div className="p-3 bg-white border-t border-gray-100 flex gap-2">
                 <input
-                    className="flex-1 bg-gray-50 border-none rounded-xl px-4 py-2.5 text-sm focus:ring-1 focus:ring-primary-100 outline-none"
+                    className="flex-1 bg-gray-50 border-none rounded-xl px-4 py-2.5 text-sm focus:ring-1 focus:ring-primary-100 outline-none disabled:opacity-70"
                     placeholder="Type a message..."
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                    onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) {
+                            e.preventDefault();
+                            handleSend();
+                        }
+                    }}
+                    disabled={sending}
                 />
                 <button
                     onClick={handleSend}
-                    disabled={!inputValue.trim()}
+                    disabled={!inputValue.trim() || sending}
                     className="w-10 h-10 bg-primary-600 hover:bg-primary-700 text-white rounded-xl flex items-center justify-center transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                    <Send className="w-4 h-4" />
+                    {sending ? (
+                        <Loader2 className="w-4 h-4 animate-spin text-white" />
+                    ) : (
+                        <Send className="w-4 h-4" />
+                    )}
                 </button>
             </div>
         </div>

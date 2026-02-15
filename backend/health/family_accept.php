@@ -33,6 +33,7 @@ if (strtotime($invitation['token_expires']) < time()) {
 
 function showMessage($title, $message, $color = "#4a90e2", $icon = "ℹ️")
 {
+    header("Content-Type: text/html; charset=UTF-8");
     echo "
     <html>
     <head>

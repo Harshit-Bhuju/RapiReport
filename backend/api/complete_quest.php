@@ -35,22 +35,40 @@ $res = $conn->query($sql_check);
 $user_data = $res->fetch_assoc();
 
 if ($user_data) {
+    $new_count = ($user_data['last_refresh_date'] !== $today) ? 1 : intval($user_data['quests_today']) + 1;
+    $bonus = 0;
+
+    // Award 500 bonus points on the 10th quest
+    if ($new_count === 10) {
+        $bonus = 500;
+        // Log the bonus separately in quest_logs for transparency
+        $bonus_quest_id = "daily_bonus_10";
+        $stmt_bonus = $conn->prepare("INSERT INTO quest_logs (user_id, quest_id, points_awarded) VALUES (?, ?, ?)");
+        $stmt_bonus->bind_param("isi", $user_id, $bonus_quest_id, $bonus);
+        $stmt_bonus->execute();
+    }
+
+    $total_added_points = $points + $bonus;
+
     if ($user_data['last_refresh_date'] !== $today) {
         $sql_update = "UPDATE territory_users SET 
                       quests_today = 1, 
                       last_refresh_date = '$today',
-                      cumulative_points = cumulative_points + $points,
-                      points_today = $points
+                      cumulative_points = cumulative_points + $total_added_points,
+                      points_today = $total_added_points,
+                      yearly_super_points = yearly_super_points + " . ($new_count === 10 ? 1 : 0) . "
                       WHERE user_id = '$user_id'";
     } else {
         $sql_update = "UPDATE territory_users SET 
                       quests_today = quests_today + 1, 
-                      cumulative_points = cumulative_points + $points,
-                      points_today = points_today + $points
+                      cumulative_points = cumulative_points + $total_added_points,
+                      points_today = points_today + $total_added_points,
+                      yearly_super_points = yearly_super_points + " . ($new_count === 10 ? 1 : 0) . "
                       WHERE user_id = '$user_id'";
     }
     $conn->query($sql_update);
 }
 
-echo json_encode(["status" => "success", "message" => "Quest logged and points awarded"]);
+$message = ($points < 0) ? "Quest skipped and points deducted" : "Quest logged and points awarded";
+echo json_encode(["status" => "success", "message" => $message]);
 $conn->close();

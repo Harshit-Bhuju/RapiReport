@@ -14,12 +14,6 @@ import { Navigation, Video } from "lucide-react";
 
 import iconUrl from "leaflet/dist/images/marker-icon.png";
 import shadowUrl from "leaflet/dist/images/marker-shadow.png";
-L.Marker.prototype.options.icon = L.icon({
-  iconUrl,
-  shadowUrl,
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-});
 
 const QUEST_ICONS = {
   park: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;"><path d="M12 22v-4"/><path d="M12 18a4 4 0 0 0 4-4c0-2-2-4-4-6-2 2-4 4-4 6a4 4 0 0 0 4 4z"/><path d="M8 14l-3 4h14l-3-4"/><path d="M9 10H7"/><path d="M15 10h-2"/><path d="M12 2v2"/></svg>`,
@@ -34,25 +28,43 @@ const getQuestIcon = (iconType, completed) => {
   const check = completed ? `<span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:bold;color:white;text-shadow:0 0 2px rgba(0,0,0,0.5)">✓</span>` : "";
   return L.divIcon({
     html: `<div style="
-      width:32px;height:32px;border-radius:50%;
+      width:24px;height:24px;border-radius:50%;
       background:${bg};border:2px solid white;
-      box-shadow:0 2px 6px rgba(0,0,0,0.2);
+      box-shadow:0 2px 4px rgba(0,0,0,0.2);
       display:flex;align-items:center;justify-content:center;
       position:relative;color:white;
     ">${svg}${check}</div>`,
-    iconSize: [32, 32],
-    iconAnchor: [16, 16],
+    iconSize: [24, 24],
+    iconAnchor: [12, 12],
   });
 };
+const FOOTPRINT_ICON = L.divIcon({
+  html: `<div style="width:8px;height:8px;background:#6366f1;border-radius:50%;opacity:0.6;box-shadow:0 0 4px #6366f1;"></div>`,
+  iconSize: [8, 8],
+  iconAnchor: [4, 4],
+});
 
-const FitBounds = ({ points }) => {
+const USER_ICON = L.divIcon({
+  html: `<div style="width:16px;height:16px;background:#ef4444;border:3px solid white;border-radius:50%;box-shadow:0 0 8px rgba(239, 68, 68, 0.4);"></div>`,
+  iconSize: [16, 16],
+  iconAnchor: [8, 8],
+});
+
+const FitBounds = ({ points, distance }) => {
   const map = useMap();
   useEffect(() => {
     if (points && points.length > 0) {
-      const bounds = L.latLngBounds(points);
-      map.fitBounds(bounds, { padding: [50, 50], maxZoom: 18 });
+      // Filter out invalid points
+      const validPoints = points.filter(p => p && p[0] != null && p[1] != null);
+      if (validPoints.length > 0) {
+        const bounds = L.latLngBounds(validPoints);
+        // If we are very close to the quest, zoom in much more
+        const padding = distance < 20 ? [100, 100] : [50, 50];
+        const maxZoom = distance < 10 ? 20 : (distance < 30 ? 19 : 18);
+        map.fitBounds(bounds, { padding, maxZoom });
+      }
     }
-  }, [points, map]);
+  }, [points, map, distance]);
   return null;
 };
 
@@ -65,11 +77,14 @@ const RecenterMap = ({ center, zoom }) => {
 };
 
 const QuestMap = () => {
-  const { currentLocation, pathHistory, updateLocation, quests, selectedQuestId, setEngagedQuest, isAITracking, skipQuest } = useGameStore();
+  const { currentLocation, pathHistory, updateLocation, quests, selectedQuestId, setSelectedQuest, viewingQuestId, setViewingQuestId, setEngagedQuest, isAITracking, skipQuest } = useGameStore();
   const [error, setError] = useState(null);
   const [shouldFollow, setShouldFollow] = useState(true);
 
   const selectedQuest = quests.find(q => q.id === selectedQuestId);
+  const distToQuest = (currentLocation && selectedQuest)
+    ? L.latLng(currentLocation.lat, currentLocation.lng).distanceTo(L.latLng(selectedQuest.lat, selectedQuest.lng))
+    : 1000;
 
   // Helper to check if user is near a quest
   const isNear = (q) => {
@@ -83,7 +98,7 @@ const QuestMap = () => {
       Math.cos((q.lat * Math.PI) / 180) *
       Math.sin(dLng / 2) ** 2;
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c <= (q.radiusMeters || 10);
+    return R * c <= (q.radiusMeters || 0.005);
   };
 
   const currentAvailableQuest = quests.find(q => q.type === "place" && !q.completed && isNear(q));
@@ -122,20 +137,28 @@ const QuestMap = () => {
 
         {shouldFollow && currentLocation && !selectedQuest && <RecenterMap center={center} />}
 
-        {/* Dynamic Bounds: Show Both User and Quest */}
+        {/* Dynamic Bounds: Show Both User and Quest with proximity-based zoom */}
         {currentLocation && selectedQuest && (
-          <FitBounds points={[
-            [currentLocation.lat, currentLocation.lng],
-            [selectedQuest.lat, selectedQuest.lng]
-          ]} />
+          <FitBounds
+            points={[
+              [currentLocation.lat, currentLocation.lng],
+              [selectedQuest.lat, selectedQuest.lng]
+            ]}
+            distance={distToQuest}
+          />
         )}
 
-        {/* Fallback recenter if no location yet */}
-        {!currentLocation && selectedQuest && selectedQuest.type === "place" && (
-          <RecenterMap center={[selectedQuest.lat, selectedQuest.lng]} zoom={17} />
-        )}
-
-        {/* User Marker */}
+        {/* Footprint Trail (Path History) */}
+        {pathHistory.length > 0 && pathHistory.map((pt, i) => (
+          (pt && pt[0] != null && pt[1] != null) && (
+            <Marker
+              key={`fp-${i}`}
+              position={[pt[0], pt[1]]}
+              icon={FOOTPRINT_ICON}
+              interactive={false}
+            />
+          )
+        ))}
 
         {/* Selected Quest Target Path */}
         {selectedQuest?.type === "walk" && selectedQuest.targetPath && (
@@ -143,35 +166,33 @@ const QuestMap = () => {
             positions={selectedQuest.targetPath}
             color="#0ea5e9"
             weight={6}
-            opacity={0.8}
+            opacity={0.4}
             lineCap="round"
           />
         )}
 
-        {/* Quest Markers (Both Place and Walk Start Points) */}
+        {/* Quest Marker (Only show the selected one) */}
         {quests.map((q) => (
-          (q.lat && q.lng) && (
+          (q.lat && q.lng && q.id === selectedQuestId) && (
             <Marker
               key={q.id}
               position={[q.lat, q.lng]}
+              eventHandlers={{
+                click: () => {
+                  setViewingQuestId(q.id);
+                  setSelectedQuest(q.id);
+                }
+              }}
               icon={getQuestIcon(q.icon || (q.type === 'walk' ? 'pin' : 'pin'), q.completed)}>
               <Popup>
                 <div className="text-center p-1 min-w-[140px]">
-                  <p className="font-bold text-sm text-gray-900 leading-tight mb-1">{q.title}</p>
-                  <p className="text-xs text-gray-500 mb-2">{q.description}</p>
-
-                  {currentLocation && (
-                    <div className="bg-gray-50 rounded-lg py-1 px-2 mb-2 border border-blue-50">
-                      <p className="text-[10px] font-black text-indigo-500 uppercase">
-                        Distance: {Math.round(L.latLng(currentLocation.lat, currentLocation.lng).distanceTo(L.latLng(q.lat, q.lng)))}m
-                      </p>
-                    </div>
-                  )}
+                  <p className="font-black text-xs text-gray-900 leading-tight mb-1 uppercase">{q.title}</p>
+                  <p className="text-[10px] text-gray-500 mb-2 font-medium">{q.description}</p>
 
                   {q.completed ? (
-                    <span className="text-[10px] font-black text-green-600 bg-green-50 px-2 py-1 rounded-full uppercase">Goal Reached</span>
+                    <span className="text-[9px] font-black text-green-600 bg-green-50 px-2 py-1 rounded-full uppercase tracking-tighter">Goal Reached</span>
                   ) : (
-                    <span className="text-[10px] font-black text-indigo-600 bg-indigo-50 px-2 py-1 rounded-full uppercase">+{q.points} Points</span>
+                    <span className="text-[9px] font-black text-indigo-600 bg-indigo-50 px-2 py-1 rounded-full uppercase tracking-tighter">+{q.points} P</span>
                   )}
                 </div>
               </Popup>
@@ -181,46 +202,50 @@ const QuestMap = () => {
 
         {/* User Marker */}
         {currentLocation && (
-          <Marker position={[currentLocation.lat, currentLocation.lng]}>
+          <Marker position={[currentLocation.lat, currentLocation.lng]} icon={USER_ICON}>
             <Popup>
-              <div className="text-center p-2">
-                <p className="font-black text-xs uppercase tracking-widest mb-2">You are here</p>
-                {currentAvailableQuest && !isAITracking && (
-                  <button
-                    onClick={() => setEngagedQuest(currentAvailableQuest)}
-                    className="w-full bg-orange-500 text-white px-3 py-2 rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-2 shadow-lg shadow-orange-100 mb-2">
-                    <Video className="w-3 h-3" />
-                    Start Video Tracking
-                  </button>
-                )}
-                {currentAvailableQuest && !isAITracking && (
-                  <button
-                    onClick={() => skipQuest(currentAvailableQuest.id)}
-                    className="w-full bg-gray-200 text-gray-500 px-3 py-1 rounded-xl text-[9px] font-bold uppercase hover:bg-gray-300 transition-colors">
-                    Skip This Quest
-                  </button>
+              <div className="text-center p-2 min-w-[120px]">
+                <p className="font-black text-[10px] uppercase tracking-widest text-gray-400 mb-2">My Position</p>
+                {currentAvailableQuest && (
+                  <p className="bg-emerald-50 text-emerald-600 px-3 py-1 rounded-lg text-[9px] font-black uppercase mb-1">
+                    Arrived At Objective
+                  </p>
                 )}
               </div>
             </Popup>
           </Marker>
         )}
 
-        {/* Navigation Path to Active Quest */}
-        {currentLocation && selectedQuest && !selectedQuest.completed && (
-          <Polyline
-            positions={[
-              [currentLocation.lat, currentLocation.lng],
-              [selectedQuest.lat, selectedQuest.lng]
-            ]}
-            color="#ec4899"
-            weight={3}
-            dashArray="10, 10"
-            opacity={0.6}
-          />
+        {/* Primary Navigation Path: "The Way" */}
+        {currentLocation && selectedQuest && !selectedQuest.completed && selectedQuest.lat != null && (
+          <>
+            {/* Thicker Outer Glow Line */}
+            <Polyline
+              positions={[
+                [currentLocation.lat, currentLocation.lng],
+                [selectedQuest.lat, selectedQuest.lng]
+              ]}
+              color="#6366f1"
+              weight={8}
+              opacity={0.15}
+            />
+            {/* Dashed Active Line */}
+            <Polyline
+              positions={[
+                [currentLocation.lat, currentLocation.lng],
+                [selectedQuest.lat, selectedQuest.lng]
+              ]}
+              color="#6366f1"
+              weight={4}
+              dashArray="1, 10"
+              lineCap="round"
+              opacity={0.8}
+            />
+          </>
         )}
       </MapContainer>
 
-      <div className="absolute top-4 right-4 z-[20]">
+      <div className="absolute top-4 right-4 z-[20] flex flex-col gap-2">
         <button
           onClick={() => setShouldFollow(!shouldFollow)}
           className={`p-3 rounded-2xl shadow-xl transition-all ${shouldFollow
@@ -231,23 +256,18 @@ const QuestMap = () => {
         </button>
       </div>
 
-      <div className="absolute bottom-6 left-6 z-[20] flex flex-wrap items-center gap-x-4 gap-y-2 bg-white/95 px-4 py-3 rounded-2xl border border-gray-100 shadow-lg">
+      <div className="absolute bottom-6 left-6 right-6 lg:right-auto z-[20] flex flex-wrap items-center gap-x-4 gap-y-2 bg-white/95 px-4 py-3 rounded-2xl border border-gray-100 shadow-lg">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-indigo-500 border-2 border-white shadow flex items-center justify-center text-white [&_svg]:w-4 [&_svg]:h-4" dangerouslySetInnerHTML={{ __html: QUEST_ICONS.park }} />
-          <span className="text-[10px] font-bold text-gray-700 uppercase tracking-wider">Park</span>
+          <div className="w-5 h-5 rounded-full bg-indigo-600 shadow-sm flex items-center justify-center text-white" dangerouslySetInnerHTML={{ __html: QUEST_ICONS.pin }} />
+          <span className="text-[9px] font-black text-gray-700 uppercase tracking-tight">Objective</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-indigo-500 border-2 border-white shadow flex items-center justify-center text-white [&_svg]:w-4 [&_svg]:h-4" dangerouslySetInnerHTML={{ __html: QUEST_ICONS.health }} />
-          <span className="text-[10px] font-bold text-gray-700 uppercase tracking-wider">Health</span>
+          <div className="w-3 h-3 rounded-full bg-red-500 border border-white" />
+          <span className="text-[9px] font-black text-gray-700 uppercase tracking-tight">Me</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-indigo-500 border-2 border-white shadow flex items-center justify-center text-white [&_svg]:w-4 [&_svg]:h-4" dangerouslySetInnerHTML={{ __html: QUEST_ICONS.community }} />
-          <span className="text-[10px] font-bold text-gray-700 uppercase tracking-wider">Hub</span>
-        </div>
-        <div className="w-px h-5 bg-gray-200" />
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-green-500 border-2 border-white shadow flex items-center justify-center text-white font-bold text-xs">✓</div>
-          <span className="text-[10px] font-bold text-gray-700 uppercase tracking-wider">Done</span>
+          <div className="w-2 h-2 rounded-full bg-indigo-400 opacity-60" />
+          <span className="text-[9px] font-black text-gray-700 uppercase tracking-tight">Trail</span>
         </div>
       </div>
     </div>

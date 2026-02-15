@@ -19,122 +19,97 @@ export const distanceMeters = (lat1, lng1, lat2, lng2) => {
 // All 10 daily quests will be pushups at different locations
 // Relative offsets in degrees (approximate for small distances)
 // 0.00001 degrees is roughly 1.1 meters
+// Quest pool: Daily progression from 1 to 10
 const QUEST_POOL = [
   {
     id: "pushup_1",
     type: "place",
     title: "Pushup Challenge 1",
-    description: "Complete 20 Pushups at this location",
+    description: "Complete 5 Pushups to start your day!",
     offsetLat: 0.00001,
     offsetLng: 0.00001,
-    radiusMeters: 10,
+    radiusMeters: 0.005,
     points: 100,
     icon: "pin",
-    ageGroup: "any",
-    fitnessLevel: "moderate",
-    healthConsideration: "any",
     videoVerification: true,
     exercise: "Pushups",
-    targetReps: 20
+    targetReps: 5
   },
   {
-    id: "pushup_2",
-    type: "place",
-    title: "Pushup Challenge 2",
-    description: "Complete 20 Pushups at this location",
-    offsetLat: -0.00001,
-    offsetLng: 0.00001,
-    radiusMeters: 10,
+    id: "walk_2",
+    type: "walk",
+    title: "Morning Stroll",
+    description: "Walk 2 meters to verify tracking (Testing Mode)",
+    targetMeters: 2,
     points: 100,
-    icon: "pin",
-    ageGroup: "any",
-    fitnessLevel: "moderate",
-    healthConsideration: "any",
-    videoVerification: true,
-    exercise: "Pushups",
-    targetReps: 20
+    icon: "walk"
   },
   {
     id: "pushup_3",
     type: "place",
     title: "Pushup Challenge 3",
-    description: "Complete 20 Pushups at this location",
+    description: "Complete 10 Pushups",
     offsetLat: 0.00001,
     offsetLng: -0.00001,
-    radiusMeters: 10,
+    radiusMeters: 0.005,
     points: 100,
     icon: "pin",
-    ageGroup: "any",
-    fitnessLevel: "moderate",
-    healthConsideration: "any",
     videoVerification: true,
     exercise: "Pushups",
-    targetReps: 20
+    targetReps: 10
   },
   {
     id: "pushup_4",
     type: "place",
     title: "Pushup Challenge 4",
-    description: "Complete 20 Pushups at this location",
+    description: "Complete 12 Pushups",
     offsetLat: -0.00001,
     offsetLng: -0.00001,
-    radiusMeters: 10,
+    radiusMeters: 0.005,
     points: 100,
     icon: "pin",
-    ageGroup: "any",
-    fitnessLevel: "moderate",
-    healthConsideration: "any",
     videoVerification: true,
     exercise: "Pushups",
-    targetReps: 20
+    targetReps: 12
   },
   {
     id: "pushup_5",
     type: "place",
     title: "Pushup Challenge 5",
-    description: "Complete 20 Pushups at this location",
+    description: "Complete 15 Pushups",
     offsetLat: 0.000015,
     offsetLng: 0,
-    radiusMeters: 10,
-    points: 100,
+    radiusMeters: 0.005,
+    points: 150,
     icon: "pin",
-    ageGroup: "any",
-    fitnessLevel: "moderate",
-    healthConsideration: "any",
     videoVerification: true,
     exercise: "Pushups",
-    targetReps: 20
+    targetReps: 15
   },
   {
     id: "pushup_6",
     type: "place",
     title: "Pushup Challenge 6",
-    description: "Complete 20 Pushups at this location",
+    description: "Complete 18 Pushups",
     offsetLat: -0.000015,
     offsetLng: 0,
-    radiusMeters: 10,
-    points: 100,
+    radiusMeters: 0.005,
+    points: 150,
     icon: "pin",
-    ageGroup: "any",
-    fitnessLevel: "moderate",
-    healthConsideration: "any",
     videoVerification: true,
     exercise: "Pushups",
-    targetReps: 20
+    targetReps: 18
   },
   {
     id: "pushup_7",
     type: "place",
     title: "Pushup Challenge 7",
-    description: "Complete 20 Pushups at this location",
+    description: "Complete 20 Pushups",
     offsetLat: 0,
     offsetLng: 0.000015,
-    radiusMeters: 10,
-    points: 100,
+    radiusMeters: 0.005,
+    points: 200,
     icon: "pin",
-    ageGroup: "any",
-    fitnessLevel: "moderate",
-    healthConsideration: "any",
     videoVerification: true,
     exercise: "Pushups",
     targetReps: 20
@@ -143,53 +118,44 @@ const QUEST_POOL = [
     id: "pushup_8",
     type: "place",
     title: "Pushup Challenge 8",
-    description: "Complete 20 Pushups at this location",
+    description: "Complete 22 Pushups",
     offsetLat: 0,
     offsetLng: -0.000015,
-    radiusMeters: 10,
-    points: 100,
+    radiusMeters: 0.005,
+    points: 200,
     icon: "pin",
-    ageGroup: "any",
-    fitnessLevel: "moderate",
-    healthConsideration: "any",
     videoVerification: true,
     exercise: "Pushups",
-    targetReps: 20
+    targetReps: 22
   },
   {
     id: "pushup_9",
     type: "place",
     title: "Pushup Challenge 9",
-    description: "Complete 20 Pushups at this location",
+    description: "Complete 25 Pushups",
     offsetLat: 0.00002,
     offsetLng: 0.00002,
-    radiusMeters: 10,
-    points: 100,
+    radiusMeters: 0.005,
+    points: 250,
     icon: "pin",
-    ageGroup: "any",
-    fitnessLevel: "moderate",
-    healthConsideration: "any",
     videoVerification: true,
     exercise: "Pushups",
-    targetReps: 20
+    targetReps: 25
   },
   {
     id: "pushup_10",
     type: "place",
-    title: "Pushup Challenge 10",
-    description: "Complete 20 Pushups at this location",
+    title: "Daily Finale",
+    description: "Complete 30 Pushups for the ultimate daily bonus!",
     offsetLat: -0.00002,
     offsetLng: -0.00002,
-    radiusMeters: 10,
-    points: 100,
+    radiusMeters: 0.005,
+    points: 300,
     icon: "pin",
-    ageGroup: "any",
-    fitnessLevel: "moderate",
-    healthConsideration: "any",
     videoVerification: true,
     exercise: "Pushups",
-    targetReps: 20
-  }
+    targetReps: 30
+  },
 ];
 
 function getAgeGroup(age) {
@@ -466,7 +432,7 @@ export const useGameStore = create((set, get) => ({
           body: JSON.stringify({
             user_id: 1,
             quest_id: questId,
-            points: 0,
+            points: -5,
             skipped: true,
           }),
         });
@@ -477,10 +443,11 @@ export const useGameStore = create((set, get) => ({
       set({
         quests: updatedQuests,
         engagedQuest: null, // Close interaction modal
-        anchored: false, // Force re-anchor for next quest
         user: {
           ...user,
-          questsCompleted: user.questsCompleted || 0, // Don't count as "completed" for stats if we want strictness, or do if we count "attempts"
+          weeklyPoints: Math.max(0, (user.weeklyPoints || 0) - 5),
+          pointsToday: Math.max(0, (user.pointsToday || 0) - 5),
+          cumulativePoints: Math.max(0, (user.cumulativePoints || 0) - 5),
           questsToday: currentQuestsToday + 1,
           lastRefreshDate: today,
         },
@@ -497,8 +464,10 @@ export const useGameStore = create((set, get) => ({
   },
 
   selectedQuestId: null,
+  viewingQuestId: null,
 
   setSelectedQuest: (id) => set({ selectedQuestId: id }),
+  setViewingQuestId: (id) => set({ viewingQuestId: id }),
 
   fetchUserStats: async () => {
     try {
@@ -510,6 +479,7 @@ export const useGameStore = create((set, get) => ({
             ...s.user,
             pointsToday: parseInt(json.data.points_today),
             weeklyPoints: parseInt(json.data.weekly_points || 0),
+            yearlySuperPoints: parseInt(json.data.yearly_super_points || 0),
             dailyEarnings: json.data.daily_earnings || [],
             cumulativePoints: parseInt(json.data.cumulative_points),
             questsToday: parseInt(json.data.quests_today),
@@ -525,7 +495,7 @@ export const useGameStore = create((set, get) => ({
     try {
       const res = await fetch(`${getAPIBaseUrl()}/get_leaderboard.php`);
       const json = await res.json();
-      if (json.status === "success") {
+      if (json.status === "success" && json.data) {
         set({ leaderboard: json.data });
       }
     } catch (e) {
@@ -536,37 +506,37 @@ export const useGameStore = create((set, get) => ({
   anchored: false,
 
   anchorQuestsToLocation: (lat, lng) => {
-    const { user, anchored } = get();
-    // Re-anchor if not anchored or if we want to refresh for next quest
-    // For now, let's keep it simple: anchor once for the day
+    const { anchored } = get();
     if (anchored && get().quests.length > 0) return;
 
-    const questIndex = (user.questsToday || 0) % QUEST_POOL.length;
-    const poolItem = QUEST_POOL[questIndex];
-    if (!poolItem) return;
+    // Generate all 10 quests based on the user's location
+    const allQuests = QUEST_POOL.map((poolItem, index) => {
+      const finalLat = lat + (poolItem.offsetLat || 0);
+      const finalLng = lng + (poolItem.offsetLng || 0);
+      let finalPath = undefined;
+      if (poolItem.targetPath) {
+        finalPath = poolItem.targetPath.map(([oLat, oLng]) => [
+          lat + oLat,
+          lng + oLng,
+        ]);
+      }
 
-    const finalLat = lat + (poolItem.offsetLat || 0);
-    const finalLng = lng + (poolItem.offsetLng || 0);
-    let finalPath = undefined;
-    if (poolItem.targetPath) {
-      finalPath = poolItem.targetPath.map(([oLat, oLng]) => [
-        lat + oLat,
-        lng + oLng,
-      ]);
-    }
-
-    const activeQuest = {
-      ...poolItem,
-      lat: finalLat,
-      lng: finalLng,
-      targetPath: finalPath,
-      completed: false,
-      progressMeters: poolItem.type === "walk" ? 0 : undefined,
-    };
+      return {
+        ...poolItem,
+        lat: finalLat,
+        lng: finalLng,
+        targetPath: finalPath,
+        completed: false,
+        skipped: false,
+        isSuperPoint: index === 9,
+        title: index === 9 ? "Yearly Super Points" : poolItem.title,
+        progressMeters: poolItem.type === "walk" ? 0 : undefined,
+      };
+    });
 
     set({
       anchored: true,
-      quests: [activeQuest], // Only one active quest at a time
+      quests: allQuests,
     });
   },
 
@@ -591,23 +561,11 @@ export const useGameStore = create((set, get) => ({
 
   },
 
-  // Fetch leaderboard from backend
-  fetchLeaderboard: async () => {
-    try {
-      const response = await fetch(getAPIBaseUrl() + '/api/get_leaderboard.php');
-      const data = await response.json();
-      if (data.status === 'success' && data.data) {
-        set({ leaderboard: data.data });
-      }
-    } catch (error) {
-      console.error('Failed to fetch leaderboard:', error);
-    }
-  },
 
-  // Fetch rewards from backend
   fetchRewards: async () => {
     try {
-      const response = await fetch(getAPIBaseUrl() + '/health/rewards_list.php', {
+      const apiRoot = getAPIBaseUrl().replace('/api', '');
+      const response = await fetch(apiRoot + '/health/rewards_list.php', {
         credentials: 'include'
       });
       const data = await response.json();
@@ -625,7 +583,8 @@ export const useGameStore = create((set, get) => ({
   // Redeem a reward
   redeemReward: async (rewardId) => {
     try {
-      const response = await fetch(getAPIBaseUrl() + '/health/rewards_redeem.php', {
+      const apiRoot = getAPIBaseUrl().replace('/api', '');
+      const response = await fetch(apiRoot + '/health/rewards_redeem.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',

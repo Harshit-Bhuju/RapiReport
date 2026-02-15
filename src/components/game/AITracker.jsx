@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { X, Activity, Maximize2, Minimize2 } from 'lucide-react';
+import { X, Activity, Maximize2, Minimize2, CheckCircle2 } from 'lucide-react';
 
 const AITracker = ({ targetReps, onRepCount, onTargetReached, onClose }) => {
     const videoRef = useRef(null);
@@ -198,9 +198,11 @@ const AITracker = ({ targetReps, onRepCount, onTargetReached, onClose }) => {
 
                         if (newReps >= targetReps) {
                             setIsCompleted(true);
-                            feedback = '🎉 QUEST COMPLETED!';
-                            setFormFeedback(feedback);
-                            setTimeout(() => onTargetReached(), 500);
+                            setFormFeedback('🎉 TARGET REACHED!');
+                            // Give user time to see the success state
+                            setTimeout(() => {
+                                onTargetReached();
+                            }, 2000);
                         }
                     } else if (currentReps >= targetReps) {
                         feedback = '🎉 QUEST COMPLETED! Closing...';
@@ -545,11 +547,22 @@ const AITracker = ({ targetReps, onRepCount, onTargetReached, onClose }) => {
             </div>
 
             {/* Form Feedback - RESPONSIVE */}
-            {formFeedback && (
+            {formFeedback && !isCompleted && (
                 <div className="absolute top-20 sm:top-24 left-1/2 transform -translate-x-1/2 z-30 bg-black/90 px-4 sm:px-6 py-2 sm:py-3 rounded-xl border-2 border-cyan-400 max-w-[90%] sm:max-w-md">
                     <p className="text-white font-bold text-sm sm:text-base md:text-lg text-center whitespace-nowrap overflow-hidden text-ellipsis">
                         {formFeedback}
                     </p>
+                </div>
+            )}
+
+            {/* Success Overlay */}
+            {isCompleted && (
+                <div className="absolute inset-0 z-40 bg-indigo-600/90 backdrop-blur-md flex items-center justify-center animate-in fade-in zoom-in duration-500">
+                    <div className="text-center p-8 bg-white rounded-[3rem] shadow-2xl transform animate-bounce">
+                        <CheckCircle2 className="w-20 h-20 text-emerald-500 mx-auto mb-4" />
+                        <h2 className="text-4xl font-black text-gray-900 mb-2 uppercase tracking-tight">Completed!</h2>
+                        <p className="text-gray-600 font-bold">Target of {targetReps} reps reached!</p>
+                    </div>
                 </div>
             )}
         </div>

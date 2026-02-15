@@ -56,10 +56,17 @@ const RewardsPanel = () => {
         </div>
       </div>
 
-      <div className="mb-6 p-4 bg-indigo-50/50 rounded-2xl border border-indigo-100/50">
-        <p className="text-[10px] text-indigo-600 font-bold leading-relaxed">
-          💡 Points are valid for **7 days** from completion. Use them before they expire!
-        </p>
+      <div className="mb-6 grid grid-cols-2 gap-4">
+        <div className="p-4 bg-indigo-50/50 rounded-2xl border border-indigo-100/50">
+          <p className="text-[10px] text-indigo-600 font-black uppercase tracking-widest mb-1">Weekly Validity</p>
+          <p className="text-xl font-black text-indigo-900">{pointsToUse} P</p>
+          <p className="text-[8px] text-indigo-400 font-bold leading-none mt-1 uppercase tracking-tight">Valid for 7 days</p>
+        </div>
+        <div className="p-4 bg-orange-50 border border-orange-100 rounded-2xl">
+          <p className="text-[10px] text-orange-600 font-black uppercase tracking-widest mb-1">Yearly Super Points</p>
+          <p className="text-xl font-black text-orange-900">{user.yearlySuperPoints || 0}</p>
+          <p className="text-[8px] text-orange-400 font-bold leading-none mt-1 uppercase tracking-tight">Daily finale bonus</p>
+        </div>
       </div>
 
       <div className="space-y-4">

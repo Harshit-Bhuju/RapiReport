@@ -146,3 +146,10 @@
     @apply bg-transparent p-0;
   }
 }
+
+/* Print styles - clean report layout */
+@media print {
+  body {
+    background: white !important;
+  }
+}

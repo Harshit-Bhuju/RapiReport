@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Card, CardBody } from "@/components/ui/Card";
 import { useAuthStore } from "@/store/authStore";
@@ -28,9 +29,11 @@ import Input from "@/components/ui/Input";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import API from "@/Configs/ApiEndpoints";
+import { toast } from "react-hot-toast";
 
 const MedicalHistory = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const openConfirm = useConfirmStore((s) => s.openConfirm);
   const { user } = useAuthStore();
   const {
@@ -63,7 +66,8 @@ const MedicalHistory = () => {
     try {
       const listRes = await axios.get(API.FAMILY_LIST, { withCredentials: true });
       if (listRes.data?.status === "success") {
-        const accepted = (listRes.data.members || []).filter(m => m.status === "accepted");
+        const membersList = listRes.data.data || listRes.data.members || [];
+        const accepted = membersList.filter(m => m.status === "accepted");
         setFamilyMembers(accepted);
         const healthObj = {};
         for (const m of accepted) {
@@ -89,9 +93,11 @@ const MedicalHistory = () => {
   const handleAnalyzeHistory = async () => {
     setIsAnalyzing(true);
     try {
-      await fetchHistoryAnalysis();
+      const analysis = await fetchHistoryAnalysis();
+      navigate("/medical-history/analyze", { state: { analysis } });
     } catch (err) {
       console.error("Analysis failed", err);
+      toast.error(err?.message || "Analysis failed. Please try again.");
     } finally {
       setIsAnalyzing(false);
     }
@@ -450,11 +456,11 @@ const MedicalHistory = () => {
                       className="w-full flex items-center justify-between p-4 hover:bg-gray-50/50 transition-colors text-left">
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-xl bg-primary-50 flex items-center justify-center text-primary-600 font-bold text-sm shrink-0">
-                          {(m.member_name || m.member_email)?.[0]?.toUpperCase() || "?"}
+                          {(m.username || m.member_name || m.email || m.member_email)?.[0]?.toUpperCase() || "?"}
                         </div>
                         <div>
                           <p className="text-sm font-bold text-gray-900">
-                            {m.member_name || m.member_email}
+                            {m.username || m.member_name || m.email || m.member_email}
                           </p>
                           <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
                             {m.relation || "Family"}

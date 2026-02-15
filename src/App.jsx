@@ -55,6 +55,7 @@ import Symptoms from "@/pages/health/Symptoms";
 import Marketplace from "@/pages/health/Marketplace";
 import Campaigns from "@/pages/health/Campaigns";
 import MedicalHistory from "@/pages/health/MedicalHistory";
+import HistoryAnalyze from "@/pages/health/HistoryAnalyze";
 import Alerts from "@/pages/health/Alerts";
 import CommunityInsights from "@/pages/health/CommunityInsights";
 import ConsultationCallManager from "@/components/features/ConsultationCallManager";
@@ -323,6 +324,16 @@ function App() {
                   <ProtectedRoute>
                     <DashboardLayout>
                       <MedicalHistory />
+                    </DashboardLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/medical-history/analyze"
+                element={
+                  <ProtectedRoute>
+                    <DashboardLayout>
+                      <HistoryAnalyze />
                     </DashboardLayout>
                   </ProtectedRoute>
                 }

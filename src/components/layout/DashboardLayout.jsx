@@ -16,9 +16,9 @@ const DashboardLayout = ({ children }) => {
     <div className="min-h-screen bg-gray-50">
       <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
-      <div className="lg:pl-72 flex flex-col min-h-screen">
+      <div className="lg:pl-72 flex flex-col min-h-screen print:pl-0">
         {/* Top Header */}
-        <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-xl border-b border-gray-100 px-4 sm:px-6 py-4">
+        <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-xl border-b border-gray-100 px-4 sm:px-6 py-4 print:hidden">
           <div className="flex items-center justify-between max-w-7xl mx-auto w-full">
             <div className="flex items-center gap-3 sm:gap-4">
               <button

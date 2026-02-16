@@ -1,12 +1,4 @@
-<?php
-
-/**
- * gemini_ocr.php — Uses Gemini Vision to read handwritten prescriptions.
- * Accepts a base64-encoded image, sends it to Gemini, returns extracted text + medicines.
- */
-require_once __DIR__ . '/cors.php';
-require_once __DIR__ . '/../config/session_config.php';
-require_once __DIR__ . '/../config/dbconnect.php';
+include __DIR__ . '/../config/header.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode(['status' => 'error', 'message' => 'Method not allowed']);
@@ -30,8 +22,8 @@ if (empty($imageBase64)) {
     exit;
 }
 
-$apiKey = getenv("GEMINI_API_KEY") ?: $_ENV["GEMINI_API_KEY"] ?? $_SERVER["GEMINI_API_KEY"] ??
-    getenv("VITE_GEMINI_API_KEY") ?: $_ENV["VITE_GEMINI_API_KEY"] ?? $_SERVER["VITE_GEMINI_API_KEY"] ?? "AIzaSyDk_oCdPeE4P3BWtsjNChp6uZL98fzS-9Q";
+$apiKey = getenv("GEMINI_KEY_OCR") ?: getenv("GEMINI_KEY_MEDICAL") ?: getenv("GEMINI_API_KEY") ?: $_ENV["GEMINI_API_KEY"] ?? $_SERVER["GEMINI_API_KEY"] ??
+    getenv("VITE_GEMINI_API_KEY") ?: $_ENV["VITE_GEMINI_API_KEY"] ?? $_SERVER["VITE_GEMINI_API_KEY"];
 
 if (empty($apiKey)) {
     $rootEnv = __DIR__ . '/../../.env';
@@ -81,9 +73,9 @@ Always return the JSON object even if no medicines are found (empty meds array).
 // Your key supports: gemini-2.x, gemini-flash-latest. NOT: gemini-pro, gemini-pro-vision, gemini-1.5-flash
 $models = array_filter([
     getenv("GEMINI_MODEL"),
+    "gemini-2.5-flash",
     "gemini-2.0-flash",
     "gemini-2.0-flash-001",
-    "gemini-2.5-flash",
     "gemini-2.0-flash-lite",
     "gemini-flash-latest",
 ]);

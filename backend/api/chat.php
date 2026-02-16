@@ -1,7 +1,3 @@
-<?php
-require_once __DIR__ . '/cors.php';
-require_once __DIR__ . '/../config/session_config.php';
-include(__DIR__ . '/../config/dbconnect.php');
 include(__DIR__ . '/../config/header.php');
 
 /**
@@ -20,10 +16,15 @@ if (empty($message)) {
     exit;
 }
 
-// Get API Key from environment
-$apiKey = getenv("GEMINI_API_KEY") ?: "AIzaSyDk_oCdPeE4P3BWtsjNChp6uZL98fzS-9Q";
+// Get API Key from environment (specifically for Chatbox)
+$apiKey = getenv("GEMINI_KEY_CHAT") ?: getenv("GEMINI_API_KEY");
 
-$modelId = getenv("GEMINI_MODEL") ?: "gemini-2.5-flash";
+if (!$apiKey) {
+    echo json_encode(["error" => "Gemini API key not configured"]);
+    exit;
+}
+
+$modelId = getenv("GEMINI_MODEL") ?: "gemini-1.5-flash";
 $url = "https://generativelanguage.googleapis.com/v1beta/models/{$modelId}:generateContent?key={$apiKey}";
 
 $systemPrompt = "

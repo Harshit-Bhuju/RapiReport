@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 
 OPENAI_KEY = os.getenv("OPENAI_API_KEY")
-GEMINI_KEY = os.getenv("GEMINI_API_KEY")
+GEMINI_KEY = os.getenv("GEMINI_KEY_OCR") or os.getenv("GEMINI_KEY_MEDICAL") or os.getenv("GEMINI_API_KEY")
 
 SYSTEM_PROMPT = """You are a medical pharmacist. Your goal is to convert messy OCR text into a clean, structured medical report.
 
@@ -105,6 +105,7 @@ def refine_with_gemini(raw_text: str) -> Tuple[Optional[str], Optional[str]]:
         # Your key supports gemini-2.x only (no gemini-pro or 1.5)
         model_names = [
             os.getenv("GEMINI_MODEL"),
+            "gemini-2.5-flash",
             "gemini-2.0-flash",
             "gemini-2.0-flash-001",
             "gemini-2.0-flash-lite",

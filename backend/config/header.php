@@ -5,6 +5,10 @@
  * MUST be included first in all API files.
  */
 
+// Load environment variables
+require_once __DIR__ . '/env_loader.php';
+loadEnv(__DIR__ . '/../../.env');
+
 // 1. CORS Headers - Must be set BEFORE any output/requires
 $allowedOrigins = [
     "http://localhost:5173",

@@ -18,7 +18,7 @@ if (empty($ocrText)) {
     exit;
 }
 
-$apiKey = getenv("GEMINI_API_KEY") ?: "AIzaSyDk_oCdPeE4P3BWtsjNChp6uZL98fzS-9Q";
+$apiKey = getenv("GEMINI_KEY_OCR") ?: getenv("GEMINI_KEY_MEDICAL") ?: getenv("GEMINI_API_KEY");
 if (empty($apiKey)) {
     echo json_encode([
         'status' => 'success',
@@ -58,9 +58,9 @@ $prompt .= "\n\nOutput only the JSON object.";
 // Your key supports gemini-2.x only (no gemini-pro or 1.5)
 $models = array_filter([
     getenv("GEMINI_MODEL"),
+    "gemini-2.5-flash",
     "gemini-2.0-flash",
     "gemini-2.0-flash-001",
-    "gemini-2.5-flash",
     "gemini-2.0-flash-lite",
     "gemini-flash-latest",
 ]);

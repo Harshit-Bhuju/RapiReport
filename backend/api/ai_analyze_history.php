@@ -133,9 +133,21 @@ $stmt->execute();
 $symptoms = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 $stmt->close();
 
-// 4. Construct Clinical Prompt
-$apiKey = getenv("GEMINI_API_KEY") ?: "AIzaSyDk_oCdPeE4P3BWtsjNChp6uZL98fzS-9Q";
-$modelId = getenv("GEMINI_MODEL") ?: "gemini-2.5-flash";
+// 4. Select Purpose-Specific API Key & Model
+$apiKey = getenv("GEMINI_KEY_MEDICAL") ?: getenv("GEMINI_API_KEY");
+
+if (!$apiKey) {
+    echo json_encode(['status' => 'error', 'message' => 'Gemini API key not configured']);
+    exit;
+}
+
+if ($is_doctor_analysis) {
+    $apiKey = getenv("GEMINI_KEY_DOCTOR") ?: $apiKey;
+} elseif ($is_family_analysis) {
+    $apiKey = getenv("GEMINI_KEY_FAMILY") ?: $apiKey;
+}
+
+$modelId = getenv("GEMINI_MODEL") ?: "gemini-1.5-flash";
 $url = "https://generativelanguage.googleapis.com/v1beta/models/{$modelId}:generateContent?key={$apiKey}";
 $patientName = $userProfile['username'] ?? $userProfile['email'] ?? 'Patient';
 $historyContext = "IMPORTANT: The patient's name is: " . $patientName . ". Always use this exact name in your analysis. Do NOT invent or use any other names.\n\n";

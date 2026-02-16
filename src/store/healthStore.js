@@ -72,8 +72,24 @@ export const useHealthStore = create(
           return json.analysis;
         }
 
+        const code = json?.http_code;
+        const msg = json?.message || "";
+
+        if (code === 429 || /rate limit|too many request/i.test(msg)) {
+          throw new Error(
+            "Too many requests. The AI service is busy. Please wait a minute or two and try again."
+          );
+        }
+        if (code >= 500 || /unavailable|temporarily/i.test(msg)) {
+          throw new Error(
+            "The AI service is temporarily unavailable. Please try again later."
+          );
+        }
+
         console.error("Health Analysis Error Detail:", json);
-        throw new Error(json?.message || "Analysis failed");
+        throw new Error(
+          msg || "Analysis couldn’t be completed. Please try again."
+        );
       },
       fetchHealthData: async () => {
         const g = get();

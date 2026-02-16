@@ -164,59 +164,77 @@ const AITracker = ({ targetReps, onRepCount, onTargetReached, onClose }) => {
         drawUI(ctx, canvas.width, canvas.height);
     };
 
-    // Load MediaPipe Pose
+    // Load MediaPipe Pose (single init to avoid WASM "Module.arguments" abort)
+    const mediaPipeLoadedRef = useRef(false);
+
     useEffect(() => {
+        const loadScript = (src) =>
+            new Promise((resolve, reject) => {
+                if (document.querySelector(`script[src="${src}"]`)) {
+                    resolve();
+                    return;
+                }
+                const script = document.createElement('script');
+                script.src = src;
+                script.crossOrigin = 'anonymous';
+                script.onload = () => resolve();
+                script.onerror = () => reject(new Error(`Failed to load ${src}`));
+                document.body.appendChild(script);
+            });
+
         const loadMediaPipe = async () => {
+            if (mediaPipeLoadedRef.current) return;
+            if (typeof window !== 'undefined' && window.__mediaPipePoseReady) {
+                if (window.__mediaPipePoseInstance) {
+                    window.__mediaPipePoseInstance.onResults(onResults);
+                    poseRef.current = window.__mediaPipePoseInstance;
+                }
+                setIsLoading(false);
+                return;
+            }
+            mediaPipeLoadedRef.current = true;
+
             try {
-                const script1 = document.createElement('script');
-                script1.src = 'https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js';
-                script1.crossOrigin = 'anonymous';
-                document.body.appendChild(script1);
+                // Pre-initialize Module so WASM doesn't abort (Module.arguments)
+                if (typeof window !== 'undefined') {
+                    window.Module = window.Module || {};
+                    window.Module.arguments = window.Module.arguments || [];
+                }
 
-                const script2 = document.createElement('script');
-                script2.src = 'https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js';
-                script2.crossOrigin = 'anonymous';
-                document.body.appendChild(script2);
+                await loadScript('https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js');
+                await loadScript('https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js');
+                await loadScript('https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js');
+                await loadScript('https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js');
 
-                const script3 = document.createElement('script');
-                script3.src = 'https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js';
-                script3.crossOrigin = 'anonymous';
-                document.body.appendChild(script3);
-
-                const script4 = document.createElement('script');
-                script4.src = 'https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js';
-                script4.crossOrigin = 'anonymous';
-                document.body.appendChild(script4);
-
-                await new Promise((resolve) => {
-                    script4.onload = resolve;
-                });
-
-                await new Promise(resolve => setTimeout(resolve, 1000));
-
-                if (window.Pose) {
-                    const pose = new window.Pose({
-                        locateFile: (file) => {
-                            return `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`;
-                        }
-                    });
-
-                    pose.setOptions({
-                        modelComplexity: 1,
-                        smoothLandmarks: true,
-                        enableSegmentation: false,
-                        smoothSegmentation: false,
-                        minDetectionConfidence: 0.45,
-                        minTrackingConfidence: 0.55
-                    });
-
-                    pose.onResults(onResults);
-                    poseRef.current = pose;
-                    setIsLoading(false);
-                } else {
+                if (!window.Pose) {
                     throw new Error('MediaPipe Pose not loaded');
                 }
+
+                if (poseRef.current) {
+                    setIsLoading(false);
+                    return;
+                }
+
+                const pose = new window.Pose({
+                    locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`,
+                });
+
+                pose.setOptions({
+                    modelComplexity: 1,
+                    smoothLandmarks: true,
+                    enableSegmentation: false,
+                    smoothSegmentation: false,
+                    minDetectionConfidence: 0.45,
+                    minTrackingConfidence: 0.55,
+                });
+
+                pose.onResults(onResults);
+                poseRef.current = pose;
+                window.__mediaPipePoseReady = true;
+                window.__mediaPipePoseInstance = pose;
+                setIsLoading(false);
             } catch (err) {
+                mediaPipeLoadedRef.current = false;
                 console.error('Error loading MediaPipe:', err);
                 const msg = 'Failed to load AI tracker. Please refresh and try again.';
                 setError(msg);

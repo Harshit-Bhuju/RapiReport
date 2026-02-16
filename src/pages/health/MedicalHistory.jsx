@@ -96,16 +96,38 @@ const MedicalHistory = () => {
   };
 
   const handleAnalyzeHistory = async () => {
+    if (isAnalyzing) return;
     setIsAnalyzing(true);
-    try {
-      const data = await fetchHistoryAnalysis();
-      navigate("/medical-history/analyze", { state: { analysis: data } });
-    } catch (err) {
-      console.error("Analysis failed", err);
-      toast.error(err?.message || "Analysis failed. Please try again.");
-    } finally {
-      setIsAnalyzing(false);
+    const maxAttempts = 2;
+    const retryDelayMs = 60_000;
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        const data = await fetchHistoryAnalysis();
+        setIsAnalyzing(false);
+        navigate("/medical-history/analyze", { state: { analysis: data } });
+        return;
+      } catch (err) {
+        const message = err?.message || "";
+        const isRateLimit = /too many request|rate limit|429/i.test(message);
+
+        if (isRateLimit && attempt < maxAttempts) {
+          toast.loading(`Rate limited. Retrying in 1 minute (attempt ${attempt + 1}/${maxAttempts})...`, {
+            id: "analyze-retry",
+            duration: retryDelayMs,
+          });
+          await new Promise((r) => setTimeout(r, retryDelayMs));
+          toast.dismiss("analyze-retry");
+          continue;
+        }
+
+        setIsAnalyzing(false);
+        console.error("Analysis failed", err);
+        toast.error(message || "Analysis failed. Please try again.", { duration: 5000 });
+        return;
+      }
     }
+    setIsAnalyzing(false);
   };
 
   const handlePrintPdf = () => {
@@ -190,10 +212,11 @@ const MedicalHistory = () => {
           )}
           <Button
             onClick={handleAnalyzeHistory}
+            disabled={isAnalyzing}
             loading={isAnalyzing}
             className="gap-2 bg-gradient-to-r from-primary-600 to-indigo-600 shadow-lg shadow-primary-200">
             <Brain className="w-4 h-4" />
-            Analyze All History
+            {isAnalyzing ? "Analyzing..." : "Analyze All History"}
           </Button>
         </div>
       </div>

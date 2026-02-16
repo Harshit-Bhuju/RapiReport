@@ -223,12 +223,49 @@ $error = curl_error($ch);
 curl_close($ch);
 
 if ($httpCode !== 200) {
-    echo json_encode(['status' => 'error', 'message' => 'AI analysis failed', 'http_code' => $httpCode, 'error' => $error, 'details' => json_decode($response, true)]);
+    $userMessage = 'AI analysis failed. Please try again.';
+    if ($httpCode === 429) {
+        $userMessage = 'Too many requests. The AI service is rate-limited. Please wait a minute or two and try again.';
+    } elseif ($httpCode >= 500) {
+        $userMessage = 'The AI service is temporarily unavailable. Please try again later.';
+    }
+    echo json_encode([
+        'status' => 'error',
+        'message' => $userMessage,
+        'http_code' => $httpCode,
+        'error' => $error,
+        'details' => json_decode($response, true)
+    ]);
     exit;
 }
 
 $resData = json_decode($response, true);
-$analysis = $resData['candidates'][0]['content']['parts'][0]['text'] ?? 'No analysis generated.';
+
+// Gemini can return 200 with an error in the body (e.g. quota, blocked)
+if (!empty($resData['error'])) {
+    $err = $resData['error'];
+    $code = $err['code'] ?? 0;
+    $userMessage = is_numeric($code) && (int)$code === 429
+        ? 'Too many requests. Please wait a minute or two and try again.'
+        : ('AI analysis failed. ' . ($err['message'] ?? 'Please try again.'));
+    echo json_encode([
+        'status' => 'error',
+        'message' => $userMessage,
+        'http_code' => (int)$code ?: 500,
+        'details' => $err
+    ]);
+    exit;
+}
+
+$analysis = $resData['candidates'][0]['content']['parts'][0]['text'] ?? null;
+if (empty($analysis)) {
+    echo json_encode([
+        'status' => 'error',
+        'message' => 'AI could not generate analysis. Please try again.',
+        'http_code' => 502
+    ]);
+    exit;
+}
 
 echo json_encode([
     'status' => 'success',

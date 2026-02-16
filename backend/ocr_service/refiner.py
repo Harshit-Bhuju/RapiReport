@@ -107,7 +107,6 @@ def refine_with_gemini(raw_text: str) -> Tuple[Optional[str], Optional[str]]:
             os.getenv("GEMINI_MODEL"),
             "gemini-2.0-flash",
             "gemini-2.0-flash-001",
-            "gemini-2.5-flash",
             "gemini-2.0-flash-lite",
             "gemini-flash-latest",
         ]

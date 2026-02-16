@@ -1,8 +1,9 @@
+<?php
 include(__DIR__ . '/../config/header.php');
 
 /**
-* Gemini AI Chat Proxy (Simplified - No DB Persistence)
-*/
+ * Gemini AI Chat Proxy (Simplified - No DB Persistence)
+ */
 
 // Get raw POST data
 $rawData = file_get_contents("php://input");
@@ -12,16 +13,16 @@ $message = $data['message'] ?? '';
 $language = $data['language'] ?? 'en';
 
 if (empty($message)) {
-echo json_encode(["error" => "Message is required"]);
-exit;
+    echo json_encode(["error" => "Message is required"]);
+    exit;
 }
 
 // Get API Key from environment (specifically for Chatbox)
 $apiKey = getenv("GEMINI_KEY_CHAT") ?: getenv("GEMINI_API_KEY");
 
 if (!$apiKey) {
-echo json_encode(["error" => "Gemini API key not configured"]);
-exit;
+    echo json_encode(["error" => "Gemini API key not configured"]);
+    exit;
 }
 
 $systemPrompt = "
@@ -37,27 +38,27 @@ Your goal is to help users understand their medical reports and provide general 
 ";
 
 $postData = [
-"contents" => [
-[
-"parts" => [
-["text" => $message]
-]
-]
-],
-"systemInstruction" => [
-"parts" => [
-["text" => $systemPrompt]
-]
-]
+    "contents" => [
+        [
+            "parts" => [
+                ["text" => $message]
+            ]
+        ]
+    ],
+    "systemInstruction" => [
+        "parts" => [
+            ["text" => $systemPrompt]
+        ]
+    ]
 ];
 
 // Rate Limit: 3 messages per day for FREE AI Chat
 $user_id = $_SESSION['user_id'] ?? 0;
 if ($user_id > 0) {
-if (!checkAIRateLimit($conn, $user_id, 3)) {
-echo json_encode(["error" => "Daily AI Chat limit (3 messages) reached. Please try again tomorrow."]);
-exit;
-}
+    if (!checkAIRateLimit($conn, $user_id, 3)) {
+        echo json_encode(["error" => "Daily AI Chat limit (3 messages) reached. Please try again tomorrow."]);
+        exit;
+    }
 }
 
 // Model Selection - Strictly use gemini-3-flash for Chat
@@ -77,17 +78,17 @@ $curlError = curl_error($ch);
 curl_close($ch);
 
 if ($httpCode !== 200) {
-if ($httpCode === 429) {
-echo json_encode(["error" => "AI Quota exceeded. Please try again in a few minutes."]);
-} else {
-echo json_encode([
-"error" => "Gemini API Error",
-"details" => json_decode($response, true) ?: $curlError,
-"code" => $httpCode,
-"model_tried" => $modelId
-]);
-}
-exit;
+    if ($httpCode === 429) {
+        echo json_encode(["error" => "AI Quota exceeded. Please try again in a few minutes."]);
+    } else {
+        echo json_encode([
+            "error" => "Gemini API Error",
+            "details" => json_decode($response, true) ?: $curlError,
+            "code" => $httpCode,
+            "model_tried" => $modelId
+        ]);
+    }
+    exit;
 }
 
 $responseData = json_decode($response, true);
@@ -96,12 +97,12 @@ $responseText = $responseData['candidates'][0]['content']['parts'][0]['text'] ??
 // DB Persistence removed as requested by user to simplify and avoid SQL errors.
 
 echo json_encode([
-"text" => [
-"en" => $responseText,
-"ne" => $responseText
-]
+    "text" => [
+        "en" => $responseText,
+        "ne" => $responseText
+    ]
 ]);
 
 if (isset($conn)) {
-$conn->close();
+    $conn->close();
 }

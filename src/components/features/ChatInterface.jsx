@@ -53,8 +53,17 @@ const loadSessions = () => {
     if (legacy) {
       const messages = JSON.parse(legacy);
       const session = createSession();
-      session.messages = messages;
-      session.title = getTitle(messages);
+      session.messages = messages.map(msg => {
+        // Sanitize legacy messages to conform to new format
+        if (typeof msg.text === 'string') {
+          return { ...msg, text: { en: msg.text, ne: msg.text } };
+        }
+        if (!msg.text || typeof msg.text !== 'object') {
+          return { ...msg, text: { en: "Message not available", ne: "सन्देश उपलब्ध छैन" } };
+        }
+        return msg;
+      });
+      session.title = getTitle(session.messages);
       localStorage.removeItem("chat_history_v2");
       localStorage.setItem(STORAGE_KEY, JSON.stringify([session]));
       localStorage.setItem(CURRENT_CHAT_KEY, session.id);
@@ -64,7 +73,28 @@ const loadSessions = () => {
     const savedCurrentId = localStorage.getItem(CURRENT_CHAT_KEY);
     if (!raw) return null;
     const sessions = JSON.parse(raw);
-    const list = sessions?.length ? sessions : [createSession()];
+    const list = (sessions?.length ? sessions : [createSession()]).map(session => ({
+      ...session,
+      messages: session.messages.map(msg => {
+        // Sanitize messages to ensure they have the expected structure
+        if (typeof msg.text === 'string') {
+          return { ...msg, text: { en: msg.text, ne: msg.text } };
+        }
+        if (!msg.text || typeof msg.text !== 'object') {
+          return { ...msg, text: { en: "Message not available", ne: "सन्देश उपलब्ध छैन" } };
+        }
+        if (!msg.text.en && !msg.text.ne) {
+          return { ...msg, text: { en: "Message not available", ne: "सन्देश उपलब्ध छैन" } };
+        }
+        if (!msg.text.en) {
+          return { ...msg, text: { ...msg.text, en: msg.text.ne || "Message not available" } };
+        }
+        if (!msg.text.ne) {
+          return { ...msg, text: { ...msg.text, ne: msg.text.en || "सन्देश उपलब्ध छैन" } };
+        }
+        return msg;
+      })
+    }));
     const active = savedCurrentId && list.find((s) => s.id === savedCurrentId);
     return {
       sessions: list,
@@ -105,7 +135,41 @@ const ChatInterface = ({
 
   const currentSession =
     sessions.find((s) => s.id === currentId) || sessions[0];
-  const messages = currentSession?.messages || [WELCOME_MSG];
+  const messages = (currentSession?.messages || [WELCOME_MSG]).map(msg => {
+    // Sanitize messages to ensure they have the expected structure
+    if (!msg.text || typeof msg.text !== 'object') {
+      return {
+        ...msg,
+        text: {
+          en: msg.text || "Message not available",
+          ne: msg.text || "सन्देश उपलब्ध छैन"
+        }
+      };
+    }
+    // Ensure both language properties exist
+    if (!msg.text.en && !msg.text.ne) {
+      return {
+        ...msg,
+        text: {
+          en: "Message not available",
+          ne: "सन्देश उपलब्ध छैन"
+        }
+      };
+    }
+    if (!msg.text.en) {
+      return {
+        ...msg,
+        text: { ...msg.text, en: msg.text.ne || "Message not available" }
+      };
+    }
+    if (!msg.text.ne) {
+      return {
+        ...msg,
+        text: { ...msg.text, ne: msg.text.en || "सन्देश उपलब्ध छैन" }
+      };
+    }
+    return msg;
+  });
 
   const persistSessions = useCallback(
     (nextSessions, nextCurrentId) => {
@@ -447,11 +511,15 @@ const ChatInterface = ({
                 )}>
                 {msg.role === "user" ? (
                   <span className="text-[1.1rem]">
-                    {i18n.language === "ne" ? msg.text.ne : msg.text.en}
+                    {i18n.language === "ne" 
+                      ? (msg.text?.ne || msg.text?.en || "Message not available") 
+                      : (msg.text?.en || msg.text?.ne || "Message not available")}
                   </span>
                 ) : (
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                    {i18n.language === "ne" ? msg.text.ne : msg.text.en}
+                    {i18n.language === "ne" 
+                      ? (msg.text?.ne || msg.text?.en || "Message not available") 
+                      : (msg.text?.en || msg.text?.ne || "Message not available")}
                   </ReactMarkdown>
                 )}
               </div>

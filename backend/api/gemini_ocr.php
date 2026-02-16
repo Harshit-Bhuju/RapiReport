@@ -1,3 +1,4 @@
+<?php
 include __DIR__ . '/../config/header.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -22,191 +23,130 @@ if (empty($imageBase64)) {
     exit;
 }
 
-$apiKey = getenv("GEMINI_KEY_OCR") ?: getenv("GEMINI_KEY_MEDICAL") ?: getenv("GEMINI_API_KEY") ?: $_ENV["GEMINI_API_KEY"] ?? $_SERVER["GEMINI_API_KEY"] ??
-    getenv("VITE_GEMINI_API_KEY") ?: $_ENV["VITE_GEMINI_API_KEY"] ?? $_SERVER["VITE_GEMINI_API_KEY"];
+// Rate Limit: 10 scans per day
+if (!checkAIRateLimit($conn, $user_id, 10)) {
+    echo json_encode(['status' => 'error', 'message' => 'Daily Scan limit (10) reached. Please try again tomorrow.']);
+    exit;
+}
+
+// 1. Image Hash Caching
+$imageHash = md5($imageBase64);
+$stmt = $conn->prepare("SELECT id, raw_text, refined_json, image_path FROM ocr_history WHERE image_hash = ? AND user_id = ? LIMIT 1");
+$stmt->bind_param("si", $imageHash, $user_id);
+$stmt->execute();
+$cacheRes = $stmt->get_result()->fetch_assoc();
+if ($cacheRes) {
+    echo json_encode([
+        'status' => 'success',
+        'rawText' => $cacheRes['raw_text'],
+        'meds' => json_decode($cacheRes['refined_json'], true) ?: [],
+        'historyId' => $cacheRes['id'],
+        'imagePath' => $cacheRes['image_path'],
+        'cached' => true
+    ]);
+    exit;
+}
+
+$apiKey = getenv("GEMINI_KEY_OCR") ?: getenv("GEMINI_KEY_MEDICAL") ?: getenv("GEMINI_API_KEY");
 
 if (empty($apiKey)) {
-    $rootEnv = __DIR__ . '/../../.env';
-    $ocrEnv = __DIR__ . '/../ocr_service/.env';
-    $debug = [
-        'env_loader_status' => defined('ENV_LOADED') ? 'active' : 'not_found',
-        'paths' => [
-            'root_env' => [
-                'path' => $rootEnv,
-                'exists' => file_exists($rootEnv),
-                'readable' => is_readable($rootEnv)
-            ],
-            'ocr_env' => [
-                'path' => $ocrEnv,
-                'exists' => file_exists($ocrEnv),
-                'readable' => is_readable($ocrEnv)
-            ]
-        ],
-        'env_keys' => array_keys($_ENV),
-        'server_keys' => array_keys($_SERVER),
-        'check_dir' => __DIR__
-    ];
-    echo json_encode(['status' => 'error', 'message' => 'Gemini API key not configured', 'debug' => $debug]);
+    echo json_encode(['status' => 'error', 'message' => 'Gemini API key not configured']);
     exit;
 }
 
 $prompt = 'You are a medical prescription OCR expert. Look at this prescription image carefully. It may be handwritten.
 
-Extract ALL text you can read, especially:
-- Medicine names (even if handwritten/abbreviated)
-- Dosages (mg, ml, etc.)
-- Frequencies (e.g. 1-0-1, twice daily, BD, TID)
-- Duration (e.g. 5 days, 1 week)
-
-Return a valid JSON object (no markdown, no code fences) with this structure:
+Extract ALL text and return a valid JSON object with this exact structure:
 {
-  "rawText": "The full extracted text from the image, line by line",
+  "rawText": "full extracted text",
   "meds": [
-    { "name": "Medicine Name", "dose": "500mg", "frequency": "1-0-1", "duration": "5 days", "raw": "original line as read" }
-  ]
+    { "name": "Medicine Name", "dose": "e.g. 500mg", "frequency": "1-0-1", "duration": "5 days", "raw": "original line" }
+  ],
+  "alternatives": [ { "for": "unclear name", "suggested": "possible full name" } ],
+  "clarityScore": 0-100,
+  "warnings": [ "any obvious interaction warnings or red flags" ]
 }
 
-If you cannot read a word clearly, include your best guess with a ? suffix (e.g. "Amoxicillin?").
-Always return the JSON object even if no medicines are found (empty meds array).';
+If no medicines are found, return empty arrays. Output JSON ONLY.';
 
-// Fallback models if primary hits quota (each has separate quota)
-// Your key supports: gemini-2.x, gemini-flash-latest. NOT: gemini-pro, gemini-pro-vision, gemini-1.5-flash
-$models = array_filter([
-    getenv("GEMINI_MODEL"),
-    "gemini-2.5-flash",
-    "gemini-2.0-flash",
-    "gemini-2.0-flash-001",
-    "gemini-2.0-flash-lite",
-    "gemini-flash-latest",
-]);
-$models = array_unique($models);
+// Single Model to minimize quota burn - Strictly use gemini-2.5-flash for OCR
+$modelId = "gemini-2.5-flash";
+$url = "https://generativelanguage.googleapis.com/v1beta/models/{$modelId}:generateContent?key={$apiKey}";
 
-$response = null;
-$httpCode = 0;
-$errBody = null;
-
-foreach ($models as $modelId) {
-    if (empty($modelId)) continue;
-    $url = "https://generativelanguage.googleapis.com/v1beta/models/{$modelId}:generateContent?key={$apiKey}";
-    $postData = [
-        'contents' => [[
-            'parts' => [
-                ['text' => $prompt],
-                [
-                    'inline_data' => [
-                        'mime_type' => $mimeType,
-                        'data' => $imageBase64
-                    ]
+$postData = [
+    'contents' => [[
+        'parts' => [
+            ['text' => $prompt],
+            [
+                'inline_data' => [
+                    'mime_type' => $mimeType,
+                    'data' => $imageBase64
                 ]
             ]
-        ]]
-    ];
+        ]
+    ]]
+];
 
-    $ch = curl_init($url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_POST, true);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($postData));
-    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 30);
-    $response = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-
-    if ($httpCode === 200) break;
-
-    $errBody = json_decode($response, true);
-    $errMsg = $errBody['error']['message'] ?? '';
-    // If quota exceeded (429), try next model; otherwise stop
-    if ($httpCode !== 429) break;
-}
+$ch = curl_init($url);
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($postData));
+curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+$response = curl_exec($ch);
+$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+$curlError = curl_error($ch);
+curl_close($ch);
 
 if ($httpCode !== 200) {
-    $errBody = $errBody ?? json_decode($response ?? '{}', true);
-    $rawMsg = $errBody['error']['message'] ?? 'Gemini API error';
-    // User-friendly quota message
-    if (strpos($rawMsg, 'quota') !== false || strpos($rawMsg, 'RESOURCE_EXHAUSTED') !== false || $httpCode === 429) {
-        $retryMatch = [];
-        preg_match('/retry in ([\d.]+)s/i', $rawMsg, $retryMatch);
-        $retrySec = isset($retryMatch[1]) ? (int) ceil((float) $retryMatch[1]) : 60;
-        $userMsg = "API quota exceeded. Please wait {$retrySec} seconds and try again. Or check your plan at https://ai.google.dev/gemini-api/docs/rate-limits";
+    if ($httpCode === 429) {
+        $msg = "AI Quota exceeded. Please try again in a few minutes.";
     } else {
-        $userMsg = $rawMsg;
+        $msg = "AI Analysis failed. Please try again.";
     }
-    echo json_encode(['status' => 'error', 'message' => $userMsg]);
+    echo json_encode(['status' => 'error', 'message' => $msg, 'code' => $httpCode]);
     exit;
 }
 
 $responseData = json_decode($response, true);
-$candidates = $responseData['candidates'] ?? [];
-$candidate = $candidates[0] ?? null;
-if (!$candidate || empty($candidate['content']['parts'])) {
-    $blockReason = $candidate['finishReason'] ?? $responseData['promptFeedback']['blockReason'] ?? 'No content generated';
-    echo json_encode(['status' => 'error', 'message' => 'Gemini returned no content. Reason: ' . $blockReason]);
-    exit;
-}
-$text = $candidate['content']['parts'][0]['text'] ?? '';
+$text = $responseData['candidates'][0]['content']['parts'][0]['text'] ?? '';
 $text = preg_replace('/^```\w*\s*|\s*```$/m', '', trim($text));
 $parsed = json_decode($text, true);
 
 if (!is_array($parsed)) {
-    // If Gemini didn't return valid JSON, still save OCR image and return the raw text
-    $image_path = '';
-    $upload_dir = __DIR__ . '/../uploads/ocr/';
-    if (!is_dir($upload_dir)) {
-        mkdir($upload_dir, 0755, true);
-    }
-    $decoded = base64_decode($imageBase64, true);
-    if ($decoded !== false && strlen($decoded) > 0) {
-        $ext = (strpos($mimeType, 'png') !== false) ? 'png' : 'jpg';
-        $filename = 'ocr_' . uniqid('', true) . '.' . $ext;
-        if (file_put_contents($upload_dir . $filename, $decoded) !== false) {
-            $image_path = $filename;
-        }
-    }
-    $meds_json = json_encode([]);
-    $stmt = $conn->prepare("INSERT INTO ocr_history (user_id, image_path, raw_text, refined_json) VALUES (?, ?, ?, ?)");
-    $stmt->bind_param("isss", $user_id, $image_path, $text, $meds_json);
-    $stmt->execute();
-    echo json_encode([
-        'status' => 'success',
-        'rawText' => $text,
-        'meds' => [],
-        'historyId' => $stmt->insert_id,
-        'imagePath' => $image_path
-    ]);
-    exit;
+    $parsed = ['rawText' => $text, 'meds' => [], 'alternatives' => [], 'clarityScore' => 0, 'warnings' => []];
 }
 
 $rawText = $parsed['rawText'] ?? $text;
 $meds = $parsed['meds'] ?? [];
 
-// Save OCR image to uploads/ocr/
+// Save OCR image
 $image_path = '';
 $upload_dir = __DIR__ . '/../uploads/ocr/';
-if (!is_dir($upload_dir)) {
-    mkdir($upload_dir, 0755, true);
-}
+if (!is_dir($upload_dir)) mkdir($upload_dir, 0755, true);
+
 $decoded = base64_decode($imageBase64, true);
 if ($decoded !== false && strlen($decoded) > 0) {
     $ext = (strpos($mimeType, 'png') !== false) ? 'png' : 'jpg';
     $filename = 'ocr_' . uniqid('', true) . '.' . $ext;
-    $full_path = $upload_dir . $filename;
-    if (file_put_contents($full_path, $decoded) !== false) {
+    if (file_put_contents($upload_dir . $filename, $decoded) !== false) {
         $image_path = $filename;
     }
 }
 
-// Save to OCR history with image path and refined meds JSON
+// Save to history
 $meds_json = json_encode($meds);
-$sql = "INSERT INTO ocr_history (user_id, image_path, raw_text, refined_json) VALUES (?, ?, ?, ?)";
-$stmt = $conn->prepare($sql);
-$stmt->bind_param("isss", $user_id, $image_path, $rawText, $meds_json);
+$stmt = $conn->prepare("INSERT INTO ocr_history (user_id, image_path, image_hash, raw_text, refined_json) VALUES (?, ?, ?, ?, ?)");
+$stmt->bind_param("issss", $user_id, $image_path, $imageHash, $rawText, $meds_json);
 $stmt->execute();
 
 echo json_encode([
     'status' => 'success',
     'rawText' => $rawText,
     'meds' => $meds,
+    'alternatives' => $parsed['alternatives'] ?? [],
+    'clarityScore' => $parsed['clarityScore'] ?? 0,
+    'warnings' => $parsed['warnings'] ?? [],
     'historyId' => $stmt->insert_id,
     'imagePath' => $image_path
 ]);

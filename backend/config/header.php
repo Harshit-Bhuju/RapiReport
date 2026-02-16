@@ -23,15 +23,24 @@ $allowedOrigins = [
 
 $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
 
-// If the origin is in our allowed list, or is a common tunnel/local dev
-if (
-    in_array($origin, $allowedOrigins) ||
-    preg_match('/^https?:\/\/(localhost|127\.0\.0\.1|.*\.trycloudflare\.com|.*\.local)(:\d+)?$/', $origin)
-) {
+// If the origin is in our allowed list, or is a common tunnel/local dev, or matches our production domains
+$isAllowed = false;
+if (in_array($origin, $allowedOrigins)) {
+    $isAllowed = true;
+} elseif (preg_match('/^https?:\/\/(localhost|127\.0\.0\.1|.*\.trycloudflare\.com|.*\.local|.*\.harmanbhuju\.com\.np|.*\.harshitbhuju\.com\.np)(:\d+)?$/', $origin)) {
+    $isAllowed = true;
+} elseif ($origin === "https://harmanbhuju.com.np" || $origin === "https://harshitbhuju.com.np") {
+    $isAllowed = true;
+}
+
+if ($isAllowed) {
     header("Access-Control-Allow-Origin: " . $origin);
 } else {
-    // Optional: Allow production domain even if origin header is missing for some reason
-    // But browsers REQUIRE the Origin header for CORS
+    // Fallback: Default to the requester's origin if it's one of our known domains
+    // This handles cases where in_array might fail due to hidden characters
+    if (strpos($origin, 'harmanbhuju.com.np') !== false || strpos($origin, 'harshitbhuju.com.np') !== false) {
+        header("Access-Control-Allow-Origin: " . $origin);
+    }
 }
 
 header("Access-Control-Allow-Methods: GET, POST, OPTIONS, DELETE, PUT");
@@ -49,3 +58,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 // 2. Core includes - Only after headers are set
 require_once(__DIR__ . "/dbconnect.php");
 require_once(__DIR__ . "/session_config.php");
+
+/**
+ * AI Rate Limiting Helper
+ */
+function checkAIRateLimit($conn, $user_id, $dailyLimit = 5)
+{
+    $today = date('Y-m-d');
+
+    // Check current usage
+    $stmt = $conn->prepare("SELECT request_count FROM ai_usage WHERE user_id = ? AND request_date = ?");
+    $stmt->bind_param("is", $user_id, $today);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $row = $result->fetch_assoc();
+    $usage = $row ? (int)$row['request_count'] : 0;
+
+    if ($usage >= $dailyLimit) {
+        return false;
+    }
+
+    // Increment usage
+    if ($row) {
+        $upd = $conn->prepare("UPDATE ai_usage SET request_count = request_count + 1 WHERE user_id = ? AND request_date = ?");
+        $upd->bind_param("is", $user_id, $today);
+        $upd->execute();
+    } else {
+        $ins = $conn->prepare("INSERT INTO ai_usage (user_id, request_date, request_count) VALUES (?, ?, 1)");
+        $ins->bind_param("is", $user_id, $today);
+        $ins->execute();
+    }
+
+    return true;
+}

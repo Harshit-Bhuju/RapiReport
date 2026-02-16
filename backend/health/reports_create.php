@@ -15,73 +15,63 @@ if (!$user_id) {
     exit;
 }
 
-// Check if reports table exists
-$tableCheck = $conn->query("SHOW TABLES LIKE 'reports'");
-if (!$tableCheck || $tableCheck->num_rows === 0) {
-    echo json_encode(['status' => 'error', 'message' => 'Reports table not found. Import backend/rapireport.sql']);
-    exit;
-}
-
-$lab_name = '';
-$report_type = '';
-$report_date = null;
-$raw_text = '';
+$input = json_decode(file_get_contents('php://input'), true) ?: [];
+$lab_name = trim($input['labName'] ?? $_POST['labName'] ?? '');
+$report_type = trim($input['reportType'] ?? $_POST['reportType'] ?? 'Lab Report');
+$report_date = !empty($input['reportDate']) ? $input['reportDate'] : (!empty($_POST['reportDate']) ? $_POST['reportDate'] : null);
+$raw_text = trim($input['rawText'] ?? $_POST['rawText'] ?? '');
+$ai_summary_en = trim($input['aiSummaryEn'] ?? $_POST['aiSummaryEn'] ?? '');
+$ai_summary_ne = trim($input['aiSummaryNe'] ?? $_POST['aiSummaryNe'] ?? '');
+$overall_status = trim($input['overallStatus'] ?? $_POST['overallStatus'] ?? 'normal');
+$tests = $input['tests'] ?? (isset($_POST['tests']) ? json_decode($_POST['tests'], true) : []);
+$image_hash = $input['imageHash'] ?? $_POST['imageHash'] ?? null;
 $image_path = null;
-$ai_summary_en = '';
-$ai_summary_ne = '';
-$overall_status = 'normal';
-$tests = [];
 
-if (isset($_POST['labName']) || isset($_POST['rawText'])) {
-    $lab_name = trim($_POST['labName'] ?? '');
-    $report_type = trim($_POST['reportType'] ?? 'Lab Report');
-    $report_date = !empty($_POST['reportDate']) ? $_POST['reportDate'] : null;
-    $raw_text = trim($_POST['rawText'] ?? '');
-    $ai_summary_en = trim($_POST['aiSummaryEn'] ?? '');
-    $ai_summary_ne = trim($_POST['aiSummaryNe'] ?? '');
-    $overall_status = trim($_POST['overallStatus'] ?? 'normal');
-    $tests = isset($_POST['tests']) ? json_decode($_POST['tests'], true) : [];
+if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
+    $upload_dir = __DIR__ . '/../uploads/reports/';
+    if (!is_dir($upload_dir)) mkdir($upload_dir, 0755, true);
 
-    if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
-        $upload_dir = __DIR__ . '/../uploads/reports/';
-        if (!is_dir($upload_dir)) mkdir($upload_dir, 0755, true);
+    if (!$image_hash) $image_hash = md5_file($_FILES['image']['tmp_name']);
 
-        $allowed = ['image/jpeg', 'image/jpg', 'image/png'];
-        if (in_array($_FILES['image']['type'], $allowed) && $_FILES['image']['size'] <= 5 * 1024 * 1024) {
-            $ext = pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION);
-            $filename = uniqid('rpt_', true) . '.' . $ext;
-            if (move_uploaded_file($_FILES['image']['tmp_name'], $upload_dir . $filename)) {
-                $image_path = 'backend/uploads/reports/' . $filename;
-            }
-        }
+    $ext = pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION);
+    $filename = uniqid('rpt_', true) . '.' . $ext;
+    if (move_uploaded_file($_FILES['image']['tmp_name'], $upload_dir . $filename)) {
+        $image_path = 'backend/uploads/reports/' . $filename;
     }
-} else {
-    $input = json_decode(file_get_contents('php://input'), true) ?: [];
-    $lab_name = trim($input['labName'] ?? '');
-    $report_type = trim($input['reportType'] ?? 'Lab Report');
-    $report_date = $input['reportDate'] ?? null;
-    $raw_text = trim($input['rawText'] ?? '');
-    $ai_summary_en = trim($input['aiSummaryEn'] ?? '');
-    $ai_summary_ne = trim($input['aiSummaryNe'] ?? '');
-    $overall_status = trim($input['overallStatus'] ?? 'normal');
-    $tests = $input['tests'] ?? [];
 }
 
-$report_date_sql = $report_date ?: null;
+// Deduplication
+if ($image_hash) {
+    $check = $conn->prepare("SELECT id FROM reports WHERE image_hash = ? AND user_id = ? LIMIT 1");
+    $check->bind_param("si", $image_hash, $user_id);
+    $check->execute();
+    $existing = $check->get_result()->fetch_assoc();
+    $check->close();
 
-$stmt = $conn->prepare("INSERT INTO reports (user_id, lab_name, report_type, report_date, raw_text, image_path, ai_summary_en, ai_summary_ne, overall_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-$stmt->bind_param('issssssss', $user_id, $lab_name, $report_type, $report_date_sql, $raw_text, $image_path, $ai_summary_en, $ai_summary_ne, $overall_status);
+    if ($existing) {
+        $report_id = $existing['id'];
+        $sql = "UPDATE reports SET lab_name = ?, report_type = ?, report_date = ?, raw_text = ?, ai_summary_en = ?, ai_summary_ne = ?, overall_status = ? WHERE id = ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param('sssssssi', $lab_name, $report_type, $report_date, $raw_text, $ai_summary_en, $ai_summary_ne, $overall_status, $report_id);
+        $stmt->execute();
+        $stmt->close();
+        echo json_encode(['status' => 'success', 'id' => $report_id, 'updated' => true]);
+        exit;
+    }
+}
+
+$stmt = $conn->prepare("INSERT INTO reports (user_id, lab_name, report_type, report_date, raw_text, image_path, ai_summary_en, ai_summary_ne, overall_status, image_hash) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+$stmt->bind_param('isssssssss', $user_id, $lab_name, $report_type, $report_date, $raw_text, $image_path, $ai_summary_en, $ai_summary_ne, $overall_status, $image_hash);
 
 if (!$stmt->execute()) {
-    $stmt->close();
-    $conn->close();
-    echo json_encode(['status' => 'error', 'message' => 'Failed to save report']);
+    echo json_encode(['status' => 'error', 'message' => 'Failed to save']);
     exit;
 }
 
-$report_id = (int) $conn->insert_id;
+$report_id = $conn->insert_id;
 $stmt->close();
 
+// Insert tests
 foreach ($tests as $t) {
     $name = $t['name'] ?? '';
     $result = $t['result'] ?? null;
@@ -94,5 +84,4 @@ foreach ($tests as $t) {
     $ins->close();
 }
 
-$conn->close();
-echo json_encode(['status' => 'success', 'id' => $report_id, 'imagePath' => $image_path]);
+echo json_encode(['status' => 'success', 'id' => $report_id]);

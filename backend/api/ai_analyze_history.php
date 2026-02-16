@@ -15,6 +15,12 @@ if (!isset($_SESSION['user_id'])) {
 
 $user_id = (int)$_SESSION['user_id'];
 
+// Rate Limit: 5 analyses per day
+if (!checkAIRateLimit($conn, $user_id, 5)) {
+    echo json_encode(['status' => 'error', 'message' => 'Daily AI Analysis limit (5) reached. Please try again tomorrow.']);
+    exit;
+}
+
 // Initial target is the current user (self-analysis)
 $target_user_id = $user_id;
 $is_family_analysis = false;
@@ -87,8 +93,8 @@ $stmt->execute();
 $userProfile = $stmt->get_result()->fetch_assoc();
 $stmt->close();
 
-// 2. Fetch Past Scans & Prescriptions (Unified in ocr_history)
-$stmt = $conn->prepare("SELECT id, note, raw_text, refined_json, created_at FROM ocr_history WHERE user_id = ? ORDER BY created_at DESC LIMIT 50");
+// 2. Fetch Past Scans & Prescriptions (Unified in ocr_history) - LIMIT 5
+$stmt = $conn->prepare("SELECT id, note, raw_text, refined_json, created_at FROM ocr_history WHERE user_id = ? ORDER BY created_at DESC LIMIT 5");
 $stmt->bind_param("i", $target_user_id);
 $stmt->execute();
 $historyRows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
@@ -107,17 +113,17 @@ foreach ($historyRows as $row) {
     $pastRecords[] = [
         'id' => $row['id'],
         'note' => $row['note'],
-        'raw_text' => $row['raw_text'],
+        'raw_text' => substr($row['raw_text'] ?? '', 0, 300), // TRUNCATE TEXT
         'meds' => $medsStr,
         'created_at' => $row['created_at'],
     ];
 }
 
-// 3. Fetch Lab Reports
+// 3. Fetch Lab Reports - LIMIT 5
 $reports = [];
 $tableCheck = $conn->query("SHOW TABLES LIKE 'reports'");
 if ($tableCheck && $tableCheck->num_rows > 0) {
-    $stmt = $conn->prepare("SELECT lab_name, report_type, report_date, ai_summary_en, raw_text, overall_status, created_at FROM reports WHERE user_id = ? ORDER BY created_at DESC LIMIT 30");
+    $stmt = $conn->prepare("SELECT lab_name, report_type, report_date, ai_summary_en, raw_text, overall_status, created_at FROM reports WHERE user_id = ? ORDER BY created_at DESC LIMIT 5");
     if ($stmt) {
         $stmt->bind_param("i", $target_user_id);
         $stmt->execute();
@@ -126,8 +132,8 @@ if ($tableCheck && $tableCheck->num_rows > 0) {
     }
 }
 
-// 5. Fetch Recent Symptoms
-$stmt = $conn->prepare("SELECT text, severity, log_date AS date, vitals_json FROM symptoms WHERE user_id = ? ORDER BY log_date DESC LIMIT 50");
+// 5. Fetch Recent Symptoms - LIMIT 10
+$stmt = $conn->prepare("SELECT text, severity, log_date AS date, vitals_json FROM symptoms WHERE user_id = ? ORDER BY log_date DESC LIMIT 10");
 $stmt->bind_param("i", $target_user_id);
 $stmt->execute();
 $symptoms = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
@@ -147,8 +153,6 @@ if ($is_doctor_analysis) {
     $apiKey = getenv("GEMINI_KEY_FAMILY") ?: $apiKey;
 }
 
-$modelId = getenv("GEMINI_MODEL") ?: "gemini-1.5-flash";
-$url = "https://generativelanguage.googleapis.com/v1beta/models/{$modelId}:generateContent?key={$apiKey}";
 $patientName = $userProfile['username'] ?? $userProfile['email'] ?? 'Patient';
 $historyContext = "IMPORTANT: The patient's name is: " . $patientName . ". Always use this exact name in your analysis. Do NOT invent or use any other names.\n\n";
 $historyContext .= "User Profile:\n";
@@ -159,20 +163,16 @@ $historyContext .= "- Existing Conditions: " . ($userProfile['conditions'] ?? 'N
 $historyContext .= "- Other/Custom: " . ($userProfile['custom_conditions'] ?? 'None') . "\n";
 $historyContext .= "- Family History: " . ($userProfile['parental_history'] ?? 'None') . "\n\n";
 
-$historyContext .= "Prescription & Scan History (Full Context):\n";
+$historyContext .= "Prescription & Scan History (Recent 5):\n";
 foreach ($pastRecords as $p) {
-    $note = (isset($p['note']) && $p['note']) ? $p['note'] : (isset($p['raw_text']) ? substr($p['raw_text'], 0, 100) . "..." : 'No details');
+    $note = (isset($p['note']) && $p['note']) ? $p['note'] : (isset($p['raw_text']) ? $p['raw_text'] : 'No details');
     $meds = $p['meds'] ?? 'No meds categorized';
     $historyContext .= "- [" . $p['created_at'] . "] Info: " . $note . " | Meds: " . $meds . "\n";
-    if (isset($p['raw_text'])) {
-        $historyContext .= "  Full Content: " . substr($p['raw_text'], 0, 500) . "...\n";
-    }
 }
 
-$historyContext .= "\nLab/Diagnostic Reports:\n";
+$historyContext .= "\nLab/Diagnostic Reports (Recent 5):\n";
 foreach ($reports as $r) {
-    $summary = $r['ai_summary_en'] ?? $r['raw_text'] ?? 'No summary';
-    if (strlen($summary) > 1500) $summary = substr($summary, 0, 1500) . '...';
+    $summary = $r['ai_summary_en'] ?? substr($r['raw_text'] ?? '', 0, 300);
     $historyContext .= "- [" . ($r['report_date'] ?? $r['created_at']) . "] " . ($r['report_type'] ?? 'Report') . " (" . ($r['lab_name'] ?? 'Lab') . ") - Status: " . ($r['overall_status'] ?? 'N/A') . "\n";
     $historyContext .= "  Summary: " . $summary . "\n\n";
 }
@@ -222,6 +222,10 @@ $postData = [
     ]
 ];
 
+// Single Model to strictly use Gemini 3 Flash for complex reasoning
+$modelId = "gemini-3-flash";
+$url = "https://generativelanguage.googleapis.com/v1beta/models/{$modelId}:generateContent?key={$apiKey}";
+
 $ch = curl_init($url);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 curl_setopt($ch, CURLOPT_POST, true);
@@ -246,7 +250,8 @@ if ($httpCode !== 200) {
         'message' => $userMessage,
         'http_code' => $httpCode,
         'error' => $error,
-        'details' => json_decode($response, true)
+        'details' => json_decode($response, true),
+        'model_tried' => $modelId
     ]);
     exit;
 }

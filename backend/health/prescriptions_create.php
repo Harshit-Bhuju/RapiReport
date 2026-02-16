@@ -15,80 +15,74 @@ if (!$user_id) {
     exit;
 }
 
-// Handle both JSON and FormData (same pattern as reports_create.php)
+// Handle both JSON and FormData
 $note = '';
 $raw_text = '';
 $meds = [];
 $image_path = null;
+$image_hash = null;
 
 $is_form_data = (isset($_POST['note']) || isset($_POST['rawText']) || isset($_POST['meds']))
     || (isset($_FILES['image']) && $_FILES['image']['error'] !== UPLOAD_ERR_NO_FILE);
 
 if ($is_form_data) {
-    // FormData submission
     $note = trim($_POST['note'] ?? '');
     $raw_text = trim($_POST['rawText'] ?? $_POST['raw_text'] ?? '');
     $meds_raw = $_POST['meds'] ?? '[]';
     $meds = is_array($meds_raw) ? $meds_raw : (json_decode($meds_raw, true) ?: []);
+    $image_hash = $_POST['imageHash'] ?? null;
 
-    // Handle image upload (save to ocr folder)
     if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
         $upload_dir = __DIR__ . '/../uploads/ocr/';
+        if (!is_dir($upload_dir)) mkdir($upload_dir, 0755, true);
 
-        // Create directory if it doesn't exist
-        if (!is_dir($upload_dir)) {
-            mkdir($upload_dir, 0755, true);
-        }
+        if (!$image_hash) $image_hash = md5_file($_FILES['image']['tmp_name']);
 
-        // Validate file type
-        $allowed_types = ['image/jpeg', 'image/jpg', 'image/png'];
-        $file_type = $_FILES['image']['type'];
-
-        if (!in_array($file_type, $allowed_types)) {
-            echo json_encode(['status' => 'error', 'message' => 'Invalid file type. Only JPG and PNG allowed.']);
-            exit;
-        }
-
-        // Validate file size (5MB max)
-        if ($_FILES['image']['size'] > 5 * 1024 * 1024) {
-            echo json_encode(['status' => 'error', 'message' => 'File too large. Max 5MB.']);
-            exit;
-        }
-
-        // Generate unique filename in ocr folder
         $ext = pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION);
         $filename = uniqid('ocr_', true) . '.' . strtolower($ext);
-        $full_path = $upload_dir . $filename;
-
-        if (move_uploaded_file($_FILES['image']['tmp_name'], $full_path)) {
-            $image_path = $filename; // Store filename
+        if (move_uploaded_file($_FILES['image']['tmp_name'], $upload_dir . $filename)) {
+            $image_path = $filename;
         }
     }
 } else {
-    // JSON submission (fallback)
     $input = json_decode(file_get_contents('php://input'), true) ?: [];
     $note = trim($input['note'] ?? '');
     $raw_text = trim($input['rawText'] ?? $input['raw_text'] ?? '');
     $meds = $input['meds'] ?? [];
+    $image_hash = $input['imageHash'] ?? null;
 }
 
-// Save to ocr_history instead of legacy prescriptions table
+// Check for existing scan with same hash to avoid duplicates
+if ($image_hash) {
+    $check = $conn->prepare("SELECT id, image_path FROM ocr_history WHERE image_hash = ? AND user_id = ? LIMIT 1");
+    $check->bind_param("si", $image_hash, $user_id);
+    $check->execute();
+    $existing = $check->get_result()->fetch_assoc();
+    $check->close();
 
-// Save to ocr_history instead of prescriptions
+    if ($existing) {
+        $history_id = $existing['id'];
+        $meds_json = json_encode($meds);
+        $sql = "UPDATE ocr_history SET note = ?, raw_text = ?, refined_json = ? WHERE id = ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param('sssi', $note, $raw_text, $meds_json, $history_id);
+        $stmt->execute();
+        $stmt->close();
+        echo json_encode(['status' => 'success', 'id' => $history_id, 'updated' => true, 'image_path' => $existing['image_path']]);
+        exit;
+    }
+}
+
 $meds_json = json_encode($meds);
-$sql = "INSERT INTO ocr_history (user_id, image_path, note, raw_text, refined_json) VALUES (?, ?, ?, ?, ?)";
+$sql = "INSERT INTO ocr_history (user_id, image_path, image_hash, note, raw_text, refined_json) VALUES (?, ?, ?, ?, ?, ?)";
 $stmt = $conn->prepare($sql);
 $img_val = $image_path ?? '';
-$stmt->bind_param('issss', $user_id, $img_val, $note, $raw_text, $meds_json);
+$hash_val = $image_hash ?? '';
+$stmt->bind_param('isssss', $user_id, $img_val, $hash_val, $note, $raw_text, $meds_json);
 
 if (!$stmt->execute()) {
-    $stmt->close();
-    $conn->close();
-    echo json_encode(['status' => 'error', 'message' => 'Failed to save to ocr_history: ' . $conn->error]);
+    echo json_encode(['status' => 'error', 'message' => 'Failed to save: ' . $conn->error]);
     exit;
 }
-$history_id = (int) $conn->insert_id;
-$stmt->close();
 
-$conn->close();
-echo json_encode(['status' => 'success', 'id' => $history_id, 'image_path' => $image_path]);
+echo json_encode(['status' => 'success', 'id' => $conn->insert_id, 'image_path' => $image_path]);

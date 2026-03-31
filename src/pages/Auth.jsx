@@ -105,11 +105,7 @@ const Auth = () => {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6 }}
             className="hidden lg:flex flex-col justify-center">
-            {/* Logo */}
-            <div className="mb-12">
-              <img src={logoIcon} alt="RapiReport" className="h-12 w-auto" />
-            </div>
-
+        
             {/* Main Heading */}
             <div className="mb-12">
               <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/80 backdrop-blur-sm border border-blue-200/50 text-blue-600 text-sm font-semibold mb-6">
@@ -222,7 +218,7 @@ const Auth = () => {
             <div className="w-full max-w-md">
               <div className="bg-white rounded-3xl shadow-xl shadow-slate-900/10 border border-slate-200/50 p-8 sm:p-10">
                 {/* Mobile Logo */}
-                <div className="lg:hidden mb-8 text-center">
+                <div className="md:hidden mb-8 text-center">
                   <img
                     src={logoIcon}
                     alt="RapiReport"
